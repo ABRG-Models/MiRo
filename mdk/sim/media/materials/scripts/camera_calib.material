@@ -1,0 +1,18 @@
+material CameraCalib/Diffuse
+{
+  receive_shadows off
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture camera_calib.png
+        filtering anistropic
+        max_anisotropy 16
+      }
+      
+    }
+  }
+}
+

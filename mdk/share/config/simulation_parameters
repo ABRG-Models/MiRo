@@ -1,0 +1,26 @@
+#-	DO NOT MODIFY THIS FILE
+#-
+#-	this is a template configuration file and should not be modified.
+#-	it is copied to the user directory during installation and this
+#-	message is removed as part of that process. the installed copy of
+#-	this file can be modified.
+#-
+#-	DO NOT MODIFY THIS FILE
+
+# these parameters are read by the simulator (Gazebo) plugin
+# at load time and are used to configure the simulation.
+
+# camera configuration
+#frame=360w@15
+
+# sensors
+enable_eyes=1
+enable_overhead=0
+enable_sonar=1
+enable_light_sensors=1
+enable_cliff_sensors=1
+
+# rendering
+# NB: enable_sun does not currently work (placeholder)
+enable_sun=1
+

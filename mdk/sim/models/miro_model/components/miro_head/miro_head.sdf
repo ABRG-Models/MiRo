@@ -1,0 +1,550 @@
+<?xml version="1.0"?>
+<!--
+	@section COPYRIGHT
+	Copyright (C) 2019 Consequential Robotics Ltd
+	
+	@section AUTHOR
+	Consequential Robotics http://consequentialrobotics.com
+	
+	@section LICENSE
+	For a full copy of the license agreement, see LICENSE in the
+	MDK root directory.
+	
+	Subject to the terms of this Agreement, Consequential
+	Robotics grants to you a limited, non-exclusive, non-
+	transferable license, without right to sub-license, to use
+	MIRO Developer Kit in accordance with this Agreement and any
+	other written agreement with Consequential Robotics.
+	Consequential Robotics does not transfer the title of MIRO
+	Developer Kit to you; the license granted to you is not a
+	sale. This agreement is a binding legal agreement between
+	Consequential Robotics and the purchasers or users of MIRO
+	Developer Kit.
+	
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+	KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+	WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+	PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+	OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+	OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
+<sdf version="1.5">
+	<model name="miro_head">
+		<link name="head">
+			<inertial>
+				<pose>-0.002 0 0.221 0 0 0</pose>
+				<mass>0.261799</mass>
+				<inertia>
+					<ixx>0.00043633</ixx>
+					<ixy>0.0</ixy>
+					<ixz>0.0</ixz>
+					<iyy>0.00043633</iyy>
+					<iyz>0.0</iyz>
+					<izz>0.00043633</izz>
+				</inertia>
+			</inertial>
+			<visual name="visual_head_lower">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/head_lower.stl</uri>
+					</mesh>
+				</geometry>
+				<material>
+					<script>
+						<uri>file://media/materials/scripts/gazebo.material</uri>
+						<name>Gazebo/White</name>
+					</script>
+				</material>
+			</visual>
+			<collision name="collision_head_lower">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/head_lower_collision.stl</uri>
+					</mesh>
+				</geometry>
+				<surface>
+					<friction>
+						<ode>
+							<mu>0.1</mu>
+							<mu2>0.1</mu2>
+						</ode>
+					</friction>
+				</surface>
+			</collision>
+			<visual name="visual_head_upper">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/head_upper.stl</uri>
+					</mesh>
+				</geometry>
+				<material>
+					<script>
+						<uri>file://media/materials/scripts/gazebo.material</uri>
+						<name>Gazebo/White</name>
+					</script>
+				</material>
+			</visual>
+			<collision name="collision_head_upper">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/head_upper_collision.stl</uri>
+					</mesh>
+				</geometry>
+				<surface>
+					<friction>
+						<ode>
+							<mu>0.1</mu>
+							<mu2>0.1</mu2>
+						</ode>
+					</friction>
+				</surface>
+			</collision>
+			<visual name="visual_eyelid_lower_lh">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/eyelid_lower_lh.stl</uri>
+					</mesh>
+				</geometry>
+				<material>
+					<script>
+						<uri>file://media/materials/scripts/gazebo.material</uri>
+						<name>Gazebo/White</name>
+					</script>
+				</material>
+			</visual>
+			<visual name="visual_eyelid_lower_rh">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/eyelid_lower_rh.stl</uri>
+					</mesh>
+				</geometry>
+				<material>
+					<script>
+						<uri>file://media/materials/scripts/gazebo.material</uri>
+						<name>Gazebo/White</name>
+					</script>
+				</material>
+			</visual>
+			<visual name="visual_nose">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/nose.stl</uri>
+					</mesh>
+				</geometry>
+				<material>
+					<script>
+						<uri>file://media/materials/scripts/gazebo.material</uri>
+						<name>Gazebo/Grey</name>
+					</script>
+				</material>
+			</visual>
+			<collision name="collision_nose">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/nose_collision.stl</uri>
+					</mesh>
+				</geometry>
+				<surface>
+					<friction>
+						<ode>
+							<mu>0.3</mu>
+							<mu2>0.3</mu2>
+						</ode>
+					</friction>
+				</surface>
+			</collision>
+			<visual name="visual_eyeball_lh">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/eyeball_lh.stl</uri>
+					</mesh>
+				</geometry>
+				<material>
+					<script>
+						<uri>file://media/materials/scripts/gazebo.material</uri>
+						<name>Gazebo/White</name>
+					</script>
+				</material>
+			</visual>
+			<visual name="visual_eyeball_rh">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/eyeball_rh.stl</uri>
+					</mesh>
+				</geometry>
+				<material>
+					<script>
+						<uri>file://media/materials/scripts/gazebo.material</uri>
+						<name>Gazebo/White</name>
+					</script>
+				</material>
+			</visual>
+			<visual name="visual_iris_lh">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/iris_lh.stl</uri>
+					</mesh>
+				</geometry>
+				<material>
+					<script>
+						<uri>file://media/materials/scripts/gazebo.material</uri>
+						<name>Gazebo/DarkGrey</name>
+					</script>
+				</material>
+			</visual>
+			<visual name="visual_iris_rh">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/iris_rh.stl</uri>
+					</mesh>
+				</geometry>
+				<material>
+					<script>
+						<uri>file://media/materials/scripts/gazebo.material</uri>
+						<name>Gazebo/DarkGrey</name>
+					</script>
+				</material>
+			</visual>
+			<!-- eye_l -->
+			<sensor name="eye_l" type="camera">
+				<pose>0.0385 0.0434 0.2595 -0.27 -0.7854 0.3665</pose>
+				<camera>
+					<!-- would be 90 degrees, but is increased to allow room
+					for the distortion model to be computed; increase is determined
+					empirically by adjusting until the camera_calib tool just fills
+					the field of view http://gazebosim.org/tutorials?tut=camera_distortion -->
+					<horizontal_fov>1.82</horizontal_fov>
+					<image>
+						<width>1280</width>
+						<height>720</height>
+					</image>
+					<clip>
+						<near>0.001</near>
+						<far>100</far>
+					</clip>
+					<distortion>
+						<k1>-0.75</k1>
+						<k2>0.25</k2>
+						<k3>0.0</k3>
+						<p1>0.0</p1>
+						<p2>0.0</p2>
+						<center>0.5 0.5</center>
+					</distortion>
+				</camera>
+				<always_on>1</always_on>
+				<update_rate>10</update_rate>
+				<visualize>false</visualize>
+			</sensor>
+			<!-- eye_r -->
+			<sensor name="eye_r" type="camera">
+				<pose>0.0385 -0.0434 0.2595 0.27 -0.7854 -0.3665</pose>
+				<camera>
+					<horizontal_fov>1.82</horizontal_fov>
+					<image>
+						<width>1280</width>
+						<height>720</height>
+					</image>
+					<clip>
+						<near>0.001</near>
+						<far>100</far>
+					</clip>
+					<distortion>
+						<k1>-0.75</k1>
+						<k2>0.25</k2>
+						<k3>0.0</k3>
+						<p1>0.0</p1>
+						<p2>0.0</p2>
+						<center>0.5 0.5</center>
+					</distortion>
+				</camera>
+				<always_on>1</always_on>
+				<update_rate>10</update_rate>
+				<visualize>false</visualize>
+			</sensor>
+			<!-- overhead -->
+			<sensor name="overhead" type="camera">
+				<pose>0 0 1.0 0 1.22 0</pose>
+				<camera>
+					<horizontal_fov>1.0472</horizontal_fov>
+					<image>
+						<width>1280</width>
+						<height>720</height>
+					</image>
+					<clip>
+						<near>0.01</near>
+						<far>2</far>
+					</clip>
+				</camera>
+				<always_on>1</always_on>
+				<update_rate>10</update_rate>
+				<visualize>false</visualize>
+			</sensor>
+			<!-- imu -->
+			<sensor name="acc_head" type="imu">
+				<pose>0 0 0 0 0 0</pose>
+				<always_on>1</always_on>
+				<update_rate>50</update_rate>
+				<visualize>false</visualize>
+			</sensor>
+			<!-- sonar -->
+			<sensor name="sonar" type="sonar">
+				<pose>0.1 0 0.235 0 -1.5708 0</pose>
+				<always_on>1</always_on>
+				<update_rate>50</update_rate>
+				<visualize>false</visualize>
+				<sonar>
+					<min>0.0</min>
+					<max>1.0</max>
+					<radius>0.05</radius>
+				</sonar>
+			</sensor>
+		</link>
+		<link name="eyelid_lh">
+			<inertial>
+				<pose>0.029 0.032 0.252 0 0 0</pose>
+				<mass>0.016755</mass>
+				<inertia>
+					<ixx>0.00000447</ixx>
+					<ixy>0.0</ixy>
+					<ixz>0.0</ixz>
+					<iyy>0.00000447</iyy>
+					<iyz>0.0</iyz>
+					<izz>0.00000447</izz>
+				</inertia>
+			</inertial>
+			<visual name="visual_eyelid_lh">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/eyelid_lh.stl</uri>
+					</mesh>
+				</geometry>
+				<material>
+					<script>
+						<uri>file://media/materials/scripts/gazebo.material</uri>
+						<name>Gazebo/White</name>
+					</script>
+				</material>
+			</visual>
+		</link>
+		<link name="eyelid_rh">
+			<inertial>
+				<pose>0.029 -0.032 0.252 0 0 0</pose>
+				<mass>0.016755</mass>
+				<inertia>
+					<ixx>0.00000447</ixx>
+					<ixy>0.0</ixy>
+					<ixz>0.0</ixz>
+					<iyy>0.00000447</iyy>
+					<iyz>0.0</iyz>
+					<izz>0.00000447</izz>
+				</inertia>
+			</inertial>
+			<visual name="visual_eyelid_rh">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/eyelid_rh.stl</uri>
+					</mesh>
+				</geometry>
+				<material>
+					<script>
+						<uri>file://media/materials/scripts/gazebo.material</uri>
+						<name>Gazebo/White</name>
+					</script>
+				</material>
+			</visual>
+		</link>
+		<!-- joint axes are from "eyelid axes.txt" in FreeCAD source folder -->
+		<joint type="revolute" name="head_eyelid_lh">
+			<pose>0.029 0.032 0.252 0 0 0</pose>
+			<parent>head</parent>
+			<child>eyelid_lh</child>
+			<axis>
+				<xyz>-0.675 0.675 -0.2978</xyz>
+				<limit>
+					<lower>-1.57</lower>
+					<upper>1.57</upper>
+				</limit>
+				<dynamics>
+					<friction>0.1</friction>
+					<damping>0.1</damping>
+					<spring_reference>-0.5</spring_reference>
+					<spring_stiffness>0.02</spring_stiffness>
+				</dynamics>
+			</axis>
+			<physics>
+				<ode>
+					<cfm_damping>true</cfm_damping>
+					<implicit_spring_damper>true</implicit_spring_damper>
+				</ode>
+			</physics>
+		</joint>
+		<joint type="revolute" name="head_eyelid_rh">
+			<pose>0.029 -0.032 0.252 0 0 0</pose>
+			<parent>head</parent>
+			<child>eyelid_rh</child>
+			<axis>
+				<xyz>0.675 0.675 0.2978</xyz>
+				<limit>
+					<lower>-1.57</lower>
+					<upper>1.57</upper>
+				</limit>
+				<dynamics>
+					<friction>0.1</friction>
+					<damping>0.1</damping>
+					<spring_reference>-0.5</spring_reference>
+					<spring_stiffness>0.02</spring_stiffness>
+				</dynamics>
+			</axis>
+			<physics>
+				<ode>
+					<cfm_damping>true</cfm_damping>
+					<implicit_spring_damper>true</implicit_spring_damper>
+				</ode>
+			</physics>
+		</joint>
+		<link name="ear_lh">
+			<inertial>
+				<pose>-0.0437 0.0474 0.2773 0 0 0</pose>
+				<mass>0.056549</mass>
+				<inertia>
+					<ixx>0.00003393</ixx>
+					<ixy>0.0</ixy>
+					<ixz>0.0</ixz>
+					<iyy>0.00003393</iyy>
+					<iyz>0.0</iyz>
+					<izz>0.00003393</izz>
+				</inertia>
+			</inertial>
+			<visual name="visual_ear_lh">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/ear_lh.stl</uri>
+					</mesh>
+				</geometry>
+				<material>
+					<script>
+						<uri>file://media/materials/scripts/gazebo.material</uri>
+						<name>Gazebo/Grey</name>
+					</script>
+				</material>
+			</visual>
+			<collision name="collision_ear_lh">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/ear_lh_collision.stl</uri>
+					</mesh>
+				</geometry>
+				<surface>
+					<friction>
+						<ode>
+							<mu>0.3</mu>
+							<mu2>0.3</mu2>
+						</ode>
+					</friction>
+				</surface>
+			</collision>
+		</link>
+		<link name="ear_rh">
+			<inertial>
+				<pose>-0.0437 -0.0474 0.2773 0 0 0</pose>
+				<mass>0.056549</mass>
+				<inertia>
+					<ixx>0.00003393</ixx>
+					<ixy>0.0</ixy>
+					<ixz>0.0</ixz>
+					<iyy>0.00003393</iyy>
+					<iyz>0.0</iyz>
+					<izz>0.00003393</izz>
+				</inertia>
+			</inertial>
+			<visual name="visual_ear_rh">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/ear_rh.stl</uri>
+					</mesh>
+				</geometry>
+				<material>
+					<script>
+						<uri>file://media/materials/scripts/gazebo.material</uri>
+						<name>Gazebo/Grey</name>
+					</script>
+				</material>
+			</visual>
+			<collision name="collision_ear_rh">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/ear_rh_collision.stl</uri>
+					</mesh>
+				</geometry>
+				<surface>
+					<friction>
+						<ode>
+							<mu>0.3</mu>
+							<mu2>0.3</mu2>
+						</ode>
+					</friction>
+				</surface>
+			</collision>
+		</link>
+		<joint type="revolute" name="head_ear_lh">
+			<pose>-0.0437 0.0474 0.2773 0 0 0</pose>
+			<parent>head</parent>
+			<child>ear_lh</child>
+			<axis>
+				<xyz>-0.5730 0.4344 0.6949</xyz>
+				<limit>
+					<lower>-1.57</lower>
+					<upper>1.57</upper>
+				</limit>
+				<dynamics>
+					<friction>0.01</friction>
+					<damping>0.001</damping>
+					<!--
+					<spring_reference>-0.5</spring_reference>
+					<spring_stiffness>0.02</spring_stiffness>
+				-->
+				</dynamics>
+			</axis>
+		</joint>
+		<joint type="revolute" name="head_ear_rh">
+			<pose>-0.0437 -0.0474 0.2773 0 0 0</pose>
+			<parent>head</parent>
+			<child>ear_rh</child>
+			<axis>
+				<xyz>-0.5730 -0.4344 0.6949</xyz>
+				<limit>
+					<lower>-1.57</lower>
+					<upper>1.57</upper>
+				</limit>
+				<dynamics>
+					<friction>0.01</friction>
+					<damping>0.001</damping>
+					<!--
+					<spring_reference>-0.5</spring_reference>
+					<spring_stiffness>0.02</spring_stiffness>
+				-->
+				</dynamics>
+			</axis>
+		</joint>
+	</model>
+</sdf>

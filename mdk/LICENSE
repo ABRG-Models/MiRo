@@ -1,0 +1,277 @@
+MIRO Developer Kit
+Copyright (C) 2019 Consequential Robotics Ltd
+
+
+
+*** SUMMARY TERMS ***
+
+Herein, "The MDK" is taken to mean all materials that may be
+supplied as part of or in association with the MIRO
+Developer Kit (MDK) software package and the MIRO robot
+itself, including all software installed on a MIRO robot at
+the time of supply to the end user, and any additional
+software (such as software updates) supplied to the end user
+in connection with their use of the MIRO robot or the MDK
+software package, as well as any other products and services
+supplied to the user in association with their use of any of
+the aforementioned products.
+
+Use of "The MDK" is not permitted without agreement to the
+terms herein. Any use of "The MDK", accordingly, indicates
+your acceptance of these terms in full. For full licensing
+information, you should consult the section "LICENSE"
+(below), which specifies in detail the terms under which you
+are supplied with "The MDK". The remainder of this section
+is a general summary of these terms of use.
+
+A set of third-party materials are supplied along with the
+MDK in the directory "image/extern". These materials are
+covered by separate licenses (including GPL, LGPL, MIT, BSD,
+and Apache licenses) and export constraints. For full
+details, you should review the licensing terms supplied in
+that directory. This summary section may not accurately
+represent the terms of use of these third-party materials.
+
+Broadly, you are permitted to use "The MDK" within your
+organisation for non-commercial use. You are not permitted
+to distribute any part of "The MDK" nor to make use of any
+part of "The MDK" in a commercial product, in general,
+though exceptions to this constraint may be granted on
+application. You idemnify Consequential Robotics, its
+employees, as well as any agents acting on its behalf
+against any liability for any harm or damage however caused
+through the use of "The MDK".
+
+The MIRO robot is a research tool designed solely for use in
+professional establishments for the purposes of research and
+development; it is not a finished consumer product.
+Furthermore, it is not certified for sale as a consumer
+product (for example, the MIRO robot does not carry European
+CE marking which would indicate compliance with essential
+Health & Safety regulations that apply in that
+jurisdiction). Use of the MIRO robot may, therefore, pose
+hazards that would not be expected during the use of
+certified consumer equipment. Before any use of the MIRO
+robot you should, accordingly, perform your own risk
+assessment.
+
+
+
+*** END USER LICENSE AGREEMENT ***
+
+IMPORTANT: PLEASE READ THIS LICENSE CAREFULLY BEFORE USING
+THIS SOFTWARE.
+
+0. SCOPE
+
+Herein, "The MDK" is taken to mean all materials that may be
+supplied as part of or in association with the MIRO
+Developer Kit (MDK) software package and the MIRO robot
+itself, including all software installed on a MIRO robot at
+the time of supply to the end user, and any additional
+software (such as software updates) supplied to the end user
+in connection with their use of the MIRO robot or the MDK
+software package, as well as any other products and services
+supplied to the user in association with their use of any of
+the aforementioned products.
+
+1. LICENSE
+
+By receiving, opening, and/or using any part of "The MDK",
+you agree that this End User User License Agreement (EULA)
+is a legally binding and valid contract and agree to be
+bound by it. You agree to abide by the intellectual property
+laws and all of the terms and conditions of this Agreement.
+
+Unless you have a different license agreement signed by
+Consequential Robotics your use of "The MDK" indicates your
+acceptance of this license agreement and warranty.
+
+Subject to the terms of this Agreement, Consequential
+Robotics grants to you a limited, non-exclusive, non-
+transferable license, without right to sub-license, to use
+"The MDK" in accordance with this Agreement and any other
+written agreement with Consequential Robotics. Consequential
+Robotics does not transfer the title of "The MDK" to you;
+the license granted to you is not a sale. This agreement is
+a binding legal agreement between Consequential Robotics and
+the purchasers or users of "The MDK".
+
+If you do not agree to be bound by this agreement, remove
+"The MDK" from your computer now and, if applicable,
+promptly return to Consequential Robotics by mail any copies
+of "The MDK" and related documentation and packaging in your
+possession.
+
+2. DISTRIBUTION
+
+"The MDK" and the license herein granted shall not be
+copied, shared, distributed, re-sold, offered for re-sale,
+transferred or sub-licensed in whole or in part except that
+you may make one copy for archive purposes only. For
+information about redistribution of "The MDK" contact
+Consequential Robotics.
+
+3. USER AGREEMENT
+
+3.1 Use
+
+Your license to use "The MDK" is limited to the number of
+licenses purchased by you. You shall not allow others to
+use, copy or evaluate copies of "The MDK".
+
+3.2 Status
+
+The MIRO robot is a research tool designed solely for use in
+professional establishments for the purposes of research and
+development; it is not a finished consumer product.
+Furthermore, it is not certified for sale as a consumer
+product (for example, the MIRO robot does not carry European
+CE marking which would indicate compliance with essential
+Health & Safety regulations that apply in that
+jurisdiction). Use of the MIRO robot may, therefore, pose
+hazards that would not be expected during the use of
+certified consumer equipment. Before any use of the MIRO
+robot you should, accordingly, perform your own risk
+assessment.
+
+3.3 Use Restrictions
+
+You shall use "The MDK" in compliance with all applicable
+laws and not for any unlawful purpose. Without limiting the
+foregoing, use, display or distribution of "The MDK"
+together with material that is pornographic, racist, vulgar,
+obscene, defamatory, libelous, abusive, promoting hatred,
+discriminating or displaying prejudice based on religion,
+ethnic heritage, race, sexual orientation or age is strictly
+prohibited.
+
+Each licensed copy of "The MDK" may be used on one single
+computer location by one user. Use of "The MDK" means that
+you have loaded, installed, or run "The MDK" on a computer
+or similar device. If you install "The MDK" onto a multi-
+user platform, server or network, each and every individual
+user of "The MDK" must be licensed separately.
+
+You may make one copy of "The MDK" for backup purposes,
+providing you only have one copy installed on one computer
+being used by one person. Other users may not use your copy
+of "The MDK". The assignment, sublicense, networking, sale,
+or distribution of copies of "The MDK" are strictly
+forbidden without the prior written consent of Consequential
+Robotics. It is a violation of this agreement to assign,
+sell, share, loan, rent, lease, borrow, network or transfer
+the use of "The MDK". If any person other than yourself uses
+"The MDK" registered in your name, regardless of whether it
+is at the same time or different times, then this agreement
+is being violated and you are responsible for that
+violation!
+
+3.4 Copyright Restriction
+
+This Software contains copyrighted material, trade secrets
+and other proprietary material. You shall not, and shall not
+attempt to, modify, reverse engineer, disassemble or
+decompile "The MDK". Nor can you create any derivative works
+or other works that are based upon or derived from "The MDK"
+in whole or in part.
+
+Consequential Robotics's name, logo and graphics file that
+represents "The MDK" shall not be used in any way to promote
+products developed with "The MDK". Consequential Robotics
+retains sole and exclusive ownership of all right, title and
+interest in and to "The MDK" and all Intellectual Property
+rights relating thereto.
+
+Copyright law and international copyright treaty provisions
+protect all parts of "The MDK", products and services. No
+program, code, part, image, audio sample, or text may be
+copied or used in any way by the user except as intended
+within the bounds of the single user program. All rights not
+expressly granted hereunder are reserved for Consequential
+Robotics.
+
+3.5 Limitation of Responsibility
+
+You will indemnify, hold harmless, and defend Consequential
+Robotics, its employees, agents and distributors against any
+and all claims, proceedings, demand and costs resulting from
+or in any way connected with your use of Consequential
+Robotics's Software.
+
+In no event (including, without limitation, in the event of
+negligence) will Consequential Robotics, its employees,
+agents or distributors be liable for any consequential,
+incidental, indirect, special or punitive damages whatsoever
+(including, without limitation, damages for loss of profits,
+loss of use, business interruption, loss of information or
+data, or pecuniary loss), in connection with or arising out
+of or related to this Agreement, "The MDK" or the use or
+inability to use "The MDK" or the furnishing, performance or
+use of any other matters hereunder whether based upon
+contract, tort or any other theory including negligence.
+
+Consequential Robotics's entire liability, without
+exception, is limited to the customers' reimbursement of the
+purchase price of "The MDK" (maximum being the lesser of the
+amount paid by you and the suggested retail price as listed
+by Consequential Robotics ) in exchange for the return of
+the product, all copies, registration papers and manuals,
+and all materials that constitute a transfer of license from
+the customer back to Consequential Robotics.
+
+3.6 Warranties
+
+Except as expressly stated in writing, Consequential
+Robotics makes no representation or warranties in respect of
+this Software and expressly excludes all other warranties,
+expressed or implied, oral or written, including, without
+limitation, any implied warranties of merchantable quality
+or fitness for a particular purpose.
+
+3.7 Governing Law
+
+This Agreement shall be governed by the law of the United
+Kingdom applicable therein. You hereby irrevocably attorn
+and submit to the non-exclusive jurisdiction of the courts
+of United Kingdom therefrom. If any provision shall be
+considered unlawful, void or otherwise unenforceable, then
+that provision shall be deemed severable from this License
+and not affect the validity and enforceability of any other
+provisions.
+
+3.8 Commercial Use
+
+"The MDK" is not for commercial use: the use of "The MDK",
+or any parts of "The MDK" (hardware or software), in a
+commercial product is not permitted.
+
+3.9 Termination
+
+Any failure to comply with the terms and conditions of this
+Agreement will result in automatic and immediate termination
+of this license. Upon termination of this license granted
+herein for any reason, you agree to immediately cease use of
+"The MDK" and destroy all copies of "The MDK" supplied under
+this Agreement. The financial obligations incurred by you
+shall survive the expiration or termination of this license.
+
+4. DISCLAIMER OF WARRANTY
+
+THE MDK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+MDK OR THE USE OR OTHER DEALINGS IN THE MDK.
+
+5. CONSENT OF USE OF DATA
+
+You agree that Consequential Robotics may collect and use
+information gathered in any manner as part of the product
+support services provided to you, if any, related to "The
+MDK". Consequential Robotics may also use this information
+to provide notices to you which may be of use or interest to
+you.

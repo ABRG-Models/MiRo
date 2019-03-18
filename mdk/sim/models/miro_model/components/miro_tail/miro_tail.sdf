@@ -1,0 +1,126 @@
+<?xml version="1.0"?>
+<!--
+	@section COPYRIGHT
+	Copyright (C) 2019 Consequential Robotics Ltd
+	
+	@section AUTHOR
+	Consequential Robotics http://consequentialrobotics.com
+	
+	@section LICENSE
+	For a full copy of the license agreement, see LICENSE in the
+	MDK root directory.
+	
+	Subject to the terms of this Agreement, Consequential
+	Robotics grants to you a limited, non-exclusive, non-
+	transferable license, without right to sub-license, to use
+	MIRO Developer Kit in accordance with this Agreement and any
+	other written agreement with Consequential Robotics.
+	Consequential Robotics does not transfer the title of MIRO
+	Developer Kit to you; the license granted to you is not a
+	sale. This agreement is a binding legal agreement between
+	Consequential Robotics and the purchasers or users of MIRO
+	Developer Kit.
+	
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+	KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+	WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+	PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+	OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+	OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
+<sdf version="1.5">
+	<model name="miro_tail">
+		<link name="tail_gmbl">
+			<inertial>
+				<pose>-0.143 0 0.085 0 0 0</pose>
+				<mass>0.056549</mass>
+				<inertia>
+					<ixx>0.00003393</ixx>
+					<ixy>0.0</ixy>
+					<ixz>0.0</ixz>
+					<iyy>0.00003393</iyy>
+					<iyz>0.0</iyz>
+					<izz>0.00003393</izz>
+				</inertia>
+			</inertial>
+		</link>
+		<joint type="revolute" name="body_tail_gmbl">
+			<pose>-0.143 0 0.085 0 0 0</pose>
+			<parent>miro_body::body</parent>
+			<child>miro_tail::tail_gmbl</child>
+			<axis>
+				<xyz>0 1 0</xyz>
+				<limit>
+					<lower>-1.57</lower>
+					<upper>1.57</upper>
+				</limit>
+				<dynamics>
+					<friction>0.01</friction>
+					<damping>0.02</damping>
+				</dynamics>
+			</axis>
+		</joint>
+		<link name="tail">
+			<inertial>
+				<pose>-0.143 0 0.085 0 0 0</pose>
+				<mass>0.056549</mass>
+				<inertia>
+					<ixx>0.00003393</ixx>
+					<ixy>0.0</ixy>
+					<ixz>0.0</ixz>
+					<iyy>0.00003393</iyy>
+					<iyz>0.0</iyz>
+					<izz>0.00003393</izz>
+				</inertia>
+			</inertial>
+			<visual name="visual_tail">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/tail.stl</uri>
+					</mesh>
+				</geometry>
+				<material>
+					<script>
+						<uri>file://media/materials/scripts/gazebo.material</uri>
+						<name>Gazebo/Grey</name>
+					</script>
+				</material>
+			</visual>
+			<collision name="collision_tail">
+				<pose>0 0 0 0 0 0</pose>
+				<geometry>
+					<mesh>
+						<uri>model://miro_model/meshes/tail_collision.stl</uri>
+					</mesh>
+				</geometry>
+				<surface>
+					<friction>
+						<ode>
+							<mu>0.1</mu>
+							<mu2>0.1</mu2>
+						</ode>
+					</friction>
+				</surface>
+			</collision>
+		</link>
+		<joint type="revolute" name="tail_gmbl_tail">
+			<pose>-0.143 0 0.085 0 0 0</pose>
+			<parent>miro_tail::tail_gmbl</parent>
+			<child>miro_tail::tail</child>
+			<axis>
+				<xyz>0 0 1</xyz>
+				<limit>
+					<lower>-1.57</lower>
+					<upper>1.57</upper>
+				</limit>
+				<dynamics>
+					<friction>0.01</friction>
+					<damping>0.02</damping>
+				</dynamics>
+			</axis>
+		</joint>
+	</model>
+</sdf>

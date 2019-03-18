@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+<!--
+	@section COPYRIGHT
+	Copyright (C) 2019 Consequential Robotics Ltd
+	
+	@section AUTHOR
+	Consequential Robotics http://consequentialrobotics.com
+	
+	@section LICENSE
+	For a full copy of the license agreement, see LICENSE in the
+	MDK root directory.
+	
+	Subject to the terms of this Agreement, Consequential
+	Robotics grants to you a limited, non-exclusive, non-
+	transferable license, without right to sub-license, to use
+	MIRO Developer Kit in accordance with this Agreement and any
+	other written agreement with Consequential Robotics.
+	Consequential Robotics does not transfer the title of MIRO
+	Developer Kit to you; the license granted to you is not a
+	sale. This agreement is a binding legal agreement between
+	Consequential Robotics and the purchasers or users of MIRO
+	Developer Kit.
+	
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+	KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+	WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+	PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+	OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+	OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
+
+<sdf version="1.5">
+	<model name="miro">
+
+		<include>
+			<uri>model://miro_model/components/miro_body</uri>
+			<pose>0 0 0 0 0 0</pose>
+		</include>
+
+		<include>
+			<uri>model://miro_model/components/miro_tail</uri>
+			<pose>0 0 0 0 0 0</pose>
+		</include>
+
+		<joint type="revolute" name="body_neck">
+			<pose>-0.002 0 0.081 0 0 0</pose>
+			<parent>miro_body::body</parent>
+			<child>miro_neck::neck</child>
+			<axis>
+				<xyz>0 1 0</xyz>
+				<limit>
+					<lower>0</lower>
+					<upper>1.57</upper>
+				</limit>
+				<dynamics>
+					<spring_stiffness>0.4</spring_stiffness>
+					<spring_reference>0.0</spring_reference>
+					<friction>0.01</friction>
+					<damping>0.1</damping>
+				</dynamics>
+			</axis>
+		</joint>
+
+		<include>
+			<uri>model://miro_model/components/miro_neck</uri>
+			<pose>0 0 0 0 0 0</pose>
+		</include>
+
+		<joint type="revolute" name="neck_gmbl">
+			<pose>-0.002 0 0.201 0 0 0</pose>
+			<parent>miro_neck::neck</parent>
+			<child>miro_gmbl::gmbl</child>
+			<axis>
+				<xyz>0 0 1</xyz>
+				<limit>
+					<lower>-1.57</lower>
+					<upper>1.57</upper>
+				</limit>
+				<dynamics>
+					<friction>0.01</friction>
+					<damping>0.1</damping>
+				</dynamics>
+			</axis>
+		</joint>
+
+		<include>
+			<uri>model://miro_model/components/miro_gmbl</uri>
+			<pose>0 0 0 0 0 0</pose>
+		</include>
+
+		<joint type="revolute" name="gmbl_head">
+			<pose>-0.002 0 0.201 0 0 0</pose>
+			<parent>miro_gmbl::gmbl</parent>
+			<child>miro_head::head</child>
+			<axis>
+				<xyz>0 1 0</xyz>
+				<limit>
+					<lower>-1.57</lower>
+					<upper>1.57</upper>
+				</limit>
+				<dynamics>
+					<spring_stiffness>0.1</spring_stiffness>
+					<spring_reference>-0.5</spring_reference>
+					<friction>0.01</friction>
+					<damping>0.1</damping>
+				</dynamics>
+			</axis>
+		</joint>
+
+		<include>
+			<uri>model://miro_model/components/miro_head</uri>
+			<pose>0 0 0 0 0 0</pose>
+		</include>
+
+		<plugin name="miro_model" filename="libmiro_gazebo.so"/>
+
+	</model>
+</sdf>
+

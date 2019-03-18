@@ -1,0 +1,67 @@
+#-	DO NOT MODIFY THIS FILE
+#-
+#-	this is a template configuration file and should not be modified.
+#-	it is copied to the user directory during installation and this
+#-	message is removed as part of that process. the installed copy of
+#-	this file can be modified.
+#-
+#-	DO NOT MODIFY THIS FILE
+
+################################################################
+#
+# this file contains the platform parameters. these affect the
+# behaviour of the platform at all four levels (P1, P2, bridge
+# and demo).
+#
+# the values in this file may be updated by the user or by the
+# system. you may change values safely, but they may also be
+# changed (at your request) automatically.
+#
+# for details of individual parameters, see the documentation
+# page at Platform Parameters.
+
+# camera
+frame=
+jpeg=
+
+# servo calibration
+lift_adj=
+yaw_adj=
+pitch_adj=
+droop_adj=
+wag_adj=
+eye0_adj=
+eye1_adj=
+ear0_adj=
+ear1_adj=
+
+# servo sensor maps
+sensor_map_lift=
+sensor_map_yaw=
+sensor_map_pitch=
+
+# cliff sensor calibration
+cliff_adj_l=
+cliff_adj_r=
+
+# cliff perception threshold
+cliff_thresh=
+cliff_margin=
+
+# cliff sensor memory
+cliff_mem=
+
+# touch sensor masks
+touch_body_mask=
+touch_head_mask=
+
+# touch sensor sensitivities
+touch_body_sensitivity=
+touch_head_sensitivity=
+
+# demo flags
+demo_flags=
+
+
+
+
