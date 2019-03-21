@@ -56,7 +56,7 @@ class BasalGanglia(object):
 			prio = action.interface.priority
 
 			# Hysteretical feedback term
-			if	i == self.selected:
+			if i == self.selected:
 				prio += self.pars.selection_hysteresis
 
 			prio = np.clip(prio, 0.0, 1.0)
@@ -70,7 +70,7 @@ class BasalGanglia(object):
 
 		# Add a little noise
 		noise = np.random.normal(size=len(actions)) * self.pars.selection_noise_mag
-		prios += noise
+		prios += abs(noise)
 
 		# select action with maximum priority (winner take all)
 		selected = np.argmax(prios)
