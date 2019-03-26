@@ -15,10 +15,15 @@ import rospy
 #     core_state, core_control, core_config, bridge_config, bridge_stream
 
 # MiRo-E ROS interfaces
-from std_msgs.msg import Float32MultiArray, UInt32MultiArray, UInt16MultiArray, UInt8MultiArray, UInt16, Int16MultiArray, String
+from std_msgs.msg import Float32MultiArray, UInt32MultiArray, UInt16MultiArray, UInt8MultiArray, UInt16, UInt32, Int16MultiArray, String
 from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import JointState, BatteryState, Imu, Range, CompressedImage
 import miro2 as miro
+
+
+# from miro2.core.node_action import NodeAction
+
+
 
 import numpy as np
 import time
@@ -378,8 +383,8 @@ class miro_ros_client:
         # store object
         self.platform_sensors = object
 
-        if DEBUG:
-            print(color.BOLD + color.RED + '\nPlatform sensors:\n' + color.END + str(self.platform_sensors))
+        # if DEBUG:
+        #     print(color.BOLD + color.RED + '\nPlatform sensors:\n' + color.END + str(self.platform_sensors))
 
     def callback_platform_state(self, object):
 
@@ -404,6 +409,18 @@ class miro_ros_client:
         # store object
         self.platform_mics = object
 
+    # def callback_control_flags(self, object):
+    #
+    #     # # ignore until active
+    #     # if not self.active:
+    #     #     return
+    #
+    #     # store object
+    #     self.control_flags = object
+    #
+    #     if DEBUG:
+    #         print(color.BOLD + color.RED + '\nControl flags:\n' + color.END + str(self.control_flags))
+
     def callback_core_state(self, object):
 
         # ignore until active
@@ -413,9 +430,19 @@ class miro_ros_client:
         # store object
         self.core_state = object
 
+    def callback_core_affect(self, object):
+
+        # ignore until active
+        if not self.active:
+            return
+
+        # store object
+        self.core_affect = object
+
         if DEBUG:
-            print(color.BOLD + color.RED + '\nCore state:\n' + color.END + str(self.core_state))
-            # print('\nEmotional valence:\n' +str(self.core_state.emotion.valence))
+            print(color.BOLD + color.RED + '\nCore affect:\n' + color.END + str(self.core_affect))
+
+
 
     def __init__(self):
 
@@ -499,7 +526,9 @@ class miro_ros_client:
 
         # Appears to be no single 'core state' replacement, will have to make several updates
         # self.sub_core_state = rospy.Subscriber(topic_root + "/core/state", core_state, self.callback_core_state)
-        self.sub_core_state = rospy.Subscriber(topic_root + "/core/affect", miro.msg.affect_state, self.callback_core_state)
+        self.sub_core_affect = rospy.Subscriber(topic_root + "/core/affect", miro.msg.affect_state, self.callback_core_affect)
+
+        # self.sub_control_flags = rospy.Subscriber(topic_root + "/control/flags", UInt32, self.callback_control_flags)
 
         # set active
         self.active = True
@@ -517,6 +546,8 @@ class miro_ros_client:
         self.rgbr_fifo = fifo(self.opt.uncompressed)
         self.core_state = None
         self.mood = None
+        self.core_affect = None
+        # self.control_flags = None
 
         if self.opt.uncompressed:
             self.sub_caml = rospy.Subscriber(topic_root + "/platform/caml", Image, self.callback_caml)
@@ -534,10 +565,10 @@ class miro_ros_client:
             self.sub_pril = rospy.Subscriber(topic_root + "/core/pril/compressed", CompressedImage, self.callback_pril)
             self.sub_prir = rospy.Subscriber(topic_root + "/core/prir/compressed", CompressedImage, self.callback_prir)
             self.sub_priw = rospy.Subscriber(topic_root + "/core/priw/compressed", CompressedImage, self.callback_priw)
-            '''
-            self.sub_rgbl = rospy.Subscriber(topic_root + "/core/rgbl/compressed", CompressedImage, self.callback_rgbl)
-            self.sub_rgbr = rospy.Subscriber(topic_root + "/core/rgbr/compressed", CompressedImage, self.callback_rgbr)
-            '''
+            # '''
+            # self.sub_rgbl = rospy.Subscriber(topic_root + "/core/rgbl/compressed", CompressedImage, self.callback_rgbl)
+            # self.sub_rgbr = rospy.Subscriber(topic_root + "/core/rgbr/compressed", CompressedImage, self.callback_rgbr)
+            # '''
 
     #==================================================
     # '''def update_data(self):
