@@ -4,26 +4,48 @@ from gi.repository import Gtk,GObject,Gdk,GLib,GdkPixbuf
 
 import sys
 import rospy
-from std_msgs.msg import String
-from sensor_msgs.msg import Image, CompressedImage
-from geometry_msgs.msg import Twist
 
-import miro_msgs
-from miro_msgs.msg import platform_config, platform_sensors, platform_state, platform_mics, platform_control, \
-    core_state, core_control, core_config, bridge_config, bridge_stream
+# Outdated MiRo-B imports
+# from std_msgs.msg import String
+# from sensor_msgs.msg import Image, CompressedImage
+# from geometry_msgs.msg import Twist
+
+# import miro_msgs
+# from miro_msgs.msg import platform_config, platform_sensors, platform_state, platform_mics, platform_control, \
+#     core_state, core_control, core_config, bridge_config, bridge_stream
+
+# MiRo-E ROS interfaces
+from std_msgs.msg import Float32MultiArray, UInt32MultiArray, UInt16MultiArray, UInt8MultiArray, UInt16, Int16MultiArray, String
+from geometry_msgs.msg import TwistStamped
+from sensor_msgs.msg import JointState, BatteryState, Imu, Range, CompressedImage
+import miro2 as miro
 
 import numpy as np
 import time
 import threading
 import cv2
 import math
-from miro_constants import miro
+
+# # Outdated MiRo-B imports
+# from miro_constants import miro
 
 import Image
 ###############################################################
 
 
 INTERPTYPE = GdkPixbuf.InterpType.BILINEAR
+DEBUG = 0
+class color:
+   PURPLE = '\033[95m'
+   CYAN = '\033[96m'
+   DARKCYAN = '\033[36m'
+   BLUE = '\033[94m'
+   GREEN = '\033[92m'
+   YELLOW = '\033[93m'
+   RED = '\033[91m'
+   BOLD = '\033[1m'
+   UNDERLINE = '\033[4m'
+   END = '\033[0m'
 
 ###############################################################
 
@@ -139,7 +161,8 @@ def show_overlay(im):
 MIRO_CAM_DISTORTION_MODEL_K1 = -0.75
 MIRO_CAM_DISTORTION_MODEL_K2 = 0.25
 MIRO_CAM_PIXEL_ASPECT_RATIO = 1.0
-MIRO_CAM_HORI_HALF_FOV = miro.__DEG2RAD(45)
+# MIRO_CAM_HORI_HALF_FOV = miro.__DEG2RAD(45)
+MIRO_CAM_HORI_HALF_FOV = miro.constants.__DEG2RAD(45)
 ################################################################
 
 class fifo:
@@ -287,31 +310,31 @@ class miro_ros_client:
         q.flags = miro.MIRO_BRIDGE_UPDATE
         self.pub_bridge_config.publish(q)
         print("bridge/config sent")
-        '''
-        # bridge/stream
-        q = bridge_stream()
-        q.sound_index_P3 = 0 # Plays music
-        self.pub_bridge_stream.publish(q)
-        print("bridge/stream sent")
-
-        # platform/config
-        self.send_platform_config = False
-        q = platform_config()
-        q.reset = 0
-        q.frame_size = 320
-        max_frame_rate = 8
-        q.frame_rate = max_frame_rate * 0.5
-        self.pub_platform_config.publish(q)
-        print("platform/config sent")
-
-        # publish
-        q = platform_control()
-        q.msg_flags = platform_control.FLAG_SYNC_PLATFORM | platform_control.FLAG_SYNC_CORE
-
-        # publish
-        q = core_control()
-        q.msg_flags = core_control.FLAG_SYNC_PLATFORM | core_control.FLAG_SYNC_CORE
-        '''
+        # '''
+        # # bridge/stream
+        # q = bridge_stream()
+        # q.sound_index_P3 = 0 # Plays music
+        # self.pub_bridge_stream.publish(q)
+        # print("bridge/stream sent")
+        #
+        # # platform/config
+        # self.send_platform_config = False
+        # q = platform_config()
+        # q.reset = 0
+        # q.frame_size = 320
+        # max_frame_rate = 8
+        # q.frame_rate = max_frame_rate * 0.5
+        # self.pub_platform_config.publish(q)
+        # print("platform/config sent")
+        #
+        # # publish
+        # q = platform_control()
+        # q.msg_flags = platform_control.FLAG_SYNC_PLATFORM | platform_control.FLAG_SYNC_CORE
+        #
+        # # publish
+        # q = core_control()
+        # q.msg_flags = core_control.FLAG_SYNC_PLATFORM | core_control.FLAG_SYNC_CORE
+        # '''
 
     def callback_caml(self, frm):
         self.caml_fifo.push(frm)
@@ -338,13 +361,13 @@ class miro_ros_client:
         self.priw_fifo.push(frm)
         #self.image_priw = self.priw_fifo.latest()
 
-    '''
-    def callback_rgbl(self, frm):
-        self.rgbl_fifo.push(frm)
-
-    def callback_rgbr(self, frm):
-        self.rgbr_fifo.push(frm)
-    '''
+    # '''
+    # def callback_rgbl(self, frm):
+    #     self.rgbl_fifo.push(frm)
+    #
+    # def callback_rgbr(self, frm):
+    #     self.rgbr_fifo.push(frm)
+    # '''
 
     def callback_platform_sensors(self, object):
 
@@ -354,6 +377,9 @@ class miro_ros_client:
 
         # store object
         self.platform_sensors = object
+
+        if DEBUG:
+            print(color.BOLD + color.RED + '\nPlatform sensors:\n' + color.END + str(self.platform_sensors))
 
     def callback_platform_state(self, object):
 
@@ -386,6 +412,10 @@ class miro_ros_client:
 
         # store object
         self.core_state = object
+
+        if DEBUG:
+            print(color.BOLD + color.RED + '\nCore state:\n' + color.END + str(self.core_state))
+            # print('\nEmotional valence:\n' +str(self.core_state.emotion.valence))
 
     def __init__(self):
 
@@ -445,22 +475,31 @@ class miro_ros_client:
         self.active = False
 
         # topic root
-        topic_root = "/miro/" + self.opt.robot_name
+        # topic_root = "/miro/" + self.opt.robot_name
+
+        # MiRo-E sim appears to just use /miro, may need changing for phys. robot
+        topic_root = "/miro"
         print "topic_root", topic_root
 
         # publish
-        self.pub_platform_control = rospy.Publisher(topic_root + "/platform/control", platform_control, queue_size=0)
-        self.pub_core_control = rospy.Publisher(topic_root + "/core/control", core_control, queue_size=0)
-        self.pub_core_config = rospy.Publisher(topic_root + "/core/config", core_config, queue_size=0)
-        self.pub_bridge_config = rospy.Publisher(topic_root + "/bridge/config", bridge_config, queue_size=0)
-        self.pub_bridge_stream = rospy.Publisher(topic_root + "/bridge/stream", bridge_stream, queue_size=0)
-        self.pub_platform_config = rospy.Publisher(topic_root + "/platform/config", platform_config, queue_size=0)
+        # Come back to this later
+        # self.pub_platform_control = rospy.Publisher(topic_root + "/platform/control", platform_control, queue_size=0)
+        # self.pub_core_control = rospy.Publisher(topic_root + "/core/control", core_control, queue_size=0)
+        # self.pub_core_config = rospy.Publisher(topic_root + "/core/config", core_config, queue_size=0)
+        # self.pub_bridge_config = rospy.Publisher(topic_root + "/bridge/config", bridge_config, queue_size=0)
+        # self.pub_bridge_stream = rospy.Publisher(topic_root + "/bridge/stream", bridge_stream, queue_size=0)
+        # self.pub_platform_config = rospy.Publisher(topic_root + "/platform/config", platform_config, queue_size=0)
+        #
+        # # subscribe
+        # self.sub_sensors = rospy.Subscriber(topic_root + "/platform/sensors", platform_sensors, self.callback_platform_sensors)
+        self.sub_sensors = rospy.Subscriber(topic_root + "/sensors/package", miro.msg.sensors_package, self.callback_platform_sensors)
 
-        # subscribe
-        self.sub_sensors = rospy.Subscriber(topic_root + "/platform/sensors", platform_sensors, self.callback_platform_sensors)
-        self.sub_state = rospy.Subscriber(topic_root + "/platform/state", platform_state, self.callback_platform_state)
-        self.sub_mics = rospy.Subscriber(topic_root + "/platform/mics", platform_mics, self.callback_platform_mics)
-        self.sub_core_state = rospy.Subscriber(topic_root + "/core/state", core_state, self.callback_core_state)
+        # self.sub_state = rospy.Subscriber(topic_root + "/platform/state", platform_state, self.callback_platform_state)
+        # self.sub_mics = rospy.Subscriber(topic_root + "/platform/mics", platform_mics, self.callback_platform_mics)
+
+        # Appears to be no single 'core state' replacement, will have to make several updates
+        # self.sub_core_state = rospy.Subscriber(topic_root + "/core/state", core_state, self.callback_core_state)
+        self.sub_core_state = rospy.Subscriber(topic_root + "/core/affect", miro.msg.affect_state, self.callback_core_state)
 
         # set active
         self.active = True
@@ -485,10 +524,10 @@ class miro_ros_client:
             self.sub_pril = rospy.Subscriber(topic_root + "/core/pril", Image, self.callback_pril)
             self.sub_prir = rospy.Subscriber(topic_root + "/core/prir", Image, self.callback_prir)
             self.sub_priw = rospy.Subscriber(topic_root + "/core/priw", Image, self.callback_priw)
-            '''
-            self.sub_rgbl = rospy.Subscriber(topic_root + "/core/rgbl", Image, self.callback_rgbl)
-            self.sub_rgbr = rospy.Subscriber(topic_root + "/core/rgbr", Image, self.callback_rgbr)
-            '''
+            # '''
+            # self.sub_rgbl = rospy.Subscriber(topic_root + "/core/rgbl", Image, self.callback_rgbl)
+            # self.sub_rgbr = rospy.Subscriber(topic_root + "/core/rgbr", Image, self.callback_rgbr)
+            # '''
         else:
             self.sub_caml = rospy.Subscriber(topic_root + "/platform/caml/compressed", CompressedImage, self.callback_caml)
             self.sub_camr = rospy.Subscriber(topic_root + "/platform/camr/compressed", CompressedImage, self.callback_camr)
@@ -501,50 +540,50 @@ class miro_ros_client:
             '''
 
     #==================================================
-    '''def update_data(self):
-        # sensors
-        q = self.platform_sensors
-        self.platform_sensors = None
-        if hasattr(q, 'battery_state'):
-            self.vbat = q.battery_state.voltage
-        else:
-            self.vbat = q.battery_voltage
-        self.vtemp = q.temperature.temperature
-        self.eyelid_closure = q.eyelid_closure
-        self.sonar = q.sonar_range.range
-        self.accel_head = q.accel_head.linear_acceleration
-        self.accel_body = q.accel_body.linear_acceleration.x
-        self.odomx = q.odometry.twist.twist.linear.x
-        self.odomz = q.odometry.twist.twist.angular.z
-
-        self.text_joints = q.joint_state.position
-        self.text_joints_effort = q.joint_state.effort
-        self.light = q.light
-        self.touch_head = q.touch_head
-        self.touch_body = q.touch_body
-        self.cliff = q.cliff
-        self.dip_state = hex2(q.dip_state_phys)
-
-        # cameras
-        #self.image_caml = self.caml_fifo.latest()
-        #self.image_camr = self.camr_fifo.latest()
-
-        # core_state
-        q = self.core_state
-        self.core_state = None
-        self.selection = q.selection
-        self.emotion = q.emotion
-        self.mood = q.mood
-        self.sleep = q.sleep
-        self.priority = q.priority
-        self.disinhibition = q.disinhibition
-
-        # platform_statertc
-        q = self.platform_state
-        self.platform_state = None
-        if q is not None:
-            self.rtc_hrs = q.rtc_hrs
-            #self.rtc_mins = q.rtc_mins
-            #self.rtc_secs = q.rtc_secs
-            self.rtc_skew = q.rtc_skew
-    '''
+    # '''def update_data(self):
+    #     # sensors
+    #     q = self.platform_sensors
+    #     self.platform_sensors = None
+    #     if hasattr(q, 'battery_state'):
+    #         self.vbat = q.battery_state.voltage
+    #     else:
+    #         self.vbat = q.battery_voltage
+    #     self.vtemp = q.temperature.temperature
+    #     self.eyelid_closure = q.eyelid_closure
+    #     self.sonar = q.sonar_range.range
+    #     self.accel_head = q.accel_head.linear_acceleration
+    #     self.accel_body = q.accel_body.linear_acceleration.x
+    #     self.odomx = q.odometry.twist.twist.linear.x
+    #     self.odomz = q.odometry.twist.twist.angular.z
+    #
+    #     self.text_joints = q.joint_state.position
+    #     self.text_joints_effort = q.joint_state.effort
+    #     self.light = q.light
+    #     self.touch_head = q.touch_head
+    #     self.touch_body = q.touch_body
+    #     self.cliff = q.cliff
+    #     self.dip_state = hex2(q.dip_state_phys)
+    #
+    #     # cameras
+    #     #self.image_caml = self.caml_fifo.latest()
+    #     #self.image_camr = self.camr_fifo.latest()
+    #
+    #     # core_state
+    #     q = self.core_state
+    #     self.core_state = None
+    #     self.selection = q.selection
+    #     self.emotion = q.emotion
+    #     self.mood = q.mood
+    #     self.sleep = q.sleep
+    #     self.priority = q.priority
+    #     self.disinhibition = q.disinhibition
+    #
+    #     # platform_statertc
+    #     q = self.platform_state
+    #     self.platform_state = None
+    #     if q is not None:
+    #         self.rtc_hrs = q.rtc_hrs
+    #         #self.rtc_mins = q.rtc_mins
+    #         #self.rtc_secs = q.rtc_secs
+    #         self.rtc_skew = q.rtc_skew
+    # '''
