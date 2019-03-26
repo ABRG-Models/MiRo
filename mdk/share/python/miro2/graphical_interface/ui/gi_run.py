@@ -413,56 +413,58 @@ class MiroGI(): # MiRo Graphical Interface main class.
             self.plt_camera_r_handle.set_data(camr)
 
 
-        if (self.miro.platform_sensors is not None) and (self.miro.core_state is not None):
+        # if (self.miro.platform_sensors is not None) and (self.miro.core_state is not None):
+        if (self.miro.platform_sensors is not None):
             # Updating emotion
-            self.plt_circle_red_handle.set_offsets([self.miro.core_state.emotion.valence * 16.0 - 8.0, self.miro.core_state.emotion.arousal * 16.0 - 8.0])
-            self.plt_circle_blue_handle.set_offsets([self.miro.core_state.mood.valence*16.0-8.0, self.miro.core_state.mood.arousal*16.0-8.0])
-            self.plt_circle_yellow_handle.set_offsets([self.miro.core_state.sleep.wakefulness*16.0-8.0, self.miro.core_state.sleep.pressure*16.0-8.0])
+            self.plt_circle_red_handle.set_offsets([self.miro.core_affect.emotion.valence * 16.0 - 8.0, self.miro.core_affect.emotion.arousal * 16.0 - 8.0])
+            self.plt_circle_blue_handle.set_offsets([self.miro.core_affect.mood.valence*16.0-8.0, self.miro.core_affect.mood.arousal*16.0-8.0])
+            self.plt_circle_yellow_handle.set_offsets([self.miro.core_affect.sleep.wakefulness*16.0-8.0, self.miro.core_affect.sleep.pressure*16.0-8.0])
 
-            # Updating GPR
-            for bar, h in zip(self.plt_GPR_handle, self.miro.core_state.selection):
-                bar.set_height(h)
+            # # Updating GPR
+            # # Need to find where selection values are in ROS!
+            # for bar, h in zip(self.plt_GPR_handle, self.miro.core_state.selection):
+            #     bar.set_height(h)
+            #
+            # # Updating priority
+            # p = self.miro.core_state.priority
+            # d = self.miro.core_state.disinhibition
+            #
+            # self.plt_priority_1B_handle.set_linewidths(1+3 * d[0])
+            # self.plt_priority_1_handle.set_linewidths(3 * d[0])
+            # self.plt_priority_1_handle.set_alpha(p[0])
+            #
+            # self.plt_priority_2B_handle.set_linewidths(1+3 * d[1])
+            # self.plt_priority_2_handle.set_linewidths(3 * d[1])
+            # self.plt_priority_2_handle.set_alpha(p[1])
+            #
+            # self.plt_priority_3B_handle.set_linewidths(1+3 * d[2])
+            # self.plt_priority_3_handle.set_linewidths(3 * d[2])
+            # self.plt_priority_3_handle.set_alpha(p[2])
+            #
+            # self.plt_priority_4B_handle.set_linewidths(1+3 * d[3])
+            # self.plt_priority_4_handle.set_linewidths(3 * d[3])
+            # self.plt_priority_4_handle.set_alpha(p[3])
+            #
+            # self.plt_priority_5B_handle.set_linewidths(1+3 * d[4])
+            # self.plt_priority_5_handle.set_linewidths(3 * d[4])
+            # self.plt_priority_5_handle.set_alpha(p[4])
+            #
+            # self.plt_priority_6B_handle.set_linewidths(1+3 * d[5])
+            # self.plt_priority_6_handle.set_linewidths(3 * d[5])
+            # self.plt_priority_6_handle.set_alpha(p[5])
+            #
+            # self.plt_priority_7B_handle.set_linewidths(1+3 * d[6])
+            # self.plt_priority_7_handle.set_linewidths(3 * d[6])
+            # self.plt_priority_7_handle.set_alpha(p[6])
+            #
+            # self.plt_priority_8B_handle.set_linewidths(1+3 * d[7])
+            # self.plt_priority_8_handle.set_linewidths(3 * d[7])
+            # self.plt_priority_8_handle.set_alpha(p[7])
 
-            # Updating priority
-            p = self.miro.core_state.priority
-            d = self.miro.core_state.disinhibition
-
-            self.plt_priority_1B_handle.set_linewidths(1+3 * d[0])
-            self.plt_priority_1_handle.set_linewidths(3 * d[0])
-            self.plt_priority_1_handle.set_alpha(p[0])
-
-            self.plt_priority_2B_handle.set_linewidths(1+3 * d[1])
-            self.plt_priority_2_handle.set_linewidths(3 * d[1])
-            self.plt_priority_2_handle.set_alpha(p[1])
-
-            self.plt_priority_3B_handle.set_linewidths(1+3 * d[2])
-            self.plt_priority_3_handle.set_linewidths(3 * d[2])
-            self.plt_priority_3_handle.set_alpha(p[2])
-
-            self.plt_priority_4B_handle.set_linewidths(1+3 * d[3])
-            self.plt_priority_4_handle.set_linewidths(3 * d[3])
-            self.plt_priority_4_handle.set_alpha(p[3])
-
-            self.plt_priority_5B_handle.set_linewidths(1+3 * d[4])
-            self.plt_priority_5_handle.set_linewidths(3 * d[4])
-            self.plt_priority_5_handle.set_alpha(p[4])
-
-            self.plt_priority_6B_handle.set_linewidths(1+3 * d[5])
-            self.plt_priority_6_handle.set_linewidths(3 * d[5])
-            self.plt_priority_6_handle.set_alpha(p[5])
-
-            self.plt_priority_7B_handle.set_linewidths(1+3 * d[6])
-            self.plt_priority_7_handle.set_linewidths(3 * d[6])
-            self.plt_priority_7_handle.set_alpha(p[6])
-
-            self.plt_priority_8B_handle.set_linewidths(1+3 * d[7])
-            self.plt_priority_8_handle.set_linewidths(3 * d[7])
-            self.plt_priority_8_handle.set_alpha(p[7])
-
-            # Updating Biological Clock time.
-            #print(self.miro.platform_state.rtc_hrs)
-            ang = np.deg2rad(270-(self.miro.platform_state.rtc_hrs*360.0/24.0))
-            self.ax_bioclock_handle.set_positions((0.0, 0.0), (np.cos(ang) * 0.7, np.sin(ang) * 0.7))
+            # # Updating Biological Clock time.
+            # #print(self.miro.platform_state.rtc_hrs)
+            # ang = np.deg2rad(270-(self.miro.platform_state.rtc_hrs*360.0/24.0))
+            # self.ax_bioclock_handle.set_positions((0.0, 0.0), (np.cos(ang) * 0.7, np.sin(ang) * 0.7))
 
     # ==========================
 
