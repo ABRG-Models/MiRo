@@ -117,7 +117,6 @@ class Selection(object):
 		self.selection_noise_mag = 0.01
 
 
-
 class Lower(object):
 
 	def __init__(self):
