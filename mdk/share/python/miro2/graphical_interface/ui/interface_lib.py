@@ -39,18 +39,6 @@ import Image
 
 
 INTERPTYPE = GdkPixbuf.InterpType.BILINEAR
-DEBUG = 0
-class color:
-   PURPLE = '\033[95m'
-   CYAN = '\033[96m'
-   DARKCYAN = '\033[36m'
-   BLUE = '\033[94m'
-   GREEN = '\033[92m'
-   YELLOW = '\033[93m'
-   RED = '\033[91m'
-   BOLD = '\033[1m'
-   UNDERLINE = '\033[4m'
-   END = '\033[0m'
 
 ###############################################################
 
@@ -173,7 +161,7 @@ MIRO_CAM_HORI_HALF_FOV = miro.constants.__DEG2RAD(45)
 class fifo:
 
     def __init__(self, uncompressed):
-        self.N = 1 # raise if we get "overflow in fifo", or to improve fps measurement
+        self.N = 1  # raise if we get "overflow in fifo", or to improve fps measurement
         self.buf = [None] * self.N
         self.r = 0
         self.w = 0
@@ -253,93 +241,93 @@ class fifo:
 ################################################################
 class miro_ros_client:
     def config_send(self):
-        c = core_config()
-        c.P2B_W_signals = c.P2B_W_signals | miro.MIRO_P2B_W_BRANCH_ENABLE
-        c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_ENABLE
-        c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_ADJUST_RTC
-        c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_VALENCE_DYNAMICS
-        c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_AROUSAL_DYNAMICS
-        c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_ENABLE_SLEEP
-        c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_FROM_CLOCK
-        c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_FROM_WAKEFULNESS
-        c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_FROM_TOUCH
-        c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_FROM_LIGHT
-        c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_FROM_SOUND
-        c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_FROM_ACCEL
-        #c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_FROM_SLEEP_BLOCKED
-        #c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_RANDOMIZE_VALENCE
-        #c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_FAST_SLEEP_DYNAMICS
-        c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_ENABLE
-        c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_THROUGH_LIGHT
-        c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_THROUGH_TAIL
-        c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_THROUGH_EYELIDS
-        c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_THROUGH_EARS
-        c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_THROUGH_VOCAL
-        c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_THROUGH_BODY
-        #c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_THROUGH_PING
-        #c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_NO_PIRATE_NOISES
-        #c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_DO_PIRATE_NOISES
-        c.P2U_W_action_signals = c.P2U_W_action_signals | miro.MIRO_P2U_W_ACTION_ENABLE
-        #c.P2U_W_action_signals = c.P2U_W_action_signals | miro.MIRO_P2U_W_ACTION_DEBUG
-        #c.P2U_W_action_signals = c.P2U_W_action_signals | miro.MIRO_P2U_W_ACTION_FORCE_MULL
-        #c.P2U_W_action_signals = c.P2U_W_action_signals | miro.MIRO_P2U_W_ACTION_RANDOMIZE_ORIENT
-        #c.P2U_W_action_signals = c.P2U_W_action_signals | miro.MIRO_P2U_W_ACTION_DISABLE_HALT
-        c.P2U_W_action_signals = c.P2U_W_action_signals | miro.MIRO_P2U_W_ACTION_MODULATE_BY_SONAR
-        c.P2U_W_body_signals = c.P2U_W_body_signals | miro.MIRO_P2U_W_BODY_ENABLE
-        #c.P2U_W_body_signals = c.P2U_W_body_signals | miro.MIRO_P2U_W_BODY_RESET_KC_INTEGRATORS
-        #c.P2U_W_body_signals = c.P2U_W_body_signals | miro.MIRO_P2U_W_BODY_NO_PUSH
-        #c.P2U_W_body_signals = c.P2U_W_body_signals | miro.MIRO_P2U_W_BODY_NO_PUSH_MOTION
-        #c.P2U_W_body_signals = c.P2U_W_body_signals | miro.MIRO_P2U_W_BODY_NO_PUSH_TRANSLATION
-        c.P2U_W_body_signals = c.P2U_W_body_signals | miro.MIRO_P2U_W_BODY_NO_PUSH_INTO_SONAR
-        #c.P2L_W_signals = c.P2L_W_signals | miro.MIRO_P2L_W_ENABLE_POS_CONTROL
-        c.P2L_W_signals = c.P2L_W_signals | miro.MIRO_P2L_W_ENABLE_CLIFF_REFLEX
-        c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_ENABLE
-        #c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_IGNORE_AUDIO
-        #c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_IGNORE_VIDEO
-        c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_SEND_PRIORITY
-        #c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_SEND_OTHER
-        #c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_NO_REAFF_COMPROMISE
-        #c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_NO_SUPPRESS
-        #c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_SHOW_COMPROMISE
-        #c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_SHOW_TEST_PATTERN
-        #c.P1_W_signals = c.P1_W_signals | miro.MIRO_P1_W_TEST_ALARM
-        #c.P1_W_signals = c.P1_W_signals | miro.MIRO_P1_W_NO_I2C_BUSY_ALARM
+        # c = core_config()
+        # c.P2B_W_signals = c.P2B_W_signals | miro.MIRO_P2B_W_BRANCH_ENABLE
+        # c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_ENABLE
+        # c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_ADJUST_RTC
+        # c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_VALENCE_DYNAMICS
+        # c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_AROUSAL_DYNAMICS
+        # c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_ENABLE_SLEEP
+        # c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_FROM_CLOCK
+        # c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_FROM_WAKEFULNESS
+        # c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_FROM_TOUCH
+        # c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_FROM_LIGHT
+        # c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_FROM_SOUND
+        # c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_FROM_ACCEL
+        # #c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_FROM_SLEEP_BLOCKED
+        # #c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_RANDOMIZE_VALENCE
+        # #c.P2U_W_affect_signals = c.P2U_W_affect_signals | miro.MIRO_P2U_W_AFFECT_FAST_SLEEP_DYNAMICS
+        # c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_ENABLE
+        # c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_THROUGH_LIGHT
+        # c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_THROUGH_TAIL
+        # c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_THROUGH_EYELIDS
+        # c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_THROUGH_EARS
+        # c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_THROUGH_VOCAL
+        # c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_THROUGH_BODY
+        # #c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_THROUGH_PING
+        # #c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_NO_PIRATE_NOISES
+        # #c.P2U_W_express_signals = c.P2U_W_express_signals | miro.MIRO_P2U_W_EXPRESS_DO_PIRATE_NOISES
+        # c.P2U_W_action_signals = c.P2U_W_action_signals | miro.MIRO_P2U_W_ACTION_ENABLE
+        # #c.P2U_W_action_signals = c.P2U_W_action_signals | miro.MIRO_P2U_W_ACTION_DEBUG
+        # #c.P2U_W_action_signals = c.P2U_W_action_signals | miro.MIRO_P2U_W_ACTION_FORCE_MULL
+        # #c.P2U_W_action_signals = c.P2U_W_action_signals | miro.MIRO_P2U_W_ACTION_RANDOMIZE_ORIENT
+        # #c.P2U_W_action_signals = c.P2U_W_action_signals | miro.MIRO_P2U_W_ACTION_DISABLE_HALT
+        # c.P2U_W_action_signals = c.P2U_W_action_signals | miro.MIRO_P2U_W_ACTION_MODULATE_BY_SONAR
+        # c.P2U_W_body_signals = c.P2U_W_body_signals | miro.MIRO_P2U_W_BODY_ENABLE
+        # #c.P2U_W_body_signals = c.P2U_W_body_signals | miro.MIRO_P2U_W_BODY_RESET_KC_INTEGRATORS
+        # #c.P2U_W_body_signals = c.P2U_W_body_signals | miro.MIRO_P2U_W_BODY_NO_PUSH
+        # #c.P2U_W_body_signals = c.P2U_W_body_signals | miro.MIRO_P2U_W_BODY_NO_PUSH_MOTION
+        # #c.P2U_W_body_signals = c.P2U_W_body_signals | miro.MIRO_P2U_W_BODY_NO_PUSH_TRANSLATION
+        # c.P2U_W_body_signals = c.P2U_W_body_signals | miro.MIRO_P2U_W_BODY_NO_PUSH_INTO_SONAR
+        # #c.P2L_W_signals = c.P2L_W_signals | miro.MIRO_P2L_W_ENABLE_POS_CONTROL
+        # c.P2L_W_signals = c.P2L_W_signals | miro.MIRO_P2L_W_ENABLE_CLIFF_REFLEX
+        # c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_ENABLE
+        # #c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_IGNORE_AUDIO
+        # #c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_IGNORE_VIDEO
+        # c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_SEND_PRIORITY
+        # #c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_SEND_OTHER
+        # #c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_NO_REAFF_COMPROMISE
+        # #c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_NO_SUPPRESS
+        # #c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_SHOW_COMPROMISE
+        # #c.P2S_W_signals = c.P2S_W_signals | miro.MIRO_P2S_W_SPATIAL_SHOW_TEST_PATTERN
+        # #c.P1_W_signals = c.P1_W_signals | miro.MIRO_P1_W_TEST_ALARM
+        # #c.P1_W_signals = c.P1_W_signals | miro.MIRO_P1_W_NO_I2C_BUSY_ALARM
 
-        c.msg_flags = c.FLAG_UPDATE_SIGNALS
-        self.pub_core_config.publish(c)
-        print("config sent")
+        # c.msg_flags = c.FLAG_UPDATE_SIGNALS
+        # self.pub_core_config.publish(c)
+        # print("config sent")
 
 
-        # bridge/config
-        q = bridge_config()
-        q.flags = miro.MIRO_BRIDGE_UPDATE
-        self.pub_bridge_config.publish(q)
-        print("bridge/config sent")
-        # '''
-        # # bridge/stream
-        # q = bridge_stream()
-        # q.sound_index_P3 = 0 # Plays music
-        # self.pub_bridge_stream.publish(q)
-        # print("bridge/stream sent")
-        #
-        # # platform/config
-        # self.send_platform_config = False
-        # q = platform_config()
-        # q.reset = 0
-        # q.frame_size = 320
-        # max_frame_rate = 8
-        # q.frame_rate = max_frame_rate * 0.5
-        # self.pub_platform_config.publish(q)
-        # print("platform/config sent")
-        #
-        # # publish
-        # q = platform_control()
-        # q.msg_flags = platform_control.FLAG_SYNC_PLATFORM | platform_control.FLAG_SYNC_CORE
-        #
-        # # publish
-        # q = core_control()
-        # q.msg_flags = core_control.FLAG_SYNC_PLATFORM | core_control.FLAG_SYNC_CORE
-        # '''
+        # # bridge/config
+        # q = bridge_config()
+        # q.flags = miro.MIRO_BRIDGE_UPDATE
+        # self.pub_bridge_config.publish(q)
+        # print("bridge/config sent")
+        # # '''
+        # # # bridge/stream
+        # # q = bridge_stream()
+        # # q.sound_index_P3 = 0 # Plays music
+        # # self.pub_bridge_stream.publish(q)
+        # # print("bridge/stream sent")
+        # #
+        # # # platform/config
+        # # self.send_platform_config = False
+        # # q = platform_config()
+        # # q.reset = 0
+        # # q.frame_size = 320
+        # # max_frame_rate = 8
+        # # q.frame_rate = max_frame_rate * 0.5
+        # # self.pub_platform_config.publish(q)
+        # # print("platform/config sent")
+        # #
+        # # # publish
+        # # q = platform_control()
+        # # q.msg_flags = platform_control.FLAG_SYNC_PLATFORM | platform_control.FLAG_SYNC_CORE
+        # #
+        # # # publish
+        # # q = core_control()
+        # # q.msg_flags = core_control.FLAG_SYNC_PLATFORM | core_control.FLAG_SYNC_CORE
+        # # '''
 
     def callback_caml(self, frm):
         self.caml_fifo.push(frm)
@@ -383,8 +371,6 @@ class miro_ros_client:
         # store object
         self.platform_sensors = object
 
-        # if DEBUG:
-        #     print(color.BOLD + color.RED + '\nPlatform sensors:\n' + color.END + str(self.platform_sensors))
 
     def callback_platform_state(self, object):
 
@@ -395,10 +381,10 @@ class miro_ros_client:
         # store object
         self.platform_state = object
 
-        # send back a core control message so that flags get respected
-        q = core_control()
-        # q.msg_flags = core_control.FLAG_SYNC_PLATFORM | core_control.FLAG_SYNC_CORE
-        self.pub_core_control.publish(q)
+        # # send back a core control message so that flags get respected
+        # q = core_control()
+        # # q.msg_flags = core_control.FLAG_SYNC_PLATFORM | core_control.FLAG_SYNC_CORE
+        # self.pub_core_control.publish(q)
 
     def callback_platform_mics(self, object):
 
@@ -409,26 +395,14 @@ class miro_ros_client:
         # store object
         self.platform_mics = object
 
-    # def callback_control_flags(self, object):
+    # def callback_core_state(self, object):
     #
-    #     # # ignore until active
-    #     # if not self.active:
-    #     #     return
+    #     # ignore until active
+    #     if not self.active:
+    #         return
     #
     #     # store object
-    #     self.control_flags = object
-    #
-    #     if DEBUG:
-    #         print(color.BOLD + color.RED + '\nControl flags:\n' + color.END + str(self.control_flags))
-
-    def callback_core_state(self, object):
-
-        # ignore until active
-        if not self.active:
-            return
-
-        # store object
-        self.core_state = object
+    #     self.core_state = object
 
     def callback_core_affect(self, object):
 
@@ -438,10 +412,6 @@ class miro_ros_client:
 
         # store object
         self.core_affect = object
-
-        if DEBUG:
-            print(color.BOLD + color.RED + '\nCore affect:\n' + color.END + str(self.core_affect))
-
 
 
     def __init__(self):
@@ -506,7 +476,7 @@ class miro_ros_client:
 
         # MiRo-E sim appears to just use /miro, may need changing for phys. robot
         topic_root = "/miro"
-        print "topic_root", topic_root
+        print "Topic root:", topic_root
 
         # publish
         # Come back to this later
@@ -528,43 +498,54 @@ class miro_ros_client:
         # self.sub_core_state = rospy.Subscriber(topic_root + "/core/state", core_state, self.callback_core_state)
         self.sub_core_affect = rospy.Subscriber(topic_root + "/core/affect", miro.msg.affect_state, self.callback_core_affect)
 
-        # self.sub_control_flags = rospy.Subscriber(topic_root + "/control/flags", UInt32, self.callback_control_flags)
-
         # set active
         self.active = True
 
         # default data
         self.platform_sensors = None
-        self.platform_state = None
-        self.platform_mics = None
+        # self.platform_state = None
+        # self.platform_mics = None
         self.caml_fifo = fifo(self.opt.uncompressed)
         self.camr_fifo = fifo(self.opt.uncompressed)
         self.pril_fifo = fifo(self.opt.uncompressed)
         self.prir_fifo = fifo(self.opt.uncompressed)
         self.priw_fifo = fifo(self.opt.uncompressed)
-        self.rgbl_fifo = fifo(self.opt.uncompressed)
-        self.rgbr_fifo = fifo(self.opt.uncompressed)
-        self.core_state = None
-        self.mood = None
+        # self.rgbl_fifo = fifo(self.opt.uncompressed)
+        # self.rgbr_fifo = fifo(self.opt.uncompressed)
+        # self.core_state = None
+        # self.mood = None
         self.core_affect = None
-        # self.control_flags = None
 
         if self.opt.uncompressed:
-            self.sub_caml = rospy.Subscriber(topic_root + "/platform/caml", Image, self.callback_caml)
-            self.sub_camr = rospy.Subscriber(topic_root + "/platform/camr", Image, self.callback_camr)
-            self.sub_pril = rospy.Subscriber(topic_root + "/core/pril", Image, self.callback_pril)
-            self.sub_prir = rospy.Subscriber(topic_root + "/core/prir", Image, self.callback_prir)
-            self.sub_priw = rospy.Subscriber(topic_root + "/core/priw", Image, self.callback_priw)
+            # self.sub_caml = rospy.Subscriber(topic_root + "/platform/caml", Image, self.callback_caml)
+            # self.sub_camr = rospy.Subscriber(topic_root + "/platform/camr", Image, self.callback_camr)
+            self.sub_caml = rospy.Subscriber(topic_root + "/sensors/caml", Image, self.callback_caml)
+            self.sub_camr = rospy.Subscriber(topic_root + "/sensors/camr", Image, self.callback_camr)
+
+            # self.sub_pril = rospy.Subscriber(topic_root + "/core/pril", Image, self.callback_pril)
+            # self.sub_prir = rospy.Subscriber(topic_root + "/core/prir", Image, self.callback_prir)
+            # self.sub_priw = rospy.Subscriber(topic_root + "/core/priw", Image, self.callback_priw)
+            self.sub_pril = rospy.Subscriber(topic_root + "/sensors/pril", Image, self.callback_pril)
+            self.sub_prir = rospy.Subscriber(topic_root + "/sensors/prir", Image, self.callback_prir)
+            self.sub_priw = rospy.Subscriber(topic_root + "/sensors/priw", Image, self.callback_priw)
+
             # '''
             # self.sub_rgbl = rospy.Subscriber(topic_root + "/core/rgbl", Image, self.callback_rgbl)
             # self.sub_rgbr = rospy.Subscriber(topic_root + "/core/rgbr", Image, self.callback_rgbr)
             # '''
         else:
-            self.sub_caml = rospy.Subscriber(topic_root + "/platform/caml/compressed", CompressedImage, self.callback_caml)
-            self.sub_camr = rospy.Subscriber(topic_root + "/platform/camr/compressed", CompressedImage, self.callback_camr)
-            self.sub_pril = rospy.Subscriber(topic_root + "/core/pril/compressed", CompressedImage, self.callback_pril)
-            self.sub_prir = rospy.Subscriber(topic_root + "/core/prir/compressed", CompressedImage, self.callback_prir)
-            self.sub_priw = rospy.Subscriber(topic_root + "/core/priw/compressed", CompressedImage, self.callback_priw)
+            # self.sub_caml = rospy.Subscriber(topic_root + "/platform/caml/compressed", CompressedImage, self.callback_caml)
+            # self.sub_camr = rospy.Subscriber(topic_root + "/platform/camr/compressed", CompressedImage, self.callback_camr)
+            self.sub_caml = rospy.Subscriber(topic_root + "/sensors/caml/compressed", CompressedImage, self.callback_caml)
+            self.sub_camr = rospy.Subscriber(topic_root + "/sensors/camr/compressed", CompressedImage, self.callback_camr)
+
+            # self.sub_pril = rospy.Subscriber(topic_root + "/core/pril/compressed", CompressedImage, self.callback_pril)
+            # self.sub_prir = rospy.Subscriber(topic_root + "/core/prir/compressed", CompressedImage, self.callback_prir)
+            # self.sub_priw = rospy.Subscriber(topic_root + "/core/priw/compressed", CompressedImage, self.callback_priw)
+            self.sub_pril = rospy.Subscriber(topic_root + "/sensors/pril/compressed", CompressedImage, self.callback_pril)
+            self.sub_prir = rospy.Subscriber(topic_root + "/sensors/prir/compressed", CompressedImage, self.callback_prir)
+            self.sub_priw = rospy.Subscriber(topic_root + "/sensors/priw/compressed", CompressedImage, self.callback_priw)
+
             # '''
             # self.sub_rgbl = rospy.Subscriber(topic_root + "/core/rgbl/compressed", CompressedImage, self.callback_rgbl)
             # self.sub_rgbr = rospy.Subscriber(topic_root + "/core/rgbr/compressed", CompressedImage, self.callback_rgbr)

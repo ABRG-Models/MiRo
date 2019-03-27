@@ -15,7 +15,9 @@ import matplotlib.patches as patches
 
 animate_MainWindow = True  # True when the main window is active and False when a zoomed-in window is open.
 
-UpdateRate = 20  # Updating Rate in Hz
+UpdateRate = 60  # Updating Rate in Hz
+
+DEBUG = 1
 
 def add_subplot(ax, fig, rect, axisbg='w'):
     box = ax.get_position()
@@ -403,8 +405,15 @@ class MiroGI(): # MiRo Graphical Interface main class.
             return
 
         priw = self.miro.priw_fifo.latest()
+
+        # if DEBUG:
+        #     print(str(priw))
+
         if (priw is not None):
             self.plt_priw_handle.set_data(priw[:, :, 0])
+
+            if DEBUG:
+                print('Main window: setting PRIW')
 
         caml = self.miro.caml_fifo.latest()
         camr = self.miro.camr_fifo.latest()
@@ -412,9 +421,12 @@ class MiroGI(): # MiRo Graphical Interface main class.
             self.plt_camera_l_handle.set_data(caml)
             self.plt_camera_r_handle.set_data(camr)
 
+            # if DEBUG:
+            #     print('Main window: setting CAML and CAMR')
 
-        # if (self.miro.platform_sensors is not None) and (self.miro.core_state is not None):
-        if (self.miro.platform_sensors is not None):
+
+        if (self.miro.platform_sensors is not None) and (self.miro.core_affect is not None):
+        # if (self.miro.platform_sensors is not None):
             # Updating emotion
             self.plt_circle_red_handle.set_offsets([self.miro.core_affect.emotion.valence * 16.0 - 8.0, self.miro.core_affect.emotion.arousal * 16.0 - 8.0])
             self.plt_circle_blue_handle.set_offsets([self.miro.core_affect.mood.valence*16.0-8.0, self.miro.core_affect.mood.arousal*16.0-8.0])
@@ -488,6 +500,9 @@ class MiroGI(): # MiRo Graphical Interface main class.
             self.plt_PRI_l_handle_SAM.set_data(pril)
             self.plt_PRI_r_handle_SAM.set_data(prir)
 
+            if DEBUG:
+                print('Salience zoom: setting PRIL and PRIR')
+
     # =========================
 
     def update_BasalGangliaZoom(self, i):
@@ -517,10 +532,10 @@ class MiroGI(): # MiRo Graphical Interface main class.
         if rospy.core.is_shutdown():
             return
 
-        if self.miro.core_state is not None:
-            self.plt_circle_red_handle_AS.set_offsets([self.miro.core_state.emotion.valence * 16.0 - 8.0, self.miro.core_state.emotion.arousal * 16.0 - 8.0])
-            self.plt_circle_blue_handle_AS.set_offsets([self.miro.core_state.mood.valence * 16.0 - 8.0, self.miro.core_state.mood.arousal * 16.0 - 8.0])
-            self.plt_circle_yellow_handle_AS.set_offsets([self.miro.core_state.sleep.wakefulness * 16.0 - 8.0, self.miro.core_state.sleep.pressure * 16.0 - 8.0])
+        if self.miro.core_affect is not None:
+            self.plt_circle_red_handle_AS.set_offsets([self.miro.core_affect.emotion.valence * 16.0 - 8.0, self.miro.core_affect.emotion.arousal * 16.0 - 8.0])
+            self.plt_circle_blue_handle_AS.set_offsets([self.miro.core_affect.mood.valence * 16.0 - 8.0, self.miro.core_affect.mood.arousal * 16.0 - 8.0])
+            self.plt_circle_yellow_handle_AS.set_offsets([self.miro.core_affect.sleep.wakefulness * 16.0 - 8.0, self.miro.core_affect.sleep.pressure * 16.0 - 8.0])
 
     # =========================
     # Events callback functions.
