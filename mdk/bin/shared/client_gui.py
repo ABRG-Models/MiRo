@@ -692,6 +692,124 @@ def generate_argb(colour, bright):
 
 			# convert compressed ROS image to raw CV image
 			image = self.image_converter.compressed_imgmsg_to_cv2(ros_image, "rgb8")
+			
+			################################### object detection #################################################
+
+			# output = image.copy()
+
+			# output = cv2.medianBlur(output,5)
+
+			# imgHSV= cv2.cvtColor(output,cv2.COLOR_BGR2HSV)
+			# # cv2.imshow("detected object", imgHSV)
+			# # 	# cv2.imshow("fill gap", maskClose)
+			# # cv2.waitKey(0)
+
+			# # green color boundary (RGB)
+			# # ([0, 127, 0], [180, 240, 180])
+
+			# # white (probably some gray) color boundary (RGB)
+			# # ([128, 128, 128], [255, 255, 255])
+
+			# # White color boundary (HSV)
+			# # ([0, 0, 195], [255, 60, 255])
+
+			# # Orange color boundary (HSV)
+			# # ([1, 190, 200], [25, 255, 255])
+
+
+			# # define the list of boundaries
+			# boundaries = [
+			# 	([0, 0, 195], [255, 60, 255]),
+			# 	([1, 190, 200], [25, 255, 255])
+			# ]
+
+			# font = cv2.FONT_HERSHEY_SIMPLEX
+
+			# count = 0
+
+			# # loop over the boundaries
+			# for (lower, upper) in boundaries:
+			# 	# create NumPy arrays from the boundaries
+			# 	lower = np.array(lower, dtype = "uint8")
+			# 	upper = np.array(upper, dtype = "uint8")
+
+			# 	# find the colors within the specified boundaries and apply
+			# 	# the mask
+			# 	mask = cv2.inRange(imgHSV, lower, upper)
+			# 	# output = cv2.bitwise_and(image, image, mask = mask)
+
+			# 	kernelOpen=np.ones((5,5))
+			# 	kernelClose=np.ones((20,20))
+
+			# 	maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
+			# 	maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
+
+			# 	maskFinal=maskClose.copy()
+			# 	im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+			# 	# cv2.drawContours(image,contours,-1,(255,0,0),3)
+
+			# 	for i in range(len(contours)):
+			# 		if count ==  0:
+			# 			text = "MiRO"
+			# 		else: 
+			# 			text = "Football"	    
+			# 		x,y,w,h=cv2.boundingRect(contours[i])
+			# 		cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
+			# 		cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+
+			# 	count += 1
+
+#################################################################################################################
+
+
+#################################### boundary detection #########################################################
+
+			# output = image.copy()
+
+			# output = cv2.medianBlur(output,5)
+
+			# hsv = cv2.cvtColor(output,cv2.COLOR_BGR2HSV)
+			# hsv = cv2.medianBlur(hsv,5)
+
+			# # green color boundary
+			# # ([0, 127, 0], [180, 240, 180])
+
+			# # white (probably some gray) color boundary
+			# # ([128, 128, 128], [255, 255, 255])
+
+			# # define the list of boundaries
+			# boundaries = [
+			# 	([36, 0, 0], [86, 255, 255])
+			# ]
+
+			# # loop over the boundaries
+			# for (lower, upper) in boundaries:
+			# 	# create NumPy arrays from the boundaries
+			# 	lower = np.array(lower, dtype = "uint8")
+			# 	upper = np.array(upper, dtype = "uint8")
+
+			# 	# find the colors within the specified boundaries and apply
+			# 	# the mask
+			# 	mask = cv2.inRange(hsv, lower, upper)
+			# 	# cv2.imshow("detected object", mask)
+			# 	# cv2.waitKey(0)
+
+
+			# 	# output = cv2.bitwise_and(hsv, hsv, mask = mask)
+
+			# 	kernelOpen=np.ones((5,5))
+			# 	kernelClose=np.ones((20,20))
+
+			# 	maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
+			# 	maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
+
+			# 	maskFinal=maskClose.copy()
+			# 	im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+
+			#  	cv2.drawContours(image,contours,-1,(255,0,0),3)
+
+############################################################################################################################
+
 
 			# set camera zoom automatically if has not been set already
 			if not self.auto_camera_zoom is None:
