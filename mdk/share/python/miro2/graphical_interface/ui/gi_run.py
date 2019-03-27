@@ -15,7 +15,7 @@ import matplotlib.patches as patches
 
 animate_MainWindow = True  # True when the main window is active and False when a zoomed-in window is open.
 
-UpdateRate = 60  # Updating Rate in Hz
+UpdateRate = 30  # Updating Rate in Hz
 
 DEBUG = 1
 
