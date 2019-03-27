@@ -1,0 +1,15 @@
+
+	def on_VelControl_change_value(self, *args):
+		self.velocity.twist.linear.x = self.VelControl.get_value() * 0
+
+	def on_AngVelControl_change_value(self, *args):
+		self.velocity.twist.angular.z = self.AngVelControl.get_value()
+
+	def on_ResetBodyVel_clicked(self, *args):
+		self.VelControl.set_value(0.0)
+		self.velocity.twist.linear.x = self.VelControl.get_value()
+		self.AngVelControl.set_value(0.0)
+		self.velocity.twist.angular.z = self.AngVelControl.get_value()
+
+
+<- velocity change
