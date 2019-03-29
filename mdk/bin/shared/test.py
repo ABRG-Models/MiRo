@@ -277,19 +277,20 @@ class controller:
 				self.pub_kin.publish(msg_kin)
 
 			if self.dribble and not self.sensors is None:
+
 				msg_wheels.twist.linear.x = 0.1
 				msg_wheels.twist.angular.z = 0.0
-#				self.pub_wheels.publish(msg_wheels)
-#				self.imp_report_wheels(msg_wheels)
+				self.pub_wheels.publish(msg_wheels)
+				self.imp_report_wheels(msg_wheels)
 
-#				if self.sensors.cliff.data[0] * 15.0 < 9.0:
-#					msg_wheels.twist.angular.z = 1.0
-#					self.pub_wheels.publish(msg_wheels)
-#					self.imp_report_wheels(msg_wheels)
-#				elif self.sensors.light.data[1] * 15.0 < 9.0:
-#					msg_wheels.twist.angular.z = -1.0
-#					self.pub_wheels.publish(msg_wheels)
-#					self.imp_report_wheels(msg_wheels)
+				if self.sensors.cliff.data[0] * 15.0 != 15.0:
+					msg_wheels.twist.angular.z = -1.0
+					self.pub_wheels.publish(msg_wheels)
+					self.imp_report_wheels(msg_wheels)
+				elif self.sensors.light.data[1] * 15.0 != 15.0:
+					msg_wheels.twist.angular.z = 1.0
+					self.pub_wheels.publish(msg_wheels)
+					self.imp_report_wheels(msg_wheels)
 
 
 			# send wheels
