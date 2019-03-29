@@ -133,6 +133,7 @@ class controller:
 			c = self.count % 10
 			if c == 0 and self.report_input and not self.sensors is None:
 				print "light", np.round(np.array(self.sensors.light.data) * 100.0)
+				print "cliff", np.round(np.array(self.sensors.cliff.data) * 15.0)
 				print "battery", np.round(np.array(self.sensors.battery.voltage) * 100.0) / 100.0
 				print "touch_body", '{0:016b}'.format(self.sensors.touch_body.data)
 				x = self.sensors.imu_head.linear_acceleration
@@ -243,8 +244,6 @@ class controller:
 					v = 0.0
 				elif t_now < t2:
 					v = (t_now - t1) / T
-				elif self.forever:
-					v = 0.5
 				elif t_now < t3:
 					v = 0.5 - (t_now - t2) / T
 				elif t_now < t4:
@@ -270,6 +269,28 @@ class controller:
 						self.pub_wheels.publish(msg_wheels)
 					self.imp_report_wheels(msg_wheels)
 					self.pub_kin.publish(msg_kin)
+
+			if self.stopb:
+				msg_kin.position[1] = np.radians(70.0)
+				msg_kin.position[2] = np.radians(0.0)
+				msg_kin.position[3] = np.radians(-20.0)
+				self.pub_kin.publish(msg_kin)
+
+			if self.dribble and not self.sensors is None:
+				msg_wheels.twist.linear.x = 0.1
+				msg_wheels.twist.angular.z = 0.0
+#				self.pub_wheels.publish(msg_wheels)
+#				self.imp_report_wheels(msg_wheels)
+
+#				if self.sensors.cliff.data[0] * 15.0 < 9.0:
+#					msg_wheels.twist.angular.z = 1.0
+#					self.pub_wheels.publish(msg_wheels)
+#					self.imp_report_wheels(msg_wheels)
+#				elif self.sensors.light.data[1] * 15.0 < 9.0:
+#					msg_wheels.twist.angular.z = -1.0
+#					self.pub_wheels.publish(msg_wheels)
+#					self.imp_report_wheels(msg_wheels)
+
 
 			# send wheels
 			if not self.spin is None:
@@ -356,6 +377,8 @@ class controller:
 		self.wheelsf = False
 		self.shoot = False
 		self.toss = ""
+		self.stopb = False
+		self.dribble = False
 		self.spin = None
 		self.kin = ""
 		self.cos = ""
@@ -446,6 +469,10 @@ class controller:
 				self.toss = "l"
 			elif key == "passr":
 				self.toss = "r"
+			elif key == "stopb":
+				self.stopb = True
+			elif key == "dribble":
+				self.dribble = True
 			else:
 				error("argument not recognised \"" + arg + "\"")
 
