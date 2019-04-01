@@ -15,6 +15,7 @@ import matplotlib.patches as patches
 
 animate_MainWindow = True  # True when the main window is active and False when a zoomed-in window is open.
 
+
 UpdateRate = 30  # Updating Rate in Hz
 
 DEBUG = 1
@@ -57,8 +58,6 @@ class Cl_Button(object): # Zoom-in button class
         animate_MainWindow = False
         self.callback()
         plt.show()
-
-#==============================
 
 class MiroGI(): # MiRo Graphical Interface main class.
     def __init__(self):

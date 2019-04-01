@@ -70,173 +70,13 @@ class controller:
 		# store
 		self.sensors = msg
 
-	def callback_cam(self, ros_image, index):
+#	def callback_caml(self, ros_image):
 
-		# discard data if GUI not displayed
-		if not self.CamWindow.get_property("visible"):
-			self.t_input_camera = [[], []]
-			return
+#		self.callback_cam(ros_image, 0)
 
-		# silently (ish) handle corrupted JPEG frames
-		try:
-			# convert compressed ROS image to raw CV image
-			image = self.image_converter.compressed_imgmsg_to_cv2(ros_image, "rgb8")
-			
-			################################### object detection #################################################
-			output = image.copy()
+#	def callback_camr(self, ros_image):
 
-			output = cv2.medianBlur(output,5)
-
-			imgHSV= cv2.cvtColor(output,cv2.COLOR_BGR2HSV)
-			 # cv2.imshow("detected object", imgHSV)
-			 # 	# cv2.imshow("fill gap", maskClose)
-			 # cv2.waitKey(0)
-
-			 # green color boundary (RGB)
-			 # ([0, 127, 0], [180, 240, 180])
-
-			 # white (probably some gray) color boundary (RGB)
-			 # ([128, 128, 128], [255, 255, 255])
-
-			 # White color boundary (HSV)
-			 # ([0, 0, 195], [255, 60, 255])
-
-			 # Orange color boundary (HSV)
-			 # ([1, 190, 200], [25, 255, 255])
-
-
-			 # define the list of boundaries
-			boundaries = [
-			 	([0, 0, 195], [255, 60, 255]),
-			 	([1, 190, 200], [25, 255, 255])
-			]
-
-			font = cv2.FONT_HERSHEY_SIMPLEX
-
-			count = 0
-
-			# loop over the boundaries
-			for (lower, upper) in boundaries:
-				# create NumPy arrays from the boundaries
-				lower = np.array(lower, dtype = "uint8")
-			 	upper = np.array(upper, dtype = "uint8")
-
-			 	# find the colors within the specified boundaries and apply
-			 	# the mask
-			 	mask = cv2.inRange(imgHSV, lower, upper)
-			 	# output = cv2.bitwise_and(image, image, mask = mask)
-
-			 	kernelOpen=np.ones((5,5))
-			 	kernelClose=np.ones((20,20))
-
-			 	maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
-			 	maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
-
-			 	maskFinal=maskClose.copy()
-			 	im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-			 	# cv2.drawContours(image,contours,-1,(255,0,0),3)
-
-			 	for i in range(len(contours)):
-			 		if count ==  0:
-			 			text = "MiRO"
-			 		else: 
-			 			text = "Football"	    
-			 		x,y,w,h=cv2.boundingRect(contours[i])
-			 		cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
-			 		cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
-
-			 	count += 1
-
-#################################################################################################################
-
-
-#################################### boundary detection #########################################################
-
-#			 output = image.copy()
-
-#			 output = cv2.medianBlur(output,5)
-
-#			 hsv = cv2.cvtColor(output,cv2.COLOR_BGR2HSV)
-#			 hsv = cv2.medianBlur(hsv,5)
-
-#			 # green color boundary
-#			 # ([0, 127, 0], [180, 240, 180])
-
-#			 # white (probably some gray) color boundary
-#			 # ([128, 128, 128], [255, 255, 255])
-
-#			 # define the list of boundaries
-#			 boundaries = [
-#			 	([36, 0, 0], [86, 255, 255])
-#			 ]
-
-#			 # loop over the boundaries
-#			 for (lower, upper) in boundaries:
-#			 	# create NumPy arrays from the boundaries
-#			 	lower = np.array(lower, dtype = "uint8")
-#			 	upper = np.array(upper, dtype = "uint8")
-
-#			 	# find the colors within the specified boundaries and apply
-#			 	# the mask
-#			 	mask = cv2.inRange(hsv, lower, upper)
-#			 	# cv2.imshow("detected object", mask)
-#			 	# cv2.waitKey(0)
-
-
-#			 	# output = cv2.bitwise_and(hsv, hsv, mask = mask)
-
-#			 	kernelOpen=np.ones((5,5))
-#			 	kernelClose=np.ones((20,20))
-
-#			 	maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
-#			 	maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
-
-#			 	maskFinal=maskClose.copy()
-#			 	im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-
-#			  	cv2.drawContours(image,contours,-1,(255,0,0),3)
-
-############################################################################################################################
-
-
-			# set camera zoom automatically if has not been set already
-			if not self.auto_camera_zoom is None:
-				h = self.auto_camera_zoom[0]
-				dt = time.time() - self.auto_camera_zoom[1]
-				if h == 0:
-					# initial state, set from first received frame regardless
-					self.do_auto_camera_zoom(image.shape[0])
-					self.auto_camera_zoom = None
-					# for initial frame, also set resolution selector
-					self.do_auto_camera_res(image.shape)
-				elif dt > 4.0:
-					self.auto_camera_zoom = None
-				elif abs(image.shape[0] - h) < 32:
-					self.do_auto_camera_zoom(h)
-					self.auto_camera_zoom = None
-
-			# do zoom
-			if self.camera_zoom == "0.5x":
-				image = cv2.resize(image, (int(image.shape[1] * 0.5), int(image.shape[0] * 0.5)))
-			elif self.camera_zoom == "2x":
-				image = cv2.resize(image, (int(image.shape[1] * 2.0), int(image.shape[0] * 2.0)))
-
-			# store image for display
-			self.input_camera[index] = image
-
-		except CvBridgeError as e:
-
-			# swallow error, silently
-			#print(e)
-			pass
-
-	def callback_caml(self, ros_image):
-
-		self.callback_cam(ros_image, 0)
-
-	def callback_camr(self, ros_image):
-
-		self.callback_cam(ros_image, 1)
+#		self.callback_cam(ros_image, 1)
 
 	def imp_report_wheels(self, msg_wheels):
 
@@ -293,6 +133,7 @@ class controller:
 			c = self.count % 10
 			if c == 0 and self.report_input and not self.sensors is None:
 				print "light", np.round(np.array(self.sensors.light.data) * 100.0)
+				print "cliff", np.round(np.array(self.sensors.cliff.data) * 15.0)
 				print "battery", np.round(np.array(self.sensors.battery.voltage) * 100.0) / 100.0
 				print "touch_body", '{0:016b}'.format(self.sensors.touch_body.data)
 				x = self.sensors.imu_head.linear_acceleration
@@ -385,6 +226,74 @@ class controller:
 				self.imp_report_wheels(msg_wheels)
 
 			# send wheels
+			if self.shoot:
+				msg_kin.position[1] = np.radians(0.0)
+				msg_kin.position[2] = np.radians(0.0)
+				msg_kin.position[3] = np.radians(0.0)
+				self.pub_kin.publish(msg_kin)
+
+				v = 0.0
+				Tq = 0.1
+				T = 1.0
+				t1 = Tq
+				t2 = t1 + T
+				t3 = t2 + T
+				t4 = t3 + Tq
+
+				if t_now < t1:
+					v = 0.0
+				elif t_now < t2:
+					v = (t_now - t1) / T
+				elif t_now < t3:
+					v = 0.5 - (t_now - t2) / T
+				elif t_now < t4:
+					v = 0.0
+				else:
+					self.active = False
+				msg_wheels.twist.linear.x = v * 4.0
+				msg_wheels.twist.angular.z = 0.0
+				self.pub_wheels.publish(msg_wheels)
+				self.imp_report_wheels(msg_wheels)
+
+			if len(self.toss) and not self.sensors is None:
+				if "l" in self.toss:
+					msg_wheels.twist.angular.z = 2.0
+					self.pub_wheels.publish(msg_wheels)
+					self.imp_report_wheels(msg_wheels)
+
+					if self.sensors.light.data[1] * 100.0 <= 10.0:
+						msg_wheels.twist.angular.z = 0.0
+						msg_kin.position[1] = np.radians(90.0)
+						msg_kin.position[2] = np.radians(0.0)
+						msg_kin.position[3] = np.radians(0.0)
+						self.pub_wheels.publish(msg_wheels)
+					self.imp_report_wheels(msg_wheels)
+					self.pub_kin.publish(msg_kin)
+
+			if self.stopb:
+				msg_kin.position[1] = np.radians(70.0)
+				msg_kin.position[2] = np.radians(0.0)
+				msg_kin.position[3] = np.radians(-20.0)
+				self.pub_kin.publish(msg_kin)
+
+			if self.dribble and not self.sensors is None:
+
+				msg_wheels.twist.linear.x = 0.1
+				msg_wheels.twist.angular.z = 0.0
+				self.pub_wheels.publish(msg_wheels)
+				self.imp_report_wheels(msg_wheels)
+
+				if self.sensors.cliff.data[0] * 15.0 != 15.0:
+					msg_wheels.twist.angular.z = -1.0
+					self.pub_wheels.publish(msg_wheels)
+					self.imp_report_wheels(msg_wheels)
+				elif self.sensors.light.data[1] * 15.0 != 15.0:
+					msg_wheels.twist.angular.z = 1.0
+					self.pub_wheels.publish(msg_wheels)
+					self.imp_report_wheels(msg_wheels)
+
+
+			# send wheels
 			if not self.spin is None:
 				v = 0.0
 				Tq = 0.2
@@ -467,6 +376,10 @@ class controller:
 		self.report_wheels = False
 		self.wheels = None
 		self.wheelsf = False
+		self.shoot = False
+		self.toss = ""
+		self.stopb = False
+		self.dribble = False
 		self.spin = None
 		self.kin = ""
 		self.cos = ""
@@ -551,6 +464,16 @@ class controller:
 			elif key == "workout":
 				self.cos = "lrx"
 				self.kin = "lyp"
+			elif key == "shoot":
+				self.shoot = True
+			elif key == "passl":
+				self.toss = "l"
+			elif key == "passr":
+				self.toss = "r"
+			elif key == "stopb":
+				self.stopb = True
+			elif key == "dribble":
+				self.dribble = True
 			else:
 				error("argument not recognised \"" + arg + "\"")
 
@@ -592,11 +515,11 @@ class controller:
 		print ("subscribe", topic)
 		self.sub_package = rospy.Subscriber(topic, miro.msg.sensors_package, self.callback_package)
 
-		# subscribe
-		topic = topic_base + "sensors/caml/compressed"
-		print ("subscribe", topic)
-		self.sub_caml = rospy.Subscriber(topic,
-					CompressedImage, self.callback_caml)
+#		# subscribe
+#		topic = topic_base + "sensors/caml/compressed"
+#		print ("subscribe", topic)
+#		self.sub_caml = rospy.Subscriber(topic,
+#					CompressedImage, self.callback_caml)
 
 
 		# wait for connect
