@@ -296,6 +296,8 @@ class miro_ros_client:
         # c.msg_flags = c.FLAG_UPDATE_SIGNALS
         # self.pub_core_config.publish(c)
         # print("config sent")
+        pass
+        return
 
 
         # # bridge/config
