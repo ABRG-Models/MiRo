@@ -255,25 +255,76 @@ class controller:
 				self.pub_wheels.publish(msg_wheels)
 				self.imp_report_wheels(msg_wheels)
 
-			if len(self.toss) and not self.sensors is None:
+#			if len(self.toss) and not self.sensors is None:
+			if len(self.toss): 
 				if "l" in self.toss:
-					msg_wheels.twist.angular.z = 2.0
-					self.pub_wheels.publish(msg_wheels)
-					self.imp_report_wheels(msg_wheels)
+					t = xk * np.radians(55.0)
+					v = 0
+					Tq = 0.1
+					T = 1.0
+					t1 = Tq
+					t2 = t1 + T
+					t3 = t2 + T
+					t4 = t3 + Tq
+					if t_now < t1:
+						v = 0.0
+					elif t_now < t2:
+						v = (t_now - t1) / T
+					elif t_now < t3:
+						v = 0.3 - (t_now - t2*0.6) / T
+					elif t_now < t4:
+						v = 0.0
+					else:
+						self.active = False
+					msg_wheels.twist.angular.z = v * -3.0
+					msg_wheels.twist.linear.x = 0
 
-					if self.sensors.light.data[1] * 100.0 <= 10.0:
-						msg_wheels.twist.angular.z = 0.0
-						msg_kin.position[1] = np.radians(90.0)
-						msg_kin.position[2] = np.radians(0.0)
-						msg_kin.position[3] = np.radians(0.0)
-						self.pub_wheels.publish(msg_wheels)
-					self.imp_report_wheels(msg_wheels)
+					msg_kin.position[1] = np.radians(75.0)
+					msg_kin.position[2] = -t
+					msg_kin.position[3] = np.radians(30.0)
 					self.pub_kin.publish(msg_kin)
+					self.imp_report_wheels(msg_wheels)
+					self.pub_wheels.publish(msg_wheels)
+
+				if "r" in self.toss:
+					t = xk * np.radians(55.0)
+					v = 0
+					Tq = 0.1
+					T = 1.0
+					t1 = Tq
+					t2 = t1 + T
+					t3 = t2 + T
+					t4 = t3 + Tq
+					if t_now < t1:
+						v = 0.0
+					elif t_now < t2:
+						v = (t_now - t1) / T
+					elif t_now < t3:
+						v = 0.3 - (t_now - t2*0.6) / T
+					elif t_now < t4:
+						v = 0.0
+					else:
+						self.active = False
+					msg_wheels.twist.angular.z = v * 3.0
+					msg_wheels.twist.linear.x = 0
+
+					msg_kin.position[1] = np.radians(75.0)
+					msg_kin.position[2] = t
+					msg_kin.position[3] = np.radians(30.0)
+					self.pub_kin.publish(msg_kin)
+					self.imp_report_wheels(msg_wheels)
+					self.pub_wheels.publish(msg_wheels)
 
 			if self.stopb:
 				msg_kin.position[1] = np.radians(70.0)
 				msg_kin.position[2] = np.radians(0.0)
 				msg_kin.position[3] = np.radians(-20.0)
+				self.pub_kin.publish(msg_kin)
+
+			if self.ready:
+				msg_kin.position[1] = np.radians(0.0)
+				msg_kin.position[2] = np.radians(0.0)
+				msg_kin.position[3] = np.radians(0.0)
 				self.pub_kin.publish(msg_kin)
 
 			if self.dribble and not self.sensors is None:
@@ -380,6 +431,7 @@ class controller:
 		self.toss = ""
 		self.stopb = False
 		self.dribble = False
+		self.ready = False
 		self.spin = None
 		self.kin = ""
 		self.cos = ""
@@ -474,6 +526,8 @@ class controller:
 				self.stopb = True
 			elif key == "dribble":
 				self.dribble = True
+			elif key == "ready":
+				self.ready = True
 			else:
 				error("argument not recognised \"" + arg + "\"")
 
