@@ -701,7 +701,7 @@ def generate_argb(colour, bright):
 			# output = cv2.medianBlur(output,5)
 
 			# imgHSV= cv2.cvtColor(output,cv2.COLOR_BGR2HSV)
-			
+
 			# # cv2.imshow("detected object", imgHSV)
 			# # 	# cv2.imshow("fill gap", maskClose)
 			# # cv2.waitKey(0)
@@ -814,8 +814,6 @@ def generate_argb(colour, bright):
 
 ############################################################################################################################
 
-
->>>>>>> 2bc6b49dbe756d47be57b83be65bca07ffe89883
 			# set camera zoom automatically if has not been set already
 			if not self.auto_camera_zoom is None:
 				h = self.auto_camera_zoom[0]
