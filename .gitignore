@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
 
 # C extensions
 *.so
@@ -96,6 +97,10 @@ venv.bak/
 
 # Rope project settings
 .ropeproject
+
+# PyCharm settings
+.idea/
+\.idea/
 
 # mkdocs documentation
 /site

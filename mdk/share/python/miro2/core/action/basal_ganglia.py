@@ -35,6 +35,9 @@ import rospy
 import numpy as np
 import miro2 as miro
 
+# Set threshold required for a valid MULL selection
+# 0.1001 seems to be a good compromise that allows MULL to win in the sim a reasonable amount of the time
+MULL_VAL = 0.1001
 
 
 class BasalGanglia(object):
@@ -56,13 +59,14 @@ class BasalGanglia(object):
 			prio = action.interface.priority
 
 			# Hysteretical feedback term
-			if	i == self.selected:
+			# if i == self.selected:
+			# Exclude MULL from hysteresis
+			if (i == self.selected) and (i != 0):
 				prio += self.pars.selection_hysteresis
 
 			prio = np.clip(prio, 0.0, 1.0)
 			prios[i] = prio
 
-		#print prios
 
 		# normalise output
 		#if np.sum(prios) > 0:
@@ -70,14 +74,21 @@ class BasalGanglia(object):
 
 		# Add a little noise
 		noise = np.random.normal(size=len(actions)) * self.pars.selection_noise_mag
-		prios += noise
+		prios += abs(noise)
 
-		# select action with maximum priority (winner take all)
+		# If MULL is the winning action at a threshold lower than MULL_VAL,
+		# add noise to non-MULL actions and subtract noise from MULL until some action is greater than 0.1
+		while (np.argmax(prios) == 0) and (prios[0] < MULL_VAL) and (all(i < 0.1 for i in prios[1:])):
+			noise = np.random.normal(size=len(actions) - 1) * self.pars.selection_noise_mag
+			prios[1:] += abs(noise)
+			prios[0] -= abs(np.random.normal() * self.pars.selection_noise_mag)
+
+		# Select action with maximum priority (winner take all)
 		selected = np.argmax(prios)
 
 		# update selection
 		if self.selected != selected:
-			print "[**** SELECT ACTION", actions[selected].name, "****]"
+			print "\n[**** SELECT ACTION", actions[selected].name, "****]"
 			actions[self.selected].event_stop()
 			self.selected = selected
 			actions[self.selected].event_start()
@@ -89,7 +100,3 @@ class BasalGanglia(object):
 				action.interface.inhibition = 0.0
 			else:
 				action.interface.inhibition = 1.0
-
-
-
-

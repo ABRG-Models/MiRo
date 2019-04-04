@@ -692,16 +692,16 @@ def generate_argb(colour, bright):
 
 		# silently (ish) handle corrupted JPEG frames
 		try:
-
 			# convert compressed ROS image to raw CV image
 			image = self.image_converter.compressed_imgmsg_to_cv2(ros_image, "rgb8")
-
-			# image = cv2.imread("miro_view2.png")
+			
+			################################### object detection #################################################
 			# output = image.copy()
 
 			# output = cv2.medianBlur(output,5)
 
 			# imgHSV= cv2.cvtColor(output,cv2.COLOR_BGR2HSV)
+			
 			# # cv2.imshow("detected object", imgHSV)
 			# # 	# cv2.imshow("fill gap", maskClose)
 			# # cv2.waitKey(0)
@@ -762,6 +762,60 @@ def generate_argb(colour, bright):
 					
 			# 	count += 1
 
+
+#################################################################################################################
+
+
+#################################### boundary detection #########################################################
+
+#			 output = image.copy()
+
+#			 output = cv2.medianBlur(output,5)
+
+#			 hsv = cv2.cvtColor(output,cv2.COLOR_BGR2HSV)
+#			 hsv = cv2.medianBlur(hsv,5)
+
+#			 # green color boundary
+#			 # ([0, 127, 0], [180, 240, 180])
+
+#			 # white (probably some gray) color boundary
+#			 # ([128, 128, 128], [255, 255, 255])
+
+#			 # define the list of boundaries
+#			 boundaries = [
+#			 	([36, 0, 0], [86, 255, 255])
+#			 ]
+
+#			 # loop over the boundaries
+#			 for (lower, upper) in boundaries:
+#			 	# create NumPy arrays from the boundaries
+#			 	lower = np.array(lower, dtype = "uint8")
+#			 	upper = np.array(upper, dtype = "uint8")
+
+#			 	# find the colors within the specified boundaries and apply
+#			 	# the mask
+#			 	mask = cv2.inRange(hsv, lower, upper)
+#			 	# cv2.imshow("detected object", mask)
+#			 	# cv2.waitKey(0)
+
+
+#			 	# output = cv2.bitwise_and(hsv, hsv, mask = mask)
+
+#			 	kernelOpen=np.ones((5,5))
+#			 	kernelClose=np.ones((20,20))
+
+#			 	maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
+#			 	maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
+
+#			 	maskFinal=maskClose.copy()
+#			 	im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+
+#			  	cv2.drawContours(image,contours,-1,(255,0,0),3)
+
+############################################################################################################################
+
+
+>>>>>>> 2bc6b49dbe756d47be57b83be65bca07ffe89883
 			# set camera zoom automatically if has not been set already
 			if not self.auto_camera_zoom is None:
 				h = self.auto_camera_zoom[0]
