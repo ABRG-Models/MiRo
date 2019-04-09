@@ -474,8 +474,8 @@ class MiroGI(): # MiRo Graphical Interface main class.
             # self.plt_priority_8_handle.set_alpha(p[7])
 
             # # Updating Biological Clock time.
-            # #print(self.miro.platform_state.rtc_hrs)
-            # ang = np.deg2rad(270-(self.miro.platform_state.rtc_hrs*360.0/24.0))
+            # print(self.miro.core_time.data)
+            # ang = np.deg2rad(270-(self.miro.core_time.data*360.0/24.0))
             # self.ax_bioclock_handle.set_positions((0.0, 0.0), (np.cos(ang) * 0.7, np.sin(ang) * 0.7))
 
     # ==========================
