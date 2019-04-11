@@ -700,7 +700,7 @@ def generate_argb(colour, bright):
 
 			# output = cv2.medianBlur(output,5)
 
-			# imgHSV= cv2.cvtColor(output,cv2.COLOR_BGR2HSV)
+			# imgHSV= cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
 
 			# # cv2.imshow("detected object", imgHSV)
 			# # 	# cv2.imshow("fill gap", maskClose)
@@ -742,7 +742,7 @@ def generate_argb(colour, bright):
 			# 	# output = cv2.bitwise_and(image, image, mask = mask)
 
 			# 	kernelOpen=np.ones((5,5))
-			# 	kernelClose=np.ones((20,20))
+			# 	kernelClose=np.ones((40,40))
 
 			# 	maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
 			# 	maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
@@ -768,49 +768,49 @@ def generate_argb(colour, bright):
 
 #################################### boundary detection #########################################################
 
-#			 output = image.copy()
+			# output = image.copy()
 
-#			 output = cv2.medianBlur(output,5)
+			# output = cv2.medianBlur(output,5)
 
-#			 hsv = cv2.cvtColor(output,cv2.COLOR_BGR2HSV)
-#			 hsv = cv2.medianBlur(hsv,5)
+			# hsv = cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
+			# hsv = cv2.medianBlur(hsv,5)
 
-#			 # green color boundary
-#			 # ([0, 127, 0], [180, 240, 180])
+			#  # green color boundary
+			#  # ([0, 127, 0], [180, 240, 180])
 
-#			 # white (probably some gray) color boundary
-#			 # ([128, 128, 128], [255, 255, 255])
+			#  # white (probably some gray) color boundary
+			#  # ([128, 128, 128], [255, 255, 255])
 
-#			 # define the list of boundaries
-#			 boundaries = [
-#			 	([36, 0, 0], [86, 255, 255])
-#			 ]
+			#  # define the list of boundaries
+			# boundaries = [
+			# 	([36, 0, 0], [86, 255, 255])
+			# ]
 
-#			 # loop over the boundaries
-#			 for (lower, upper) in boundaries:
-#			 	# create NumPy arrays from the boundaries
-#			 	lower = np.array(lower, dtype = "uint8")
-#			 	upper = np.array(upper, dtype = "uint8")
+			#  # loop over the boundaries
+			# for (lower, upper) in boundaries:
+			# 	# create NumPy arrays from the boundaries
+			# 	lower = np.array(lower, dtype = "uint8")
+			#  	upper = np.array(upper, dtype = "uint8")
 
-#			 	# find the colors within the specified boundaries and apply
-#			 	# the mask
-#			 	mask = cv2.inRange(hsv, lower, upper)
-#			 	# cv2.imshow("detected object", mask)
-#			 	# cv2.waitKey(0)
+			#  	# find the colors within the specified boundaries and apply
+			#  	# the mask
+			#  	mask = cv2.inRange(hsv, lower, upper)
+			#  	# cv2.imshow("detected object", mask)
+			#  	# cv2.waitKey(0)
 
 
-#			 	# output = cv2.bitwise_and(hsv, hsv, mask = mask)
+			#  	# output = cv2.bitwise_and(hsv, hsv, mask = mask)
 
-#			 	kernelOpen=np.ones((5,5))
-#			 	kernelClose=np.ones((20,20))
+			#  	kernelOpen=np.ones((5,5))
+			#  	kernelClose=np.ones((40,40))
 
-#			 	maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
-#			 	maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
+			#  	maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
+			#  	maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
 
-#			 	maskFinal=maskClose.copy()
-#			 	im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+			#  	maskFinal=maskClose.copy()
+			#  	im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
 
-#			  	cv2.drawContours(image,contours,-1,(255,0,0),3)
+			  	# cv2.drawContours(image,contours,-1,(255,0,0),3)
 
 ############################################################################################################################
 
