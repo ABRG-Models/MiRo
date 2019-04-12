@@ -499,10 +499,11 @@ class miro_ros_client:
 
         # Appears to be no single 'core state' replacement, will have to make several updates
         # self.sub_core_state = rospy.Subscriber(topic_root + "/core/state", core_state, self.callback_core_state)
-        self.sub_core_affect = rospy.Subscriber(topic_root + "/core/affect", miro.msg.affect_state, self.callback_core_affect)
-        # self.sub_core_time = rospy.Subscriber(topic_root + "/core/affect/time", UInt16, self.callback_core_time)
+        # self.sub_core_affect = rospy.Subscriber(topic_root + "/core/affect", miro.msg.affect_state, self.callback_core_affect)
+        rospy.Subscriber(topic_root + "/core/affect", miro.msg.affect_state, self.callback_core_affect)
+		# self.sub_core_time = rospy.Subscriber(topic_root + "/core/affect/time", UInt16, self.callback_core_time)
 
-        # set active
+		# set active
         self.active = True
 
         # default data
