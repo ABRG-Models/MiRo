@@ -10,7 +10,7 @@ import miro2 as miro
 
 # create kc object with default (calibration) configuration
 # of joints (and zeroed pose of FOOT in WORLD)
-kc = miro.utils.kc.kc_miro()
+kc = miro.utils.kc_interf.kc_miro()
 
 # create objects in HEAD
 pos = miro.utils.get("LOC_NOSE_TIP_HEAD")

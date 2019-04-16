@@ -16,8 +16,6 @@ import threading
 import time
 import numpy as np
 
-import Queue
-
 # TODO: Add definitions for physical or sim. robot
 
 
@@ -27,17 +25,21 @@ class MiroClient:
 		# # set inactive
 		# self.active = False
 
-		# data = ros_data.get()
-
 		self.opt = {'Uncompressed': False}
-
-		uncompressed = False
 
 		# Set topic root
 		topic_root = "/miro"
 
-		# Subscribe to ROS topics
-		rospy.Subscriber(topic_root + "/core/affect", miro.msg.affect_state, self.callback_core_affect)
+		# # Subscribe to ROS topics
+		# rospy.Subscriber(topic_root + "/core/affect", miro.msg.affect_state, self.callback_core_affect)
+
+		# TODO: Add mics, pril prir priw, basal ganglia (priority, disinhibition, selection), clock
+
+		# New ROS topics
+		rospy.Subscriber(topic_root + '/core/affect/state', miro.msg.affect_state, self.callback_core_affect)
+		rospy.Subscriber(topic_root + '/core/affect/time', UInt32, self.callback_core_time)
+		rospy.Subscriber(topic_root + '/core/selection/priority', Float32MultiArray, self.callback_selection_priority)
+		rospy.Subscriber(topic_root + '/core/selection/inhibition', Float32MultiArray, self.callback_selection_inhibition)
 
 		if self.opt['Uncompressed']:
 			# TODO: Uncompressed callbacks not yet tested
@@ -55,29 +57,29 @@ class MiroClient:
 			# rospy.Subscriber(topic_root + "/sensors/prir/compressed", CompressedImage, self.callback_prir)
 			# rospy.Subscriber(topic_root + "/sensors/priw/compressed", CompressedImage, self.callback_priw)
 
-
-		# self.sub_sensors = rospy.Subscriber(topic_root + "/sensors/package", miro.msg.sensors_package,
-		# 									self.callback_platform_sensors)
-
-
 		# # set active
 		# self.active = True
 
 		# Default data
 		self.core_affect = None
-		# self.core_affect = Queue.LifoQueue(maxsize=1)
-		# self.core_affect.put(None)
-
-		# self.sensors = {
-		# 	'Cam L': None,
-		# 	'Cam R': None
-		# }
-
+		self.core_time = None
+		self.selection_priority = None
+		self.selection_inhibition = None
 		self.sensors_caml = None
 		self.sensors_camr = None
-		# self.caml_fifo = fifo(self.opt['Uncompressed'])
 
+	def callback_core_affect(self, data):
+		self.core_affect = data
+		# self.core_affect.put(data)
 
+	def callback_core_time(self, data):
+		self.core_time = data
+
+	def callback_selection_priority(self, data):
+		self.selection_priority = data
+
+	def callback_selection_inhibition(self, data):
+		self.selection_inhibition = data
 
 	# TODO: Image stitching before passing images back to dashboard
 	def callback_caml(self, frame):
@@ -85,10 +87,6 @@ class MiroClient:
 
 	def callback_camr(self, frame):
 		self.sensors_camr = self.process_frame(frame)
-
-	def callback_core_affect(self, data):
-		self.core_affect = data
-		# self.core_affect.put(data)
 
 	@staticmethod
 	def process_frame(frame):

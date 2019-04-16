@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Import Dash components
 import dash
+import dash_daq as daq
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
@@ -132,7 +133,21 @@ upper_group = dbc.Row(
 			dbc.Card(
 				[
 					dbc.CardHeader('Action selection'),
-					dbc.CardBody(dbc.CardText('[Action selection graph]'))
+					dbc.CardBody(
+						[
+							dcc.Graph(
+								id='action-graph',
+								config={
+									'displayModeBar': False
+								},
+								style={
+									'height': '600px',
+									'width' : '900px',
+									'border': '1px solid'
+								}
+							)
+						]
+					)
 				]
 			),
 			width={
@@ -284,6 +299,7 @@ mid_group = dbc.Row(
 		dbc.Col(
 			dbc.Card(
 				[
+					# TODO: Add priority vision, toggle via button
 					dbc.CardHeader('Spatial attention'),
 					dbc.CardBody(
 						[
@@ -318,8 +334,8 @@ mid_group = dbc.Row(
 									'displayModeBar': False
 								},
 								style={
-									# 'height': '400px',
-									# 'width' : '400px',
+									'height': '400px',
+									'width' : '400px',
 									'border': '1px solid'
 								}
 							)
@@ -452,7 +468,22 @@ lower_group = dbc.Row(
 			dbc.Card(
 				[
 					dbc.CardHeader('Circadian rhythm'),
-					dbc.CardBody(dbc.CardText('Lorem ipsum'))
+					dbc.CardBody(
+						[
+							dcc.Graph(
+								id='circadian-graph',
+								animate=True,
+								config={
+									'displayModeBar': False
+								},
+								style={
+									'height': '400px',
+									'width' : '400px',
+									'border': '1px solid'
+								}
+							)
+						]
+					)
 				]
 			),
 			width={
@@ -577,8 +608,13 @@ app.layout = html.Div(
 		bottom_arrows,
 		tooltips,
 		dcc.Interval(
-			id='interval-component',
+			id='interval-fast',
 			interval=0.25 * 1000,
+			n_intervals=0
+		),
+		dcc.Interval(
+			id='interval-slow',
+			interval=60 * 1000,
 			n_intervals=0
 		)
 	]
@@ -587,48 +623,76 @@ app.layout = html.Div(
 # This is only to suppress warnings TEMPORARILY
 app.config['suppress_callback_exceptions'] = True
 
-# app.layout = html.Div(children=[
-# 	html.H1(children='MiRo dashboard'),
-#
-# 	html.Div(children='''
-#         What's MiRo up to today?
-#     '''),
-#
-# 	# Changing component IDs will cause an error if the dashboard is still open
-# 	dcc.Graph(
-# 		id='affect-graph',
-# 		animate=True,
-# 		config={
-# 			'displayModeBar': False
-# 		},
-# 		style={
-# 			'height'         : '400px',
-# 			'width'          : '400px',
-# 			'border'         : '1px solid',
-# 		}
-# 	),
-#
-# 	dcc.Graph(
-# 		id='cam-graph',
-# 		config={
-# 			'displayModeBar': False
-# 		}
-# 	),
-#
-# 	dcc.Interval(
-# 		id='interval-component',
-# 		interval=0.25 * 1000,
-# 		n_intervals=0
-# 	)
-# ])
+
+@app.callback(Output('action-graph', 'figure'), [Input('interval-fast', 'n_intervals')])
+def update_action(n):
+
+	if (miro_ros_data.selection_priority is not None) and (miro_ros_data.selection_inhibition is not None):
+		action_channels = [x + 1 for x in range(0, len(miro_ros_data.selection_priority.data))]
+		action_inhibition = np.array(miro_ros_data.selection_inhibition.data)
+		action_priority = np.array([-x for x in miro_ros_data.selection_priority.data])
+	else:
+		action_channels = [0]
+		action_inhibition = [0]
+		action_priority = [0]
 
 
+	# women_bins = np.array([-600, -623, -653, -650, -670, -578, -541, -411, -322, -230])
+	# men_bins = np.array([600, 623, 653, 650, 670, 578, 541, 360, 312, 170])
+	#
+	# # y = [x + 1 for x in range(0, action_channels)]
 
-@app.callback(Output('affect-graph', 'figure'), [Input('interval-component', 'n_intervals')])
+	layout = go.Layout(
+		yaxis={
+			'fixedrange': True,
+			'title'     : 'Action'
+		},
+		xaxis={
+			'fixedrange': True,
+		    'range'     : [-1, 1],
+			'ticktext'  : [1, 0.5, 0, 0.5, 1],
+			'tickvals'  : [-1, -0.5, 0, 0.5, 1],
+		    'title'     : 'Salience'
+		},
+		barmode='overlay',
+		bargap=0.1
+	)
+
+	data = [
+		go.Bar(
+			y=action_channels,
+			x=action_priority,
+			orientation='h',
+			name='Priority',
+			# # FIXME: Get proper action priority value
+			# text=abs(action_priority),
+			# hoverinfo='text',
+			marker={
+				'color': 'mediumseagreen'
+			}
+		),
+		go.Bar(
+			y=action_channels,
+			x=action_inhibition,
+			orientation='h',
+			name='Inhibition',
+			# hoverinfo='x',
+			marker={
+				'color': 'silver'
+			}
+		)
+	]
+
+	return {
+		'data'  : data,
+		'layout': layout
+	}
+
+
+@app.callback(Output('affect-graph', 'figure'), [Input('interval-fast', 'n_intervals')])
 def update_affect(n):
 
 	affect_layout = go.Layout(
-		title={'text': 'Affect'},
 		xaxis={
 			'title'         : 'Valence',
 			'range'         : [0, 1],
@@ -722,7 +786,7 @@ def update_affect(n):
 		}
 
 
-@app.callback(Output('cam-graph', 'figure'), [Input('interval-component', 'n_intervals')])
+@app.callback(Output('cam-graph', 'figure'), [Input('interval-fast', 'n_intervals')])
 def update_cameras(n):
 	caml = miro_ros_data.sensors_caml
 	camr = miro_ros_data.sensors_camr
@@ -804,6 +868,77 @@ def update_cameras(n):
 	}
 
 
+@app.callback(Output('circadian-graph', 'figure'), [Input('interval-slow', 'n_intervals')])
+def update_clock_graph(n):
+
+	if miro_ros_data.core_time.data is not None:
+		c_data = miro_ros_data.core_time.data
+	else:
+		c_data = 0
+
+	c_hrs = range(0, 24)
+	# Set clock hand width and length
+	h_width = 2
+	h_length = 0.9
+
+	# TODO: Make circadian clock display leading zeroes
+	# circadian_hrs = ['{:02d}'.format(item) for item in range(0, 24)]
+
+	# TODO: Add sun / moon glyphs or background image to plot
+
+	data = [
+		go.Scatterpolar(
+			fill='toself',
+			fillcolor='steelblue',
+			marker={
+				'line': {
+					'color': 'black',
+					'width': 0.5
+				}
+			},
+			mode='lines',
+			r=[0, 0.1, h_length, 0.1, 0],
+			theta=[
+				0,
+				c_hrs[c_data - h_width],
+				c_hrs[c_data],
+				c_hrs[c_data + h_width],
+				0
+			]
+		)
+	]
+
+	layout = go.Layout(
+		# margin={
+		# 	'l': 0,
+		# 	'r': 0,
+		# 	't': 0,
+		# 	'b': 0
+		# },
+		polar={
+			'angularaxis': {
+				'categoryarray': range(0, 24),
+				'direction'    : 'clockwise',
+				'nticks'       : 8,
+				'period'       : 15,
+				'rotation'     : 270,
+				'showgrid'     : False,
+				'type'         : 'category'
+			},
+			'radialaxis' : {
+				'range'  : [0, 1],
+				'visible': False
+			}
+		},
+		showlegend=False
+	)
+
+	return {
+		'data'  : data,
+		'layout': layout
+	}
+
+
 if __name__ == '__main__':
 	# Initialise a new ROS node
 	# disable_rostime must be True to work in Pycharm
@@ -814,4 +949,4 @@ if __name__ == '__main__':
 	miro_dash = {}
 
 	# Hot reloading seems to cause "IOError: [Errno 11] Resource temporarily unavailable" errors
-	app.run_server(debug=True)
+	app.run_server(debug=False)
