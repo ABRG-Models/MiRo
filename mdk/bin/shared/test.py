@@ -235,7 +235,7 @@ class controller:
 
 			if self.dribble and not self.sensors is None:
 
-				msg_wheels.twist.linear.x = 0.1
+				msg_wheels.twist.linear.x = 0.2
 				msg_wheels.twist.angular.z = 0.0
 				self.pub_wheels.publish(msg_wheels)
 				self.imp_report_wheels(msg_wheels)
