@@ -14,10 +14,6 @@ import plotly.graph_objs as go
 import rospy
 import numpy as np
 import miro_interface as mi
-import time
-
-
-# TODO: Make 'ball spotted!' display
 
 # TODO: Maybe change layout so spatial is wider, affect is smaller, and circadian moves right by one
 
@@ -37,71 +33,90 @@ css = {
 		'font-weight': 'bolder',
 		'text-align' : 'center',
 		'padding'    : '0px'
+	},
+	'arrow_div': {
+		'background-color': 'lightblue',
+		'height'          : '100%',
+		'text-align'      : 'center',
+		'width'           : '100%'
+	},
+	'arrow_img': {
+		'height': '100%',
+		'width' : '50%'
 	}
 }
 
+##########
+# Define dashboard items
+# TODO: Put these into dicts
+
+ball_alert_left = dbc.Alert(
+	"⚽",
+	id='ball-alert-left',
+	color='info',
+	is_open=False,
+	style={
+		'font-size' : 'x-large',
+		'text-align': 'center'
+	}
+)
+
+ball_alert_right = dbc.Alert(
+	"⚽",
+	id='ball-alert-right',
+	color='info',
+	is_open=False,
+	style={
+		'font-size' : 'x-large',
+		'text-align': 'center'
+	}
+)
+
 graph_action = dcc.Graph(
 	id='action-graph',
-	config={
-		'displayModeBar': False
-	},
+	config={'displayModeBar': False},
 	style={
-		'height': '176px',
+		'height': '150px',
 		'width' : '100%',
-		# 'border': '1px solid'
 	}
 )
 
 graph_affect = dcc.Graph(
 	id='affect-graph',
 	animate=True,
-	config={
-		'displayModeBar': False
-	},
+	config={'displayModeBar': False},
 	style={
 		'height': '400px',
 		'width' : '100%',
-		# 'border': '1px solid'
 	}
 )
 
 graph_aural = dcc.Graph(
 	id='aural-graph',
-	config={
-		'displayModeBar': False
-	},
-	style={
-		# 'height': '400px',
-		'width' : '100%',
-		# 'border': '1px solid'
-	}
+	config={'displayModeBar': False},
+	style={'width': '100%'}
 )
 
 graph_cameras = dcc.Graph(
 	id='camera-graph',
-	config={
-		'displayModeBar': False
-	},
-	style={
-		# 'height': '200px',
-		'width' : '100%',
-		# 'border': '1px solid'
-	}
+	config={'displayModeBar': False},
+	style={'width': '100%'}
 )
 
 graph_circadian = dcc.Graph(
 	id='circadian-graph',
 	animate=True,
-	config={
-		'displayModeBar': False
-	},
+	config={'displayModeBar': False},
 	style={
 		'height': '100px',
 		'width' : '100%',
-		# 'border': '1px solid'
 	}
 )
 
+# TODO: Tidy up all double brackets
+
+##########
+# Define dashboard rows
 
 top_arrows = dbc.Row(
 	[
@@ -148,10 +163,16 @@ top_arrows = dbc.Row(
 			}
 		),
 		dbc.Col(
+			# html.Div(
+			# 	arrow['down'],
+			# 	style=css['arrow'],
+			# 	id='top-affect'
+			# ),
 			html.Div(
-				arrow['down'],
-				style=css['arrow'],
-				id='top-affect'
+				html.Img(
+					src='assets/black.png',
+					height='100%'
+				),
 			),
 			width={
 				'size'  : 1,
@@ -201,10 +222,17 @@ upper_group = dbc.Row(
 			}
 		),
 		dbc.Col(
+			# html.Div(
+			# 	arrow['down'],
+			# 	style=css['arrow'],
+			# 	# id='top-affect'
+			# ),
 			html.Div(
-				arrow['down'],
-				style=css['arrow'],
-				# id='top-affect'
+				html.Img(
+					src='assets/black.png',
+					style=css['arrow_img']
+				),
+				style=css['arrow_div']
 			),
 			width={
 				'size'  : 1,
@@ -284,11 +312,9 @@ upper_arrows = dbc.Row(
 mid_group = dbc.Row(
 	[
 		dbc.Col(
-			dbc.Card(
-				[
-					dbc.CardBody(dbc.CardText('[MiRo]'))
-				]
-			),
+			dbc.Card([
+				dbc.CardBody(dbc.CardText('[MiRo]'))
+			]),
 			width=1
 		),
 		dbc.Col(
@@ -342,22 +368,39 @@ mid_group = dbc.Row(
 			width=1
 		),
 		dbc.Col(
-			dbc.Card(
-				[
-					dbc.CardHeader('Spatial attention'),
-					dbc.CardBody(
-						[
-							graph_aural,
-							graph_cameras,
-							daq.BooleanSwitch(
-								id='cam-toggle',
-								label='Visual attention overlay',
-								labelPosition='bottom'
-							)
-						]
+			dbc.Card([
+				dbc.CardHeader('Spatial attention'),
+				dbc.CardBody(
+					[
+						graph_aural,
+						graph_cameras,
+					]
+				),
+				dbc.CardFooter(
+					dbc.Table(
+						html.Tbody(
+							html.Tr([
+								# TODO: Add face detection alert
+								html.Td(ball_alert_left),
+								html.Td(
+									daq.BooleanSwitch(
+										id='cam-toggle',
+										label='Visual attention overlay',
+										labelPosition='bottom',
+									)
+								),
+								html.Td(ball_alert_right),
+							])
+						),
+						borderless=True,
+						size='sm',
+						style={
+							'margin' : '0px 0px 0px 0px',
+							'padding': '0px 0px 0px 0px',
+						}
 					)
-				]
-			),
+				)
+			]),
 			width={
 				'size'  : 3,
 				'offset': 0
@@ -595,10 +638,10 @@ tooltips = html.Div(
 			'Spatial bias, inhibition of return',
 			target='top-spatial'
 		),
-		dbc.Tooltip(
-			'Downstream effects on affective state',
-			target='top-affect'
-		),
+		# dbc.Tooltip(
+		# 	'Downstream effects on affective state',
+		# 	target='top-affect'
+		# ),
 	]
 )
 
@@ -625,6 +668,11 @@ app.layout = html.Div(
 			n_intervals=0
 		),
 		dcc.Interval(
+			id='interval-medium',
+			interval=1 * 1000,
+			n_intervals=0
+		),
+		dcc.Interval(
 			id='interval-slow',
 			interval=60 * 1000,
 			n_intervals=0
@@ -632,8 +680,24 @@ app.layout = html.Div(
 	]
 )
 
-# This is only to suppress warnings TEMPORARILY
-app.config['suppress_callback_exceptions'] = True
+# # This is only to suppress warnings TEMPORARILY
+# app.config['suppress_callback_exceptions'] = True
+
+
+@app.callback(Output('ball-alert-left', 'is_open'), [Input('interval-fast', 'n_intervals')])
+def alert_ball_left(n):
+	if len(miro_ros_data.core_detect_ball_l.data) > 1:
+		return True
+	else:
+		return False
+
+
+@app.callback(Output('ball-alert-right', 'is_open'), [Input('interval-fast', 'n_intervals')])
+def alert_ball_right(n):
+	if len(miro_ros_data.core_detect_ball_r.data) > 1:
+		return True
+	else:
+		return False
 
 
 @app.callback(Output('action-graph', 'figure'), [Input('interval-fast', 'n_intervals')])
@@ -688,7 +752,7 @@ def update_action(n):
 			x=action_priority,
 			orientation='h',
 			name='Input',
-			# # FIXME: Get proper action priority value
+			# FIXME: Get proper action priority value
 			# text=abs(action_priority),
 			# hoverinfo='text',
 			marker={
@@ -821,7 +885,8 @@ def update_affect(n):
 			'layout': affect_layout
 		}
 
-@app.callback(Output('aural-graph', 'figure'), [Input('interval-fast', 'n_intervals')])
+
+@app.callback(Output('aural-graph', 'figure'), [Input('interval-medium', 'n_intervals')])
 def update_aural(n):
 	priw = miro_ros_data.core_priw
 
@@ -871,14 +936,32 @@ def update_aural(n):
 			}
 		],
 		images=priw_image,
-		title={'text': 'Aural'},
-		xaxis={'visible': False},
-		yaxis={'visible': False},
+		title={
+			'pad': {
+				'b': 10,
+				'l': 0,
+				'r': 0,
+				't': 0
+			},
+			'text'   : 'Aural',
+			'yanchor': 'bottom',
+			'y'      : 1,
+			'yref'   : 'paper'
+		},
+		xaxis={
+			'fixedrange': True,
+			'visible'   : False
+		},
+		yaxis={
+			'fixedrange': True,
+			'visible'   : False
+		}
 	)
 
 	return {'layout': layout}
 
-@app.callback(Output('camera-graph', 'figure'), [Input('interval-fast', 'n_intervals'), Input('cam-toggle', 'on')])
+
+@app.callback(Output('camera-graph', 'figure'), [Input('interval-medium', 'n_intervals'), Input('cam-toggle', 'on')])
 def update_cameras(n, toggle):
 	caml = miro_ros_data.sensors_caml
 	camr = miro_ros_data.sensors_camr
@@ -899,9 +982,9 @@ def update_cameras(n, toggle):
 		'sizey'  : 1,           # Overridden by 'constrain' property but must still be set
 		'source' : caml,
 		'x'      : 0,
-		'y'      : 0,
 		'xanchor': 'left',
 		'xref'   : 'paper',
+		'y': 0,
 		'yanchor': 'bottom',
 		'yref'   : 'paper',
 	}
@@ -914,9 +997,9 @@ def update_cameras(n, toggle):
 		'sizey'  : 1,
 		'source' : camr,
 		'x'      : 1,
-		'y'      : 0,
 		'xanchor': 'right',
 		'xref'   : 'paper',
+		'y': 0,
 		'yanchor': 'bottom',
 		'yref'   : 'paper',
 	 }
@@ -929,9 +1012,9 @@ def update_cameras(n, toggle):
 		'sizey'  : 1,
 		'source' : pril,
 		'x'      : 0,
-		'y'      : 0,
 		'xanchor': 'left',
 		'xref'   : 'paper',
+		'y': 0,
 		'yanchor': 'bottom',
 		'yref'   : 'paper',
 	}
@@ -944,9 +1027,9 @@ def update_cameras(n, toggle):
 		'sizey'  : 1,
 		'source' : prir,
 		'x'      : 1,
-		'y'      : 0,
 		'xanchor': 'right',
 		'xref'   : 'paper',
+		'y': 0,
 		'yanchor': 'bottom',
 		'yref'   : 'paper',
 	}
@@ -993,10 +1076,26 @@ def update_cameras(n, toggle):
 				'yref': 'paper'
 			}
 		],
-		# TODO: Sort out title padding
-		title={'text': 'Vision'},
-		xaxis={'visible': False},
-		yaxis={'visible': False},
+		title={
+			'pad'    : {
+				'b': 10,
+				'l': 0,
+				'r': 0,
+				't': 0
+			},
+			'text'   : 'Visual',
+			'yanchor': 'bottom',
+			'y'      : 1,
+			'yref'   : 'paper'
+		},
+		xaxis={
+			'fixedrange': True,
+			'visible'   : False
+		},
+		yaxis={
+			'fixedrange': True,
+			'visible'   : False
+		}
 	)
 
 	return {'layout': layout}
@@ -1081,9 +1180,6 @@ if __name__ == '__main__':
 
 	# Initialise MiRo client
 	miro_ros_data = mi.MiroClient()
-	# miro_dash = {}
-
-	# TODO: Make accessible from elsewhere on LAN
 
 	# Hot reloading seems to cause "IOError: [Errno 11] Resource temporarily unavailable" errors
 	app.run_server(debug=False)
