@@ -1266,34 +1266,34 @@ def generate_argb(colour, bright):
 			    # cv2.putText(image, "{:.1f}in".format(D), (int(object_centerX), int(object_centerY - 10)),
 			    #             cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 0, 0), 2)
 			    print("Distance: ", D)
+#			    self.VelControl.set_value(0.05)
 			    if object_centerX>image_centerX:
-			        print("right")
-				self.AngVelControl.set_value(-0.2)
-			        print("direction vector: ",object_centerX-image_centerX)
+			        print("ball is at right")
+				self.AngVelControl.set_value(-0.3)
+#			        print("direction vector: ",object_centerX-image_centerX)
 			        if object_centerY>image_centerY:
-			            print("down")
-			            print("direction vector: ",object_centerY-image_centerY)
+			            print("left down")
+#			            print("direction vector: ",object_centerY-image_centerY)
 			        elif object_centerY<image_centerY:
-			            print("up")
-			            print("direction vector: ",image_centerY-object_centerY)
+			            print("left up")
+#			            print("direction vector: ",image_centerY-object_centerY)
 			    elif object_centerX<image_centerX:
-			        print("left")
-				self.AngVelControl.set_value(0.2)
-			        print("direction vector: ",image_centerX-object_centerX)
+			        print("ball is at left")
+				self.AngVelControl.set_value(0.3)
+#			        print("direction vector: ",image_centerX-object_centerX)
 			        if object_centerY>image_centerY:
-			            print("down")
-			            print("direction vector: ",object_centerY-image_centerY)
+			            print("right down")
+#			            print("direction vector: ",object_centerY-image_centerY)
 			        elif object_centerY<image_centerY:
-			            print("up")
-			            print("direction vector: ",image_centerY-object_centerY)
+			            print("right up")
+#			            print("direction vector: ",image_centerY-object_centerY)
 			    elif object_centerX==image_centerX:
-				self.VelControl.set_value(1.0)
 			        if object_centerY>image_centerY:
-			            print("down")
-			            print("direction vector: ",object_centerY-image_centerY)
+			            print("center down")
+#			            print("direction vector: ",object_centerY-image_centerY)
 			        elif object_centerY<image_centerY:
-			            print("up")
-			            print("direction vector: ",image_centerY-object_centerY)
+			            print("center up")
+#			            print("direction vector: ",image_centerY-object_centerY)
 			        else:
 				    self.VelControl.set_value(0.0)
 			            print("right at the front")
@@ -1538,8 +1538,8 @@ def generate_argb(colour, bright):
 ###########################################################################################################
 
 		# for each camera
-		for i in range(2):
-
+#		for i in range(2):
+		for i in range(1):
 			# get image
 			image = self.input_camera[i]
 			self.input_camera[i] = None
