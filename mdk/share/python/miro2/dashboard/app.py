@@ -1,5 +1,6 @@
 #!/home/dbuxton/mdk/share/python/miro2/dashboard/.venv/bin/python
 # -*- coding: utf-8 -*-
+
 # Import Dash components
 import dash
 import dash_daq as daq
@@ -7,24 +8,18 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
-
 import plotly.graph_objs as go
-import plotly.plotly as py
-
-import numpy as np
 
 # Import system and ROS components
 import rospy
+import numpy as np
 import miro_interface as mi
 import time
 
-from PIL import Image
-import io
 
-import Queue
+# TODO: Make 'ball spotted!' display
 
-
-import cv2
+# TODO: Maybe change layout so spatial is wider, affect is smaller, and circadian moves right by one
 
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -44,6 +39,69 @@ css = {
 		'padding'    : '0px'
 	}
 }
+
+graph_action = dcc.Graph(
+	id='action-graph',
+	config={
+		'displayModeBar': False
+	},
+	style={
+		'height': '176px',
+		'width' : '100%',
+		# 'border': '1px solid'
+	}
+)
+
+graph_affect = dcc.Graph(
+	id='affect-graph',
+	animate=True,
+	config={
+		'displayModeBar': False
+	},
+	style={
+		'height': '400px',
+		'width' : '100%',
+		# 'border': '1px solid'
+	}
+)
+
+graph_aural = dcc.Graph(
+	id='aural-graph',
+	config={
+		'displayModeBar': False
+	},
+	style={
+		# 'height': '400px',
+		'width' : '100%',
+		# 'border': '1px solid'
+	}
+)
+
+graph_cameras = dcc.Graph(
+	id='camera-graph',
+	config={
+		'displayModeBar': False
+	},
+	style={
+		# 'height': '200px',
+		'width' : '100%',
+		# 'border': '1px solid'
+	}
+)
+
+graph_circadian = dcc.Graph(
+	id='circadian-graph',
+	animate=True,
+	config={
+		'displayModeBar': False
+	},
+	style={
+		'height': '100px',
+		'width' : '100%',
+		# 'border': '1px solid'
+	}
+)
+
 
 top_arrows = dbc.Row(
 	[
@@ -133,20 +191,7 @@ upper_group = dbc.Row(
 			dbc.Card(
 				[
 					dbc.CardHeader('Action selection'),
-					dbc.CardBody(
-						[
-							dcc.Graph(
-								id='action-graph',
-								config={
-									'displayModeBar': False
-								},
-								style={
-									'height': '600px',
-									'width' : '900px',
-									'border': '1px solid'
-								}
-							)
-						]
+					dbc.CardBody([graph_action]
 					)
 				]
 			),
@@ -299,45 +344,15 @@ mid_group = dbc.Row(
 		dbc.Col(
 			dbc.Card(
 				[
-					# TODO: Add priority vision, toggle via button
 					dbc.CardHeader('Spatial attention'),
 					dbc.CardBody(
 						[
-							dcc.Graph(
-								id='cam-graph',
-								config={
-									'displayModeBar': False
-								},
-								style={
-									'border': '1px solid'
-								}
-							)
-						]
-					)
-				]
-			),
-			width={
-				'size'  : 2,
-				'offset': 0
-			}
-		),
-		dbc.Col(
-			dbc.Card(
-				[
-					dbc.CardHeader('Affect'),
-					dbc.CardBody(
-						[
-							dcc.Graph(
-								id='affect-graph',
-								animate=True,
-								config={
-									'displayModeBar': False
-								},
-								style={
-									'height': '400px',
-									'width' : '400px',
-									'border': '1px solid'
-								}
+							graph_aural,
+							graph_cameras,
+							daq.BooleanSwitch(
+								id='cam-toggle',
+								label='Visual attention overlay',
+								labelPosition='bottom'
 							)
 						]
 					)
@@ -345,7 +360,19 @@ mid_group = dbc.Row(
 			),
 			width={
 				'size'  : 3,
-				'offset': 1
+				'offset': 0
+			}
+		),
+		dbc.Col(
+			dbc.Card(
+				[
+					dbc.CardHeader('Affect'),
+					dbc.CardBody([graph_affect])
+				]
+			),
+			width={
+				'size'  : 3,
+				'offset': 0
 			}
 		)
 	],
@@ -468,22 +495,7 @@ lower_group = dbc.Row(
 			dbc.Card(
 				[
 					dbc.CardHeader('Circadian rhythm'),
-					dbc.CardBody(
-						[
-							dcc.Graph(
-								id='circadian-graph',
-								animate=True,
-								config={
-									'displayModeBar': False
-								},
-								style={
-									'height': '400px',
-									'width' : '400px',
-									'border': '1px solid'
-								}
-							)
-						]
-					)
+					dbc.CardBody([graph_circadian])
 				]
 			),
 			width={
@@ -628,42 +640,54 @@ app.config['suppress_callback_exceptions'] = True
 def update_action(n):
 
 	if (miro_ros_data.selection_priority is not None) and (miro_ros_data.selection_inhibition is not None):
-		action_channels = [x + 1 for x in range(0, len(miro_ros_data.selection_priority.data))]
+		# action_channels = [x + 1 for x in range(0, len(miro_ros_data.selection_priority.data))]
 		action_inhibition = np.array(miro_ros_data.selection_inhibition.data)
 		action_priority = np.array([-x for x in miro_ros_data.selection_priority.data])
 	else:
-		action_channels = [0]
+		# action_channels = [0]
 		action_inhibition = [0]
 		action_priority = [0]
 
-
-	# women_bins = np.array([-600, -623, -653, -650, -670, -578, -541, -411, -322, -230])
-	# men_bins = np.array([600, 623, 653, 650, 670, 578, 541, 360, 312, 170])
-	#
-	# # y = [x + 1 for x in range(0, action_channels)]
+	# TODO: Extract this list automatically from demo code
+	action_list = [
+		'Mull',
+		'Halt',
+		'Orient',
+		'Approach',
+		'Avert',
+		'Flee',
+		'Retreat'
+	]
 
 	layout = go.Layout(
-		yaxis={
-			'fixedrange': True,
-			'title'     : 'Action'
+		bargap=0.1,
+		barmode='overlay',
+		margin={
+			'b': 40,
+			'l': 60,
+			'r': 0,
+			't': 0
 		},
 		xaxis={
 			'fixedrange': True,
-		    'range'     : [-1, 1],
+			'range'     : [-1, 1],
 			'ticktext'  : [1, 0.5, 0, 0.5, 1],
 			'tickvals'  : [-1, -0.5, 0, 0.5, 1],
-		    'title'     : 'Salience'
+			'title'     : 'Salience'
 		},
-		barmode='overlay',
-		bargap=0.1
+		yaxis={
+			'fixedrange': True,
+			# 'title'     : 'Action'
+		},
 	)
 
+	# TODO: Colour each action individually and label actions appropriately
 	data = [
 		go.Bar(
-			y=action_channels,
+			y=action_list,
 			x=action_priority,
 			orientation='h',
-			name='Priority',
+			name='Input',
 			# # FIXME: Get proper action priority value
 			# text=abs(action_priority),
 			# hoverinfo='text',
@@ -672,10 +696,10 @@ def update_action(n):
 			}
 		),
 		go.Bar(
-			y=action_channels,
+			y=action_list,
 			x=action_inhibition,
 			orientation='h',
-			name='Inhibition',
+			name='Output',
 			# hoverinfo='x',
 			marker={
 				'color': 'silver'
@@ -692,36 +716,48 @@ def update_action(n):
 @app.callback(Output('affect-graph', 'figure'), [Input('interval-fast', 'n_intervals')])
 def update_affect(n):
 
-	affect_layout = go.Layout(
+	layout = go.Layout(
+		legend={
+			'orientation': 'h',
+			'x'          : 0.5,
+			'xanchor'    : 'center',
+			'y'          : 1.1
+		},
+		margin={
+			'b': 20,
+			'l': 20,
+			'r': 5,
+			't': 0
+		},
 		xaxis={
-			'title'         : 'Valence',
-			'range'         : [0, 1],
 			'fixedrange'    : True,
-			'showgrid'      : False,
-			'zeroline'      : False,
-			'showticklabels': False,
+			'linewidth'     : 0.5,
 			'mirror'        : True,
-			'linewidth'     : 1
+			'range'         : [0, 1],
+			'showgrid'      : False,
+			'showticklabels': False,
+			'title'         : 'Valence',
+			'zeroline'      : False,
 		},
 		yaxis={
-			'title'         : 'Arousal',
-			'range'         : [0, 1],
 			'fixedrange'    : True,
-			'showgrid'      : False,
-			'zeroline'      : False,
-			'showticklabels': False,
+			'linewidth'     : 0.5,
 			'mirror'        : True,
-			'linewidth'     : 1
+			'range'         : [0, 1],
+			'showgrid'      : False,
+			'showticklabels': False,
+			'title'         : 'Arousal',
+			'zeroline'      : False,
 		}
 	)
 
 	# Update affect
-	affect_in = miro_ros_data.core_affect
-	if affect_in is not None:
-		affect_out = {
+	affect_data = miro_ros_data.core_affect
+	if affect_data is not None:
+		data = {
 			'emotion': go.Scatter(
-				x=np.array(affect_in.emotion.valence),
-				y=np.array(affect_in.emotion.arousal),
+				x=np.array(affect_data.emotion.valence),
+				y=np.array(affect_data.emotion.arousal),
 				name='Emotion',
 				mode='markers',
 				opacity=0.7,
@@ -735,8 +771,8 @@ def update_affect(n):
 			),
 
 			'mood'   : go.Scatter(
-				x=np.array(affect_in.mood.valence),
-				y=np.array(affect_in.mood.arousal),
+				x=np.array(affect_data.mood.valence),
+				y=np.array(affect_data.mood.arousal),
 				name='Mood',
 				mode='markers',
 				opacity=0.7,
@@ -750,8 +786,8 @@ def update_affect(n):
 			),
 
 			'sleep'  : go.Scatter(
-				x=np.array(affect_in.sleep.wakefulness),
-				y=np.array(affect_in.sleep.pressure),
+				x=np.array(affect_data.sleep.wakefulness),
+				y=np.array(affect_data.sleep.pressure),
 				name='Sleep',
 				mode='markers',
 				opacity=0.7,
@@ -767,11 +803,11 @@ def update_affect(n):
 
 		return {
 			'data'  : [
-				affect_out['emotion'],
-				affect_out['mood'],
-				affect_out['sleep']
+				data['emotion'],
+				data['mood'],
+				data['sleep']
 			],
-			'layout': affect_layout
+			'layout': layout
 		}
 
 	else:
@@ -785,106 +821,205 @@ def update_affect(n):
 			'layout': affect_layout
 		}
 
+@app.callback(Output('aural-graph', 'figure'), [Input('interval-fast', 'n_intervals')])
+def update_aural(n):
+	priw = miro_ros_data.core_priw
 
-@app.callback(Output('cam-graph', 'figure'), [Input('interval-fast', 'n_intervals')])
-def update_cameras(n):
+	# Needs to be updated manually if plot width changes; value includes margins
+	p_height = 60
+
+	# Set image properties
+	if priw is not None:
+		priw_image = [{
+			'layer'  : 'below',
+			'opacity': 1,
+			'sizing' : 'stretch',
+			'sizex'  : 1,
+			'sizey'  : 1,
+			'source' : priw,
+			'x'      : 0,
+			'y'      : 0,
+			'xref'   : 'paper',
+			'yref'   : 'paper',
+			'yanchor': 'bottom'
+		}]
+	else:
+		priw_image = []
+
+	layout = go.Layout(
+		height=p_height,
+		margin={
+			'b': 0,
+			'l': 0,
+			'r': 0,
+			't': 30
+		},
+		shapes=[
+			{
+				'line': {
+					'color': 'silver',
+					'dash' : 'dot',
+					'width': 1,
+				},
+				'type': 'line',
+				'x0'  : 0.5,
+				'x1'  : 0.5,
+				'xref': 'paper',
+				'y0'  : 0,
+				'y1'  : 1,
+				'yref': 'paper'
+			}
+		],
+		images=priw_image,
+		title={'text': 'Aural'},
+		xaxis={'visible': False},
+		yaxis={'visible': False},
+	)
+
+	return {'layout': layout}
+
+@app.callback(Output('camera-graph', 'figure'), [Input('interval-fast', 'n_intervals'), Input('cam-toggle', 'on')])
+def update_cameras(n, toggle):
 	caml = miro_ros_data.sensors_caml
 	camr = miro_ros_data.sensors_camr
 
-	# TODO: Get dimensions directly from image data
-	img_width = 640     # FIXME: Is actually 320... not sure why this scales properly
-	img_height = 176
+	pril = miro_ros_data.core_pril
+	prir = miro_ros_data.core_prir
 
-	if (caml is not None) and (camr is not None):
-		layout = go.Layout(
-			title={'text': 'MiRo vision'},
-			xaxis={
-				'visible'   : False,
-				'range'     : [0, img_width * 2],
-				'fixedrange': True
-			},
-			yaxis={
-				'visible'   : False,
-				'range'     : [0, img_height],
-				'fixedrange': True
-			},
-			width=img_width,
-			height=img_height,
-			margin={'l': 0, 'r': 0, 't': 0, 'b': 0},
-			images=[
-				{
-					'source' : caml,
-					'x'      : 0,
-					'y'      : img_height,
-					'sizex'  : img_width,
-					'sizey'  : img_height,
-					'xref'   : "x",
-					'yref'   : "y",
-					# 'sizing' : "stretch",
-					'opacity': 1,
-					'layer'  : "below"
-				},
-				{
-					'source' : camr,
-					'x'      : img_width,
-					'y'      : img_height,
-					'sizex'  : img_width,
-					'sizey'  : img_height,
-					'xref'   : "x",
-					'yref'   : "y",
-	                # 'sizing' : "stretch",
-	                'opacity': 1,
-	                'layer'  : "below"
-				 }
-			]
-		)
-	else:
-		layout = go.Layout(
-			xaxis={
-				'visible'   : False,
-				'range'     : [0, img_width * 2],
-				'fixedrange': True
-			},
-			yaxis={
-				'visible'   : False,
-				'range'     : [0, img_height],
-				'fixedrange': True
-			},
-			width=img_width,
-			height=img_height,
-			margin={'l': 0, 'r': 0, 't': 0, 'b': 0},
-		)
+	# Needs to be updated manually if plot width changes; value includes margins
+	# p_height = 115
+	p_height = 185
 
-	return {
-		'data'  : [{
-			'x'     : [0, img_width * 2],
-			'y'     : [0, img_height],
-			'mode'  : 'markers',
-			'marker': {
-				'opacity': 0
-			}
-		}],
-		'layout': layout
+	# Set camera image properties
+	caml_image = {
+		'layer'  : 'below',
+		'opacity': 1,
+		'sizing' : 'contain',
+		'sizex'  : 0.5,
+		'sizey'  : 1,           # Overridden by 'constrain' property but must still be set
+		'source' : caml,
+		'x'      : 0,
+		'y'      : 0,
+		'xanchor': 'left',
+		'xref'   : 'paper',
+		'yanchor': 'bottom',
+		'yref'   : 'paper',
 	}
+
+	camr_image = {
+		'layer'  : 'below',
+		'opacity': 1,
+		'sizing' : 'contain',
+		'sizex'  : 0.5,
+		'sizey'  : 1,
+		'source' : camr,
+		'x'      : 1,
+		'y'      : 0,
+		'xanchor': 'right',
+		'xref'   : 'paper',
+		'yanchor': 'bottom',
+		'yref'   : 'paper',
+	 }
+
+	pril_image = {
+		'layer'  : 'above',
+		'opacity': 0.5,
+		'sizing' : 'contain',
+		'sizex'  : 0.5,
+		'sizey'  : 1,
+		'source' : pril,
+		'x'      : 0,
+		'y'      : 0,
+		'xanchor': 'left',
+		'xref'   : 'paper',
+		'yanchor': 'bottom',
+		'yref'   : 'paper',
+	}
+
+	prir_image = {
+		'layer'  : 'above',
+		'opacity': 0.5,
+		'sizing' : 'contain',
+		'sizex'  : 0.5,
+		'sizey'  : 1,
+		'source' : prir,
+		'x'      : 1,
+		'y'      : 0,
+		'xanchor': 'right',
+		'xref'   : 'paper',
+		'yanchor': 'bottom',
+		'yref'   : 'paper',
+	}
+
+	# Show vision with attention overlay, vision alone, or nothing
+	if (caml is not None) and (camr is not None):
+		if toggle:
+			cam_images = [
+				caml_image,
+				camr_image,
+				pril_image,
+				prir_image
+			]
+		else:
+			cam_images = [
+				caml_image,
+				camr_image
+			]
+	else:
+		cam_images = []
+
+	layout = go.Layout(
+		height=p_height,
+		images=cam_images,
+		margin={
+			'b': 10,
+			'l': 0,
+			'r': 0,
+			't': 60
+		},
+		shapes=[
+			{
+				'line': {
+					'color': 'black',
+					'dash' : 'dot',
+					'width': 1,
+				},
+				'type': 'line',
+				'x0'  : 0.5,
+				'x1'  : 0.5,
+				'xref': 'paper',
+				'y0'  : 0,
+				'y1'  : 1,
+				'yref': 'paper'
+			}
+		],
+		# TODO: Sort out title padding
+		title={'text': 'Vision'},
+		xaxis={'visible': False},
+		yaxis={'visible': False},
+	)
+
+	return {'layout': layout}
 
 
 @app.callback(Output('circadian-graph', 'figure'), [Input('interval-slow', 'n_intervals')])
 def update_clock_graph(n):
 
 	if miro_ros_data.core_time.data is not None:
-		c_data = miro_ros_data.core_time.data
+		circ_data = miro_ros_data.core_time.data
 	else:
-		c_data = 0
-
-	c_hrs = range(0, 24)
-	# Set clock hand width and length
-	h_width = 2
-	h_length = 0.9
+		circ_data = 0
 
 	# TODO: Make circadian clock display leading zeroes
-	# circadian_hrs = ['{:02d}'.format(item) for item in range(0, 24)]
+	circ_hrs = range(0, 24)
+	# circ_hrs = ['{:02d}'.format(item) for item in range(0, 24)]
+
+	# Set clock hand width and length
+	hand_width = 2
+	hand_length = 0.9
 
 	# TODO: Add sun / moon glyphs or background image to plot
+	# TODO: Find out how to disable zoom
 
 	data = [
 		go.Scatterpolar(
@@ -897,27 +1032,27 @@ def update_clock_graph(n):
 				}
 			},
 			mode='lines',
-			r=[0, 0.1, h_length, 0.1, 0],
+			r=[0, 0.1, hand_length, 0.1, 0],
 			theta=[
 				0,
-				c_hrs[c_data - h_width],
-				c_hrs[c_data],
-				c_hrs[c_data + h_width],
+				circ_hrs[circ_data - hand_width],
+				circ_hrs[circ_data],
+				circ_hrs[circ_data + hand_width],
 				0
 			]
 		)
 	]
 
 	layout = go.Layout(
-		# margin={
-		# 	'l': 0,
-		# 	'r': 0,
-		# 	't': 0,
-		# 	'b': 0
-		# },
+		margin={
+			'b': 20,
+			'l': 10,
+			'r': 10,
+			't': 20
+		},
 		polar={
 			'angularaxis': {
-				'categoryarray': range(0, 24),
+				'categoryarray': circ_hrs,
 				'direction'    : 'clockwise',
 				'nticks'       : 8,
 				'period'       : 15,
@@ -926,8 +1061,8 @@ def update_clock_graph(n):
 				'type'         : 'category'
 			},
 			'radialaxis' : {
-				'range'  : [0, 1],
-				'visible': False
+				'range'     : [0, 1],
+				'visible'   : False
 			}
 		},
 		showlegend=False
@@ -946,7 +1081,9 @@ if __name__ == '__main__':
 
 	# Initialise MiRo client
 	miro_ros_data = mi.MiroClient()
-	miro_dash = {}
+	# miro_dash = {}
+
+	# TODO: Make accessible from elsewhere on LAN
 
 	# Hot reloading seems to cause "IOError: [Errno 11] Resource temporarily unavailable" errors
 	app.run_server(debug=False)
