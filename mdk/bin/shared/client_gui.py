@@ -1268,6 +1268,7 @@ def generate_argb(colour, bright):
 			    print("Distance: ", D)
 			    if object_centerX>image_centerX:
 			        print("right")
+				self.AngVelControl.set_value(-0.2)
 			        print("direction vector: ",object_centerX-image_centerX)
 			        if object_centerY>image_centerY:
 			            print("down")
@@ -1277,6 +1278,7 @@ def generate_argb(colour, bright):
 			            print("direction vector: ",image_centerY-object_centerY)
 			    elif object_centerX<image_centerX:
 			        print("left")
+				self.AngVelControl.set_value(0.2)
 			        print("direction vector: ",image_centerX-object_centerX)
 			        if object_centerY>image_centerY:
 			            print("down")
@@ -1285,6 +1287,7 @@ def generate_argb(colour, bright):
 			            print("up")
 			            print("direction vector: ",image_centerY-object_centerY)
 			    elif object_centerX==image_centerX:
+				self.VelControl.set_value(1.0)
 			        if object_centerY>image_centerY:
 			            print("down")
 			            print("direction vector: ",object_centerY-image_centerY)
@@ -1292,6 +1295,7 @@ def generate_argb(colour, bright):
 			            print("up")
 			            print("direction vector: ",image_centerY-object_centerY)
 			        else:
+				    self.VelControl.set_value(0.0)
 			            print("right at the front")
 
 			# set camera zoom automatically if has not been set already
