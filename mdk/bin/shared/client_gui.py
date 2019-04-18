@@ -2,6 +2,7 @@
 import time
 import gi
 import os
+import sys
 
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject, GdkPixbuf, Gdk
@@ -71,10 +72,225 @@ left = False
 
 class miro_gui:
 
-	def __init__(self):
+
+	def ball_control(self):
+
+		# pars
+		f_kin = 0.25
+		f_cos = 1.0
+
+		# state
+		t_now = 0.0
+
+		# message
+		msg_kin = JointState()
+		msg_kin.position = [0.0, np.radians(30.0), 0.0, 0.0]
+
+		# message
+		msg_wheels = TwistStamped()
+		msg_push = miro.msg.push()
+
+		# message
+		msg_cos = Float32MultiArray()
+		msg_cos.data = [0.5, 0.5, 0.0, 0.0, 0.5, 0.5]
+
+		# message
+		msg_illum = UInt32MultiArray()
+		msg_illum.data = [0, 0, 0, 0, 0, 0]
+
+		# loop
+		while self.active and not rospy.core.is_shutdown():
+
+			# break on loss of state file
+			if not self.state_file is None:
+				if not os.path.isfile(self.state_file):
+					break
+
+			# compute drive signals
+			xk = math.sin(t_now * f_kin * 2 * math.pi)
+			xc = math.sin(t_now * f_cos * 2 * math.pi)
+			xc2 = math.sin(t_now * f_cos * 1 * math.pi)
+
+			# feedback to user
+			c = self.count % 10
+			if c == 0 and self.report_input and not self.sensors is None:
+				print "light", np.round(np.array(self.sensors.light.data) * 100.0)
+				print "cliff", np.round(np.array(self.sensors.cliff.data) * 15.0)
+				print "battery", np.round(np.array(self.sensors.battery.voltage) * 100.0) / 100.0
+				print "touch_body", '{0:016b}'.format(self.sensors.touch_body.data)
+				x = self.sensors.imu_head.linear_acceleration
+				print "imu_head", [x.x, x.y, x.z]
+				print "----------------------------------------------------------------"
+
+			# send wheels
+			if self.shoot:
+				msg_kin.position[1] = np.radians(0.0)
+				msg_kin.position[2] = np.radians(0.0)
+				msg_kin.position[3] = np.radians(0.0)
+				self.pub_kin.publish(msg_kin)
+
+				v = 0.0
+				Tq = 0.1
+				T = 1.0
+				t1 = Tq
+				t2 = t1 + T
+				t3 = t2 + T
+				t4 = t3 + Tq
+
+				if t_now < t1:
+					v = 0.0
+				elif t_now < t2:
+					v = (t_now - t1) / T
+				elif t_now < t3:
+					v = 0.5 - (t_now - t2) / T
+				elif t_now < t4:
+					v = 0.0
+				else:
+					self.active = False
+				msg_wheels.twist.linear.x = v * 4.0
+				msg_wheels.twist.angular.z = 0.0
+				self.pub_cmd_vel.publish(msg_wheels)
+				self.imp_report_wheels(msg_wheels)
+
+			if len(self.toss): 
+				if "l" in self.toss:
+					t = xk * np.radians(55.0)
+					v = 0
+					Tq = 0.1
+					T = 1.0
+					t1 = Tq
+					t2 = t1 + T
+					t3 = t2 + T
+					t4 = t3 + Tq
+					if t_now < t1:
+						v = 0.0
+					elif t_now < t2:
+						v = (t_now - t1) / T
+					elif t_now < t3:
+						v = 0.3 - (t_now - t2*0.6) / T
+					elif t_now < t4:
+						v = 0.0
+					else:
+						self.active = False
+					msg_wheels.twist.angular.z = v * -3.0
+					msg_wheels.twist.linear.x = 0
+
+					msg_kin.position[1] = np.radians(75.0)
+					msg_kin.position[2] = -t
+					msg_kin.position[3] = np.radians(30.0)
+					self.pub_kin.publish(msg_kin)
+					self.imp_report_wheels(msg_wheels)
+					self.pub_cmd_vel.publish(msg_wheels)
+
+				if "r" in self.toss:
+					t = xk * np.radians(55.0)
+					v = 0
+					Tq = 0.1
+					T = 1.0
+					t1 = Tq
+					t2 = t1 + T
+					t3 = t2 + T
+					t4 = t3 + Tq
+					if t_now < t1:
+						v = 0.0
+					elif t_now < t2:
+						v = (t_now - t1) / T
+					elif t_now < t3:
+						v = 0.3 - (t_now - t2*0.6) / T
+					elif t_now < t4:
+						v = 0.0
+					else:
+						self.active = False
+					msg_wheels.twist.angular.z = v * 3.0
+					msg_wheels.twist.linear.x = 0
+
+					msg_kin.position[1] = np.radians(75.0)
+					msg_kin.position[2] = t
+					msg_kin.position[3] = np.radians(30.0)
+					self.pub_kin.publish(msg_kin)
+					self.imp_report_wheels(msg_wheels)
+					self.pub_cmd_vel.publish(msg_wheels)
+
+			if self.stopb:
+				msg_kin.position[1] = np.radians(70.0)
+				msg_kin.position[2] = np.radians(0.0)
+				msg_kin.position[3] = np.radians(-20.0)
+				self.pub_kin.publish(msg_kin)
+
+			if self.ready:
+				msg_kin.position[1] = np.radians(0.0)
+				msg_kin.position[2] = np.radians(0.0)
+				msg_kin.position[3] = np.radians(0.0)
+				self.pub_kin.publish(msg_kin)
+
+			if self.dribble and not self.sensors is None:
+
+				msg_wheels.twist.linear.x = 0.1
+				msg_wheels.twist.angular.z = 0.0
+				self.pub_cmd_vel.publish(msg_wheels)
+				self.imp_report_wheels(msg_wheels)
+
+				if self.sensors.cliff.data[0] * 15.0 != 15.0:
+					msg_wheels.twist.angular.z = -1.0
+					self.pub_cmd_vel.publish(msg_wheels)
+					self.imp_report_wheels(msg_wheels)
+				elif self.sensors.light.data[1] * 15.0 != 15.0:
+					msg_wheels.twist.angular.z = 1.0
+					self.pub_cmd_vel.publish(msg_wheels)
+					self.imp_report_wheels(msg_wheels)
+
+			# state
+			time.sleep(0.02)
+			self.count = self.count + 1
+			t_now = t_now + 0.02
+
+	def __init__(self, args):
+
+		rospy.init_node("miro_gui")
 
 		# state
 		self.step = 0
+		self.state_file = None
+		self.count = 0
+		self.active = False
+
+		# input
+		self.report_input = True
+		self.sensors = None
+		self.kin_sensor = None
+
+		# options
+		self.report_wheels = False
+		self.shoot = False
+		self.toss = ""
+		self.stopb = False
+		self.dribble = False
+		self.ready = False
+
+		# handle args
+		for arg in args:
+			f = arg.find('=')
+			if f == -1:
+				key = arg
+				val = ""
+			else:
+				key = arg[:f]
+				val = arg[f+1:]
+			if key == "shoot":
+				self.shoot = True
+			elif key == "passl":
+				self.toss = "l"
+			elif key == "passr":
+				self.toss = "r"
+			elif key == "stopb":
+				self.stopb = True
+			elif key == "dribble":
+				self.dribble = True
+			elif key == "ready":
+				self.ready = True
+				print("Ready")
+			else:
+				error("argument not recognised \"" + arg + "\"")
 
 		#Load GUI from glade file
 		self.builder = Gtk.Builder()
@@ -282,7 +498,8 @@ class miro_gui:
 		self.MicScrolledWindow.add_with_viewport(self.canvas)
 
 		# variables to store input data
-		self.input_package = None
+#		self.input_package = None
+		self.sensors = None
 		self.input_camera = [None, None]
 		self.t_input_camera = [[], []]
 		self.input_mics = np.zeros((self.x_len, self.no_of_mics))
@@ -342,6 +559,14 @@ class miro_gui:
 					CompressedImage, self.callback_caml)
 		self.sub_camr = rospy.Subscriber(topic_base + "sensors/camr/compressed",
 					CompressedImage, self.callback_camr)
+
+		# wait for connect
+		print "wait for connect..."
+		time.sleep(1)
+
+		# set to active
+		self.active = True
+
 
 	#Handle Closure of Main Window
 	def on_MainWindow_destroy(self, *args):
@@ -643,10 +868,21 @@ def generate_argb(colour, bright):
 ################################################################
 ## ROS CALLBACKS
 
+	def callback_kin(self, msg):
+
+		# ignore until active
+		if not self.active:
+			return
+
+		# report
+		self.kin_sensor = msg.position
+
 	def callback_package(self, msg):
 
 		# store for processing in update_gui
-		self.input_package = msg
+#		self.input_package = msg
+		self.sensors = msg
+
 
 	def callback_mics(self, data):
 
@@ -662,6 +898,20 @@ def generate_argb(colour, bright):
 		# array is [ L, R, H, B] mics
 		# add to top of buffer
 		self.input_mics = np.vstack((data, self.input_mics[:self.x_len-500,:]))
+
+	def imp_report_wheels(self, msg_wheels):
+
+		if self.report_wheels and not self.sensors is None:
+			opto = self.sensors.wheel_speed_opto.data
+			emf = self.sensors.wheel_speed_back_emf.data
+			pwm = self.sensors.wheel_effort_pwm.data
+			print \
+				fmtflt(msg_wheels.twist.linear.x), \
+				fmtflt(msg_wheels.twist.linear.x), \
+				fmtflt(opto[0]), fmtflt(opto[1]), \
+				fmtflt(emf[0]), fmtflt(emf[1]), \
+				fmtflt(pwm[0]), fmtflt(pwm[1])
+
 
 	def do_auto_camera_zoom(self, image_height):
 
@@ -746,29 +996,31 @@ def generate_argb(colour, bright):
 			# 	lower = np.array(lower, dtype = "uint8")
 			# 	upper = np.array(upper, dtype = "uint8")
 			 
-			# 	# find the colors within the specified boundaries and apply
-			# 	# the mask
-			# 	mask = cv2.inRange(imgHSV, lower, upper)
-			# 	# output = cv2.bitwise_and(image, image, mask = mask)
+# 				# find the colors within the specified boundaries and apply
+# 				# the mask
+# 				mask = cv2.inRange(imgHSV, lower, upper)
+# 				# output = cv2.bitwise_and(image, image, mask = mask)
 
-			# 	kernelOpen=np.ones((5,5))
-			# 	kernelClose=np.ones((40,40))
+# 				kernelOpen=np.ones((5,5))
+# 				kernelClose=np.ones((40,40))
 
-			# 	maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
-			# 	maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
+# 				maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
+# 				maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
 
-			# 	maskFinal=maskClose.copy()
-			# 	im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-			# 	# cv2.drawContours(image,contours,-1,(255,0,0),3)
+# 				maskFinal=maskClose.copy()
+# 				im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+# 				# cv2.drawContours(image,contours,-1,(255,0,0),3)
 
-			# 	for i in range(len(contours)):
-			# 		if count ==  0:
-			# 			text = "MiRO"
-			# 		else: 
-			# 			text = "Football"	    
-			# 		x,y,w,h=cv2.boundingRect(contours[i])
-			# 		cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
-			# 		cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+# 				for i in range(len(contours)):
+# 					if count ==  0:
+# 						text = "MiRO"
+# 					else: 
+# 						text = "Football"
+# #						self.dribble = True
+# #						self.ball_control()
+# 					x,y,w,h=cv2.boundingRect(contours[i])
+# 					cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
+# 					cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
 					
 			# 	count += 1
 
@@ -942,7 +1194,7 @@ def generate_argb(colour, bright):
 			    # find the colors within the specified boundaries and apply
 			    # the mask
 			    mask = cv2.inRange(imgHSV, lower, upper)
-			    # output = cv2.bitwise_and(image, image, mask = mask)
+			    # output = cv2.bitwise_and(image, image, mask = mask)	
 
 			    kernelOpen=np.ones((5,5))
 			    kernelClose=np.ones((20,20))
@@ -1295,11 +1547,14 @@ def generate_argb(colour, bright):
 		self.step += 1
 		step_ = self.step % 100
 
-		if not self.input_package is None:
+#		if not self.input_package is None:
+		if not self.sensors is None:
 
 			# acquire
-			p = self.input_package
-			self.input_package = None
+#			p = self.input_package
+#			self.input_package = None
+			p = self.sensors
+			self.sensors = None
 
 			# update battery
 			x = p.battery.voltage
@@ -1479,9 +1734,9 @@ def generate_argb(colour, bright):
 ## MAIN
 
 if __name__ == "__main__":
-	main = miro_gui()
-	rospy.init_node("miro_gui")
+	main = miro_gui(sys.argv[1:])
 	Gtk.main()
+#	main.loop()
 
 
 
