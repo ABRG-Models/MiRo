@@ -152,7 +152,7 @@ class miro_gui:
 				self.pub_cmd_vel.publish(msg_wheels)
 				self.imp_report_wheels(msg_wheels)
 
-			if len(self.toss): 
+			if len(self.toss):
 				if "l" in self.toss:
 					t = xk * np.radians(55.0)
 					v = 0
@@ -931,17 +931,17 @@ def generate_argb(colour, bright):
 			if s == l[i]:
 				self.gui_CapResolutionSelection.set_active(i)
 				return
-				
-	def find_center(cnts):
-		for i in cnts:
-		# compute the center of the contour
-			M = cv2.moments(i)
-			coX = int(M["m10"] / M["m00"])
-			coY = int(M["m01"] / M["m00"])
-			# draw the contour and center of the shape on the image
-			cv2.circle(image, (coX, coY), 7, (255, 255, 255), -1)
-			cv2.putText(image, "center", (coX - 20, coY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-		return coX, coY
+
+	# def find_center(cnts):
+	# 	for i in cnts:
+	# 	# compute the center of the contour
+	# 		M = cv2.moments(i)
+	# 		coX = int(M["m10"] / M["m00"])
+	# 		coY = int(M["m01"] / M["m00"])
+	# 		# draw the contour and center of the shape on the image
+	# 		cv2.circle(image, (coX, coY), 7, (255, 255, 255), -1)
+	# 		cv2.putText(image, "center", (coX - 20, coY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+	# 	return coX, coY
 
 	def callback_cam(self, ros_image, index):
 
@@ -954,7 +954,7 @@ def generate_argb(colour, bright):
 		try:
 			# convert compressed ROS image to raw CV image
 			image = self.image_converter.compressed_imgmsg_to_cv2(ros_image, "rgb8")
-			
+
 			################################### object detection #################################################
 			# output = image.copy()
 
@@ -978,7 +978,7 @@ def generate_argb(colour, bright):
 			# # Orange color boundary (HSV)
 			# # ([1, 190, 200], [25, 255, 255])
 
-				
+
 			# # define the list of boundaries
 			# boundaries = [
 			# 	([0, 0, 195], [255, 60, 255]),
@@ -995,7 +995,7 @@ def generate_argb(colour, bright):
 			# 	# create NumPy arrays from the boundaries
 			# 	lower = np.array(lower, dtype = "uint8")
 			# 	upper = np.array(upper, dtype = "uint8")
-			 
+
 # 				# find the colors within the specified boundaries and apply
 # 				# the mask
 # 				mask = cv2.inRange(imgHSV, lower, upper)
@@ -1014,14 +1014,14 @@ def generate_argb(colour, bright):
 # 				for i in range(len(contours)):
 # 					if count ==  0:
 # 						text = "MiRO"
-# 					else: 
+# 					else:
 # 						text = "Football"
 # #						self.dribble = True
 # #						self.ball_control()
 # 					x,y,w,h=cv2.boundingRect(contours[i])
 # 					cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
 # 					cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
-					
+
 			# 	count += 1
 
 
@@ -1128,7 +1128,7 @@ def generate_argb(colour, bright):
 ######################################distance and orientation detection####################################################
 			output = image.copy()
 			output = cv2.medianBlur(output,5)
-			imgHSV= cv2.cvtColor(output,cv2.COLOR_BGR2HSV)
+			imgHSV= cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
 
 
 			imgGray= cv2.cvtColor(output,cv2.COLOR_BGR2GRAY)
@@ -1173,14 +1173,40 @@ def generate_argb(colour, bright):
 			# define the list of boundaries
 			boundaries = [
 			    ([0, 0, 195], [255, 60, 255]),
-			    ([1, 190, 200], [25, 255, 255])
+				([170, 50,50], [172, 255, 255])
+			    # ([1, 190, 200], [25, 255, 255])
 			]
+
+
 
 			font = cv2.FONT_HERSHEY_SIMPLEX
 
 			count = 0
 
+			def find_center(cnts):
+				for i in cnts:
+				# compute the center of the contour
+					M = cv2.moments(i)
+					coX = int(M["m10"] / M["m00"])
+					coY = int(M["m01"] / M["m00"])
+					# draw the contour and center of the shape on the image
+					cv2.circle(image, (coX, coY), 7, (255, 255, 255), -1)
+					cv2.putText(image, "center", (coX - 20, coY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+				return coX, coY
+
+			def find_bottom(cnts):
+				for i in cnts:
+				# compute the center of the contour
+					M = cv2.moments(i)
+					coX = int(M["m10"] / M["m00"])
+					coY = int(M["m01"] / M["m00"])
+					# draw the contour and center of the shape on the image
+					cv2.circle(image, (coX, coY*2), 7, (255, 255, 255), -1)
+					cv2.putText(image, "bottom", (coX - 20, coY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+				return coX, coY
+
 			find_center(cntss)
+			find_bottom(cntss)
 			image_centerX, image_centerY = find_center(cntss)
 			print("X: ",image_centerX)
 			print("Y: ",image_centerY)
@@ -1194,7 +1220,7 @@ def generate_argb(colour, bright):
 			    # find the colors within the specified boundaries and apply
 			    # the mask
 			    mask = cv2.inRange(imgHSV, lower, upper)
-			    # output = cv2.bitwise_and(image, image, mask = mask)	
+			    # output = cv2.bitwise_and(image, image, mask = mask)
 
 			    kernelOpen=np.ones((5,5))
 			    kernelClose=np.ones((20,20))
@@ -1211,6 +1237,7 @@ def generate_argb(colour, bright):
 			    # extRight = tuple(c[c[:, :, 0].argmax()][0])
 			    # extTop = tuple(c[c[:, :, 1].argmin()][0])
 			    # extBot = tuple(c[c[:, :, 1].argmax()][0])
+
 
 			    for i in range(len(contours)):
 			        if count == 0:
@@ -1233,9 +1260,9 @@ def generate_argb(colour, bright):
 			    object_centerX, object_centerY = find_center(cnts)
 			    print("oX: ",object_centerX)
 			    print("oY: ",object_centerY)
-			    cv2.line(image, (int(image_centerX), int(image_centerY)), (int(object_centerX), int(object_centerY)),
+			    cv2.line(image, (int(image_centerX), int(image_centerY)*2), (int(object_centerX), int(object_centerY)),
 			            (255, 0, 0), 2)
-			    D = dist.euclidean((image_centerX, image_centerY), (object_centerX, object_centerY))
+			    D = dist.euclidean((image_centerX, image_centerY*2), (object_centerX, object_centerY))
 			    # cv2.putText(image, "{:.1f}in".format(D), (int(object_centerX), int(object_centerY - 10)),
 			    #             cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 0, 0), 2)
 			    print("Distance: ", D)
@@ -1352,7 +1379,7 @@ def generate_argb(colour, bright):
 			return True
 
 ######################## Update Image Stitching ##################################
-	
+
 
 		# caml = self.input_camera[0]
 		# self.input_camera[0] = None
@@ -1401,7 +1428,7 @@ def generate_argb(colour, bright):
 		# (x, y, w, h) = cv2.boundingRect(c)
 
 		# cv2.rectangle(mask, (x, y), (x + w, y + h), 255, -1)
-			
+
 		# # create two copies of the mask: one to serve as our actual
 		# # minimum rectangular region and another to serve as a counter
 		# # for how many pixels need to be removed to form the minimum
@@ -1455,7 +1482,7 @@ def generate_argb(colour, bright):
 		# 	# create NumPy arrays from the boundaries
 		# 	lower = np.array(lower, dtype = "uint8")
 		# 	upper = np.array(upper, dtype = "uint8")
-		 
+
 		# 	# find the colors within the specified boundaries and apply
 		# 	# the mask
 		# 	mask = cv2.inRange(imgHSV, lower, upper)
@@ -1474,16 +1501,16 @@ def generate_argb(colour, bright):
 		# 	for i in range(len(contours)):
 		# 		if count ==  0:
 		# 			text = "MiRO"
-		# 		else: 
-		# 			text = "Football"	    
+		# 		else:
+		# 			text = "Football"
 		# 		x,y,w,h=cv2.boundingRect(contours[i])
 		# 		cv2.rectangle(stitched,(x,y),(x+w,y+h),(0,0,255), 2)
 		# 		cv2.putText(stitched, text,(x,y+h),font,1.0,(0,255,255), True)
-				
+
 		# 	count += 1
 
 
-	
+
 
 		# 	tt = self.t_input_camera[i]
 		# 	tt.append(t)
@@ -1737,6 +1764,3 @@ if __name__ == "__main__":
 	main = miro_gui(sys.argv[1:])
 	Gtk.main()
 #	main.loop()
-
-
-
