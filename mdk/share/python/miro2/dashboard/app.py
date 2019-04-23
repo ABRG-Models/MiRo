@@ -15,17 +15,12 @@ import rospy
 import numpy as np
 import miro_interface as mi
 
-# TODO: Maybe change layout so spatial is wider, affect is smaller, and circadian moves right by one
-
-
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-arrow = {
-	'up'   : '⬆',
-	'right': '➡',
-	'down' : '⬇',
-	'left' : '⬅'
-}
+H_WIDTH = '7px'
+V_WIDTH = '5px'
+A_WIDTH = '10px'
+A_HEIGHT = '20px'
 
 css = {
 	'arrow': {
@@ -34,616 +29,726 @@ css = {
 		'text-align' : 'center',
 		'padding'    : '0px'
 	},
-	'arrow_div': {
-		'background-color': 'lightblue',
-		'height'          : '100%',
-		'text-align'      : 'center',
-		'width'           : '100%'
+	'arrow_down': {
+		'border-left' : A_WIDTH + ' solid white',
+		'border-right': A_WIDTH + ' solid white',
+		'border-top'  : A_HEIGHT + ' solid black',
+		'height'      : 0,
+		'margin'      : 'auto',
+		'position'    : 'relative',
+		'bottom'      : '20px',
+		'width'       : 0
 	},
-	'arrow_img': {
-		'height': '100%',
-		'width' : '50%'
-	}
+	'arrow_left': {
+		'border-bottom': A_WIDTH + ' solid white',
+		'border-right' : A_HEIGHT + ' solid black',
+		'border-top'   : A_WIDTH + ' solid white',
+		'float'        : 'left',
+		'height'       : 0,
+		'margin-top'   : '-12px',
+		'width'        : 0
+	},
+	'arrow_right': {
+		'border-bottom': A_WIDTH + ' solid white',
+		'border-left'  : A_HEIGHT + ' solid black',
+		'border-top'   : A_WIDTH + ' solid white',
+		'float'        : 'right',
+		'height'       : 0,
+		'margin-top'   : '-12px',
+		'width'        : 0
+	},
+	'arrow_right_clear': {
+		'border-bottom': A_WIDTH + ' solid transparent',
+		'border-left'  : A_HEIGHT + ' solid transparent',
+		'border-top'   : A_WIDTH + ' solid transparent',
+		'float'        : 'right',
+		'height'       : 0,
+		'margin-top'   : '-12px',
+		'width'        : 0
+	},
+	'arrow_up': {
+		'border-bottom': A_HEIGHT + ' solid black',
+		'border-left'  : A_WIDTH + ' solid white',
+		'border-right' : A_WIDTH + ' solid white',
+		'height'       : 0,
+		'margin'       : 'auto',
+		'width'        : 0
+	},
+	'bar': {
+		'border'    : '0px',
+		'margin'    : '0px',
+		'padding'   : '5px',
+		'text-align': 'center'
+	},
+	'line_horizontal': {
+		'background-color': 'black',
+		'border-bottom'   : '1px white solid',
+		'border-top'      : '1px white solid',
+		'float'           : 'right',
+		'height'          : H_WIDTH,
+		'width'           : '100%',
+		'margin-top'      : '25px',
+	},
+	'line_horizontal_clear': {
+		'border-bottom'   : '1px white transparent',
+		'border-top'      : '1px white transparent',
+		'float'           : 'right',
+		'height'          : H_WIDTH,
+		'width'           : '100%',
+		'margin-top'      : '25px',
+	},
+	'line_horizontal_clear_left': {
+		'background-color': 'white',
+		'border-right'    : '5px black solid',
+		'height'          : '6px',
+		'width'           : '52%',
+		'position'        : 'absolute',
+		'right'           : '48%',
+		'top'             : 25
+	},
+	'line_vertical': {
+		'background-color': 'black',
+		'height'          : '100%',
+		'width'           : V_WIDTH,
+		'margin'          : 'auto',
+		'min-height'      : '30px'
+	},
 }
 
 ##########
 # Define dashboard items
-# TODO: Put these into dicts
-
-ball_alert_left = dbc.Alert(
-	"⚽",
-	id='ball-alert-left',
-	color='info',
-	is_open=False,
-	style={
-		'font-size' : 'x-large',
-		'text-align': 'center'
-	}
-)
-
-ball_alert_right = dbc.Alert(
-	"⚽",
-	id='ball-alert-right',
-	color='info',
-	is_open=False,
-	style={
-		'font-size' : 'x-large',
-		'text-align': 'center'
-	}
-)
-
-graph_action = dcc.Graph(
-	id='action-graph',
-	config={'displayModeBar': False},
-	style={
-		'height': '150px',
-		'width' : '100%',
-	}
-)
-
-graph_affect = dcc.Graph(
-	id='affect-graph',
-	animate=True,
-	config={'displayModeBar': False},
-	style={
-		'height': '400px',
-		'width' : '100%',
-	}
-)
-
-graph_aural = dcc.Graph(
-	id='aural-graph',
-	config={'displayModeBar': False},
-	style={'width': '100%'}
-)
-
-graph_cameras = dcc.Graph(
-	id='camera-graph',
-	config={'displayModeBar': False},
-	style={'width': '100%'}
-)
-
-graph_circadian = dcc.Graph(
-	id='circadian-graph',
-	animate=True,
-	config={'displayModeBar': False},
-	style={
-		'height': '100px',
-		'width' : '100%',
-	}
-)
+dashboard_alerts = {
+	'ball_left': dbc.Alert(
+		"⚽",
+		id='ball-alert-left',
+		color='info',
+		is_open=False,
+		style={
+			'font-size' : 'x-large',
+			'text-align': 'center'
+		}
+	),
+	'ball_right': dbc.Alert(
+		"⚽",
+		id='ball-alert-right',
+		color='info',
+		is_open=False,
+		style={
+			'font-size' : 'x-large',
+			'text-align': 'center'
+		}
+	)
+}
+dashboard_graphs = {
+	'action': dcc.Graph(
+		id='action-graph',
+		config={'displayModeBar': False},
+		style={
+			'height': '150px',
+			'width' : '100%',
+		}
+	),
+	'affect': dcc.Graph(
+		id='affect-graph',
+		animate=True,
+		config={'displayModeBar': False},
+		style={
+			'height': '400px',
+			'width' : '100%',
+		}
+	),
+	'aural': dcc.Graph(
+		id='aural-graph',
+		config={'displayModeBar': False},
+		style={'width': '100%'}
+	),
+	'cameras': dcc.Graph(
+		id='camera-graph',
+		config={'displayModeBar': False},
+		style={'width': '100%'}
+	),
+	'circadian': dcc.Graph(
+		id='circadian-graph',
+		animate=True,
+		config={'displayModeBar': False},
+		style={
+			'height': '100px',
+			'width' : '100%',
+		}
+	)
+}
 
 # TODO: Tidy up all double brackets
 
 ##########
 # Define dashboard rows
-
-top_arrows = dbc.Row(
-	[
-		dbc.Col(
-			html.Div(
-				arrow['down'],
-				style=css['arrow'],
-				id='top-sigma'
-			),
-			width={
-				'size'  : 1,
-				'offset': 3
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['down'],
-				style=css['arrow'],
-				id='top-spatial'
-			),
-			width={
-				'size'  : 1,
-				'offset': 0
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['down'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 0
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['up'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 3
-			}
-		),
-		dbc.Col(
-			# html.Div(
-			# 	arrow['down'],
-			# 	style=css['arrow'],
-			# 	id='top-affect'
-			# ),
-			html.Div(
-				html.Img(
-					src='assets/black.png',
-					height='100%'
-				),
-			),
-			width={
-				'size'  : 1,
-				'offset': 1
-			}
-		)
-	],
-	no_gutters=True,
-)
-
-upper_group = dbc.Row(
-	[
+dashboard_rows = {
+	'Row_top': dbc.Row(
 		dbc.Col(
 			dbc.Alert(
-				'Σ',
-				style=css['arrow'],
-				color='info'
-			),
-			width={
-				'size'  : 1,
-				'offset': 3
-			}
+				'⬆ To P3 ⬆',
+				color='dark',
+				style=css['bar']
+			)
 		),
-		dbc.Col(
-			html.Div(
+		no_gutters=True
+	),
+	'Row_1': dbc.Row(
+		[
+			dbc.Col(
 				[
-					arrow['left'],
-					arrow['down']
-				]
+					html.Div(style=css['line_vertical']),
+					html.Div(style=css['arrow_down']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 3
+				},
 			),
-			width={
-				'size'  : 1,
-				'offset': 0
-			}
-		),
-		dbc.Col(
-			dbc.Card(
+			dbc.Col(
+				html.Div(style=css['line_vertical']),
+				width={
+					'size'  : 1,
+					'offset': 0
+				}
+			),
+			dbc.Col(
 				[
+					html.Div(style=css['line_vertical']),
+					html.Div(style=css['arrow_down']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 0
+				}
+			),
+			dbc.Col(
+				[
+					html.Div(style=css['arrow_up']),
+					html.Div(style=css['line_vertical']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 3
+				}
+			),
+			dbc.Col(
+				html.Div(style=css['line_vertical']),
+				width={
+					'size'  : 1,
+					'offset': 1
+				}
+			),
+		],
+		no_gutters=True
+	),
+	'Row_2': dbc.Row(
+		[
+			dbc.Col(
+				[
+					dbc.Alert(
+						'Σ',
+						color='info',
+						style={
+							'font-size'  : 'xx-large',
+							'font-weight': 'bolder',
+							'margin'     : '0px',
+							'text-align' : 'center'
+						}
+					),
+					html.Div(style=css['line_vertical']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 3
+				}
+			),
+			dbc.Col(
+				[
+					html.Div(style=css['line_horizontal']),
+					html.Div(style=css['arrow_left']),
+					html.Div(style=css['line_vertical']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 0
+				},
+			),
+			dbc.Col(
+				dbc.Card([
 					dbc.CardHeader('Action selection'),
-					dbc.CardBody([graph_action]
-					)
-				]
+					dbc.CardBody(dashboard_graphs['action'])
+				]),
+				width={
+					'size'  : 5,
+					'offset': 0
+				}
 			),
-			width={
-				'size'  : 5,
-				'offset': 0
-			}
-		),
-		dbc.Col(
-			# html.Div(
-			# 	arrow['down'],
-			# 	style=css['arrow'],
-			# 	# id='top-affect'
-			# ),
-			html.Div(
-				html.Img(
-					src='assets/black.png',
-					style=css['arrow_img']
-				),
-				style=css['arrow_div']
+			dbc.Col(
+				html.Div(style=css['line_vertical']),
+				width={
+					'size'  : 1,
+					'offset': 1
+				}
 			),
-			width={
-				'size'  : 1,
-				'offset': 1
-			}
-		),
-	],
-	no_gutters=True
-)
-
-upper_arrows = dbc.Row(
-	[
-		dbc.Col(
-			html.Div(
-				arrow['down'],
-				style=css['arrow']
+		],
+		no_gutters=True
+	),
+	'Row_3': dbc.Row(
+		[
+			dbc.Col(
+				html.Div(style=css['line_vertical']),
+				width={
+					'size'  : 1,
+					'offset': 3
+				}
 			),
-			width={
-				'size'  : 1,
-				'offset': 3
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['down'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 0
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['up'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 0
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['up'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 1
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['down'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 1
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['down'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 1
-			}
-		)
-	],
-	no_gutters=True
-)
-
-mid_group = dbc.Row(
-	[
-		dbc.Col(
-			dbc.Card([
-				dbc.CardBody(dbc.CardText('[MiRo]'))
-			]),
-			width=1
-		),
-		dbc.Col(
-			html.Div(
-				arrow['right'],
-				style=css['arrow']
-			),
-			width=1
-		),
-		dbc.Col(
-			[
-				dbc.Alert(
-					'Motor reafferent',
-					color='info'
-				),
-				dbc.Alert(
-					'Noise filter',
-					color='info'
-				)
-			],
-			width={
-				'size'  : 1,
-				'offset': 0
-			}
-		),
-		dbc.Col(
-			html.Div(
+			dbc.Col(
 				[
-					arrow['right'],
-					arrow['down']
-				]
+					html.Div(style=css['line_vertical']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 0
+				}
 			),
-			width=1
-		),
-		dbc.Col(
-			html.Div(
+			dbc.Col(
 				[
-					arrow['right'],
-					'L'
-				]
+					html.Div(style=css['arrow_up']),
+					html.Div(style=css['line_vertical']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 0
+				}
 			),
-			width=1
-		),
-		dbc.Col(
-			html.Div(
+			dbc.Col(
 				[
-					arrow['right'],
-					arrow['up']
-				]
+					html.Div(style=css['arrow_up']),
+					html.Div(style=css['line_vertical']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 1
+				}
 			),
-			width=1
-		),
-		dbc.Col(
-			dbc.Card([
-				dbc.CardHeader('Spatial attention'),
-				dbc.CardBody(
+			dbc.Col(
+				[
+					html.Div(style=css['line_vertical']),
+					html.Div(style=css['arrow_down']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 1
+				}
+			),
+			dbc.Col(
+				[
+					html.Div(style=css['line_vertical']),
+					html.Div(style=css['arrow_down']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 1
+				}
+			)
+		],
+		no_gutters=True
+	),
+	'Row_4': dbc.Row(
+		[
+			dbc.Col(
+				dbc.Card([
+					dbc.CardBody(dbc.CardText('[MiRo]'))
+				]),
+				width={
+					'size'  : 1,
+					'offset': 0
+				}
+			),
+			dbc.Col(
+				[
+					html.Div(style=css['line_horizontal']),
+					html.Div(style=css['arrow_right']),
+					html.Div(style=css['line_horizontal']),
+					html.Div(style=css['arrow_right']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 0
+				},
+			),
+			dbc.Col(
+				[
+					dbc.Card([
+						dbc.CardBody([
+							dbc.CardText(
+								'Motor reafferent noise filter',
+							    style={'font-size': '90%'}
+							),
+							# dbc.CardText('Noise filter')
+						]),
+						dbc.CardFooter(
+							'➡ Self-activity reports',
+							style={'font-size': 'x-small'}
+						)
+					],
+						color='light'
+					),
+				],
+				width={
+					'size'  : 1,
+					'offset': 0
+				}
+			),
+			dbc.Col(
+				[
+					html.Div(style=css['line_horizontal_clear']),
+					html.Div(style=css['arrow_right_clear']),
+					html.Div(style=css['line_horizontal']),
+					html.Div(style=css['arrow_right_clear']),
+					html.Div(style=css['line_horizontal']),
+					html.Div(style=css['arrow_right_clear']),
+					html.Div(style=css['line_vertical']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 0
+				}
+			),
+			dbc.Col(
+				html.Div(
 					[
-						graph_aural,
-						graph_cameras,
+						html.Div(style=css['line_horizontal_clear_left']),
+						html.Div(style=css['line_horizontal']),
+						html.Div(style=css['arrow_right_clear']),
+						html.Div(style=css['line_horizontal']),
+						html.Div(style=css['arrow_right_clear']),
+						html.Div(style=css['line_horizontal']),
+						html.Div(style=css['arrow_right_clear']),
+						html.Div(style=css['line_vertical']),
 					]
 				),
-				dbc.CardFooter(
-					dbc.Table(
-						html.Tbody(
-							html.Tr([
-								# TODO: Add face detection alert
-								html.Td(ball_alert_left),
-								html.Td(
-									daq.BooleanSwitch(
-										id='cam-toggle',
-										label='Visual attention overlay',
-										labelPosition='bottom',
-									)
+				width={
+					'size'  : 1,
+					'offset': 0
+				},
+			),
+			dbc.Col(
+				[
+					html.Div(style=css['line_horizontal']),
+					html.Div(style=css['arrow_right']),
+					html.Div(style=css['line_horizontal']),
+					html.Div(style=css['arrow_right']),
+					html.Div(style=css['line_horizontal']),
+					html.Div(style=css['arrow_right']),
+					# For some reason the standard vertical line results in a 1px offset here
+					# html.Div(style=css['line_vertical']),
+					html.Div(style={
+						'background-color': 'black',
+						'height'          : '100%',
+						'width'           : V_WIDTH,
+						'margin-left'     : '49%',
+						'min-height'      : '30px'
+					})
+				],
+				width={
+					'size'  : 1,
+					'offset': 0
+				}
+			),
+			dbc.Col(
+				dbc.Card([
+					dbc.CardHeader('Spatial attention'),
+					dbc.CardBody(
+						[
+							dashboard_graphs['aural'],
+							dashboard_graphs['cameras'],
+							dbc.Table(
+								html.Tbody(
+									html.Tr([
+										# TODO: Add face detection alert
+										html.Td(dashboard_alerts['ball_left']),
+										html.Td(dashboard_alerts['ball_right']),
+									])
 								),
-								html.Td(ball_alert_right),
-							])
-						),
-						borderless=True,
-						size='sm',
-						style={
-							'margin' : '0px 0px 0px 0px',
-							'padding': '0px 0px 0px 0px',
-						}
+								borderless=True,
+								size='sm',
+								style={
+									'margin' : 0,
+									'padding': 0,
+								}
+							)
+						]
+					),
+					dbc.CardFooter(
+						daq.BooleanSwitch(
+							id='cam-toggle',
+							label='Visual attention overlay',
+							labelPosition='bottom',
+						)
 					)
-				)
-			]),
-			width={
-				'size'  : 3,
-				'offset': 0
-			}
-		),
-		dbc.Col(
-			dbc.Card(
-				[
+				],
+					style={'height': '100%'}
+				),
+				width={
+					'size'  : 3,
+					'offset': 0
+				}
+			),
+			dbc.Col(
+				dbc.Card([
 					dbc.CardHeader('Affect'),
-					dbc.CardBody([graph_affect])
-				]
-			),
-			width={
-				'size'  : 3,
-				'offset': 0
-			}
-		)
-	],
-	no_gutters=True
-)
-
-lower_arrows = dbc.Row(
-	[
-		dbc.Col(
-			html.Div(
-				arrow['up'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 2
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['down'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 0
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['up'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 1
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['up'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 1
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['up'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 1
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['up'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 0
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['down'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 0
-			}
-		),
-	],
-	no_gutters=True
-)
-
-lower_group = dbc.Row(
-	[
-		dbc.Col(
-			dbc.Card(
+					dbc.CardBody(dashboard_graphs['affect'])
+				],
+					style={'height': '100%'}
+				),
+				width={
+					'size'  : 3,
+					'offset': 0
+				}
+			)
+		],
+		no_gutters=True
+	),
+	'Row_5': dbc.Row(
+		[
+			dbc.Col(
 				[
-					dbc.CardHeader('Body model (Motor)'),
-					dbc.CardBody(dbc.CardText('Lorem ipsum'))
-				]
+					html.Div(style=css['line_vertical']),
+					html.Div(style=css['arrow_down']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 3
+				}
 			),
-			width={
-				'size'  : 3,
-				'offset': 3
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['left'],
-				style=css['arrow']
+			dbc.Col(
+				html.Div(style=css['line_vertical']),
+				width={
+					'size'  : 1,
+					'offset': 1
+				}
 			),
-			width={
-				'size'  : 1,
-				'offset': 0
-			}
-		),
-		dbc.Col(
-			dbc.Card(
+			dbc.Col(
 				[
-					dbc.CardHeader('Body model (Sensory)'),
-					dbc.CardBody(dbc.CardText('Lorem ipsum'))
-				]
+					html.Div(style=css['arrow_up']),
+					html.Div(style=css['line_vertical']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 1
+				}
 			),
-			width={
-				'size'  : 1,
-				'offset': 0
-			}
-		),
-		dbc.Col(
-			dbc.Card(
+			dbc.Col(
 				[
-					dbc.CardHeader('Circadian rhythm'),
-					dbc.CardBody([graph_circadian])
-				]
+					html.Div(style=css['arrow_up']),
+					html.Div(style=css['line_vertical']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 1
+				}
 			),
-			width={
-				'size'  : 1,
-				'offset': 1
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['up'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 0
-			}
-		),
-		dbc.Col(
-			dbc.Card(
+			dbc.Col(
 				[
-					dbc.CardHeader('Expression'),
-					dbc.CardBody(dbc.CardText('Lorem ipsum'))
-				]
+					html.Div(style=css['arrow_up']),
+					html.Div(style=css['line_vertical']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 0
+				}
 			),
-			width={
-				'size'  : 1,
-				'offset': 0
-			}
+			dbc.Col(
+				[
+					# html.Div(style=css['line_vertical']),
+					# html.Div(style=css['arrow_down']),
+					# html.Div(style=css['line_vertical_half_bottom']),
+					# html.Div(style=css['arrow_down']),
+					html.Div(style=css['line_vertical']),
+					html.Div(style=css['arrow_down']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 0
+				}
+			),
+		],
+		no_gutters=True
+	),
+	'Row_6': dbc.Row(
+		[
+			dbc.Col(
+				dbc.Card(
+					[
+						dbc.CardHeader('Body model (Motor)'),
+						dbc.CardBody(dbc.CardText('Lorem ipsum')),
+						dbc.CardFooter(
+							'➡ Self-activity reports',
+							style={'font-size': 'x-small'}
+						)
+					],
+					style={
+						'height': '100%'
+					}
+				),
+				width={
+					'size'  : 3,
+					'offset': 3
+				}
+			),
+			dbc.Col(
+				[
+					# html.Div(style=css['line_horizontal_clear_right']),
+					# html.Div(style=css['line_horizontal']),
+					# html.Div(style=css['arrow_left']),
+					html.Div(style=css['line_horizontal']),
+					html.Div(style=css['arrow_left']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 0
+				}
+			),
+			dbc.Col(
+				dbc.Card(
+					[
+						dbc.CardHeader('Body model (Sensory)'),
+						dbc.CardBody(dbc.CardText('Lorem ipsum'))
+					],
+					style={
+						'height': '100%'
+					}
+				),
+				width={
+					'size'  : 1,
+					'offset': 0
+				}
+			),
+			dbc.Col(
+				dbc.Card(
+					[
+						dbc.CardHeader('Circadian rhythm'),
+						dbc.CardBody(dashboard_graphs['circadian'])
+					],
+					style={
+						'height': '100%'
+					}
+				),
+				width={
+					'size'  : 1,
+					'offset': 1
+				}
+			),
+			dbc.Col(
+				html.Div(style=css['line_vertical']),
+				width={
+					'size'  : 1,
+					'offset': 0
+				}
+			),
+			dbc.Col(
+				dbc.Card(
+					[
+						dbc.CardHeader('Expression'),
+						dbc.CardBody(dbc.CardText('Lorem ipsum')),
+						dbc.CardFooter(
+							'➡ Self-activity reports',
+							style={'font-size': 'x-small'}
+						)
+					],
+					style={
+						'height': '100%'
+					}
+				),
+				width={
+					'size'  : 1,
+					'offset': 0
+				}
+			),
+		],
+		no_gutters=True
+	),
+	'Row_7': dbc.Row(
+		[
+			dbc.Col(
+				[
+					html.Div(style=css['line_vertical']),
+					html.Div(style=css['arrow_down']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 4
+				}
+			),
+			dbc.Col(
+				[
+					html.Div(style=css['arrow_up']),
+					html.Div(style=css['line_vertical']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 2
+				}
+			),
+			dbc.Col(
+				[
+					html.Div(style=css['arrow_up']),
+					html.Div(style=css['line_vertical']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 1
+				}
+			),
+			dbc.Col(
+				html.Div(style=css['line_vertical']),
+				width={
+					'size'  : 1,
+					'offset': 0
+				}
+			),
+			dbc.Col([
+					html.Div(style=css['line_vertical']),
+					html.Div(style=css['arrow_down']),
+				],
+				width={
+					'size'  : 1,
+					'offset': 0
+				}
+			),
+		],
+		no_gutters=True
+	),
+	'Row_btm': dbc.Row(
+		dbc.Col(
+			dbc.Alert(
+				'⬇ To P1 ⬇',
+				color='dark',
+				style=css['bar']
+			)
 		),
-	],
-	no_gutters=True
-)
+		no_gutters=True
+	)
+}
 
-bottom_arrows = dbc.Row(
-	[
-		dbc.Col(
-			html.Div(
-				arrow['down'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 5
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['up'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 1
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['up'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 1
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['up'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 0
-			}
-		),
-		dbc.Col(
-			html.Div(
-				arrow['down'],
-				style=css['arrow']
-			),
-			width={
-				'size'  : 1,
-				'offset': 0
-			}
-		),
-	],
-	no_gutters=True
-)
-
-tooltips = html.Div(
-	[
-		dbc.Tooltip(
-			'Motor pattern output',
-			target='top-sigma'
-		),
-		dbc.Tooltip(
-			'Spatial bias, inhibition of return',
-			target='top-spatial'
-		),
-		# dbc.Tooltip(
-		# 	'Downstream effects on affective state',
-		# 	target='top-affect'
-		# ),
-	]
-)
+# tooltips = html.Div(
+# 	[
+# 		# dbc.Tooltip(
+# 		# 	'Motor pattern output',
+# 		# 	target='top-sigma'
+# 		# ),
+# 		# dbc.Tooltip(
+# 		# 	'Spatial bias, inhibition of return',
+# 		# 	target='top-spatial'
+# 		# ),
+# 		# dbc.Tooltip(
+# 		# 	'Downstream effects on affective state',
+# 		# 	target='top-affect'
+# 		# ),
+# 	]
+# )
 
 
 # Dash Bootstrap CSS theme
@@ -654,14 +759,16 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 app.layout = html.Div(
 	[
-		top_arrows,
-		upper_group,
-		upper_arrows,
-		mid_group,
-		lower_arrows,
-		lower_group,
-		bottom_arrows,
-		tooltips,
+		dashboard_rows['Row_top'],
+		dashboard_rows['Row_1'],
+		dashboard_rows['Row_2'],
+		dashboard_rows['Row_3'],
+		dashboard_rows['Row_4'],
+		dashboard_rows['Row_5'],
+		dashboard_rows['Row_6'],
+		dashboard_rows['Row_7'],
+		dashboard_rows['Row_btm'],
+		# tooltips,
 		dcc.Interval(
 			id='interval-fast',
 			interval=0.25 * 1000,
@@ -683,7 +790,7 @@ app.layout = html.Div(
 # # This is only to suppress warnings TEMPORARILY
 # app.config['suppress_callback_exceptions'] = True
 
-
+# TODO: Just make a single ball alert
 @app.callback(Output('ball-alert-left', 'is_open'), [Input('interval-fast', 'n_intervals')])
 def alert_ball_left(n):
 	if len(miro_ros_data.core_detect_ball_l.data) > 1:
@@ -875,6 +982,7 @@ def update_affect(n):
 		}
 
 	else:
+		# TODO: Is this null data necessary?
 		null_data = go.Scatter(
 			x=np.array(-1),
 			y=np.array(-1),
@@ -1118,7 +1226,7 @@ def update_clock_graph(n):
 	hand_length = 0.9
 
 	# TODO: Add sun / moon glyphs or background image to plot
-	# TODO: Find out how to disable zoom
+	# TODO: Find out how to disable polar plot zoom
 
 	data = [
 		go.Scatterpolar(
