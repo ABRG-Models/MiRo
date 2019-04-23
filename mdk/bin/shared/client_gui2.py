@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 import time
 import gi
 import os
@@ -12,6 +11,7 @@ import rospy
 from std_msgs.msg import Float32MultiArray, UInt32MultiArray, UInt16MultiArray, UInt8MultiArray, UInt16, Int16MultiArray, String
 from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import JointState, BatteryState, Imu, Range, CompressedImage
+from scipy.spatial import distance as dist
 
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
@@ -19,7 +19,6 @@ import numpy as np
 
 import math
 import miro2 as miro
-
 
 
 from matplotlib.backends.backend_gtk3agg import FigureCanvasGTK3Agg as FigureCanvas
@@ -73,13 +72,191 @@ left = False
 
 class miro_gui:
 
-	def __init__(self):
+
+	def ball_control(self):
+
+		# pars
+		f_kin = 0.25
+		f_cos = 1.0
+
+		# state
+		t_now = 0.0
+
+		# message
+		self.kin_joints = JointState()
+		self.kin_joints.position = [0.0, np.radians(30.0), 0.0, 0.0]
+
+		# message
+		self.velocity = TwistStamped()
+
+		# message
+		self.cos_joints = Float32MultiArray()
+		self.cos_joints.data = [0.5, 0.5, 0.0, 0.0, 0.5, 0.5]
+
+		# loop
+		while self.active and not rospy.core.is_shutdown():
+
+			# break on loss of state file
+			if not self.state_file is None:
+				if not os.path.isfile(self.state_file):
+					break
+
+			# compute drive signals
+			xk = math.sin(t_now * f_kin * 2 * math.pi)
+			xc = math.sin(t_now * f_cos * 2 * math.pi)
+			xc2 = math.sin(t_now * f_cos * 1 * math.pi)
+			#
+			# # feedback to user
+			# c = self.count % 10
+			# if c == 0 and self.report_input and not self.sensors is None:
+			# 	print "light", np.round(np.array(self.sensors.light.data) * 100.0)
+			# 	print "cliff", np.round(np.array(self.sensors.cliff.data) * 15.0)
+			# 	print "battery", np.round(np.array(self.sensors.battery.voltage) * 100.0) / 100.0
+			# 	print "touch_body", '{0:016b}'.format(self.sensors.touch_body.data)
+			# 	x = self.sensors.imu_head.linear_acceleration
+			# 	print "imu_head", [x.x, x.y, x.z]
+			# 	print "----------------------------------------------------------------"
+
+			# send wheels
+			if self.shoot:
+				self.LiftControl.set_value(0.0)
+				self.YawControl.set_value(0.0)
+				self.PitchControl.set_value(0.0)
+				self.kin_joints.position[lift] = math.radians(self.LiftControl.get_value())
+				self.kin_joints.position[pitch] = math.radians(self.PitchControl.get_value())
+				self.kin_joints.position[yaw] = math.radians(self.YawControl.get_value())
+
+				v = 0.0
+				Tq = 0.1
+				T = 1.0
+				t1 = Tq
+				t2 = t1 + T
+				t3 = t2 + T
+				t4 = t3 + Tq
+
+				if t_now < t1:
+					v = 0.0
+				elif t_now < t2:
+					v = (t_now - t1) / T
+				elif t_now < t3:
+					v = 0.5 - (t_now - t2) / T
+				elif t_now < t4:
+					v = 0.0
+				else:
+					self.active = False
+				self.velocity.twist.linear.x = v * 4.0
+				self.velocity.twist.angular.z = 0.0
+				# self.pub_cmd_vel.publish(msg_wheels)
+				# self.imp_report_wheels(msg_wheels)
+
+			if len(self.toss):
+				if "l" in self.toss:
+					t = xk * np.radians(55.0)
+					v = 0
+					Tq = 0.1
+					T = 1.0
+					t1 = Tq
+					t2 = t1 + T
+					t3 = t2 + T
+					t4 = t3 + Tq
+					if t_now < t1:
+						v = 0.0
+					elif t_now < t2:
+						v = (t_now - t1) / T
+					elif t_now < t3:
+						v = 0.3 - (t_now - t2*0.6) / T
+					elif t_now < t4:
+						v = 0.0
+					else:
+						self.active = False
+					msg_wheels.twist.angular.z = v * -3.0
+					msg_wheels.twist.linear.x = 0
+
+					msg_kin.position[1] = np.radians(75.0)
+					msg_kin.position[2] = -t
+					msg_kin.position[3] = np.radians(30.0)
+					self.pub_kin.publish(msg_kin)
+					self.imp_report_wheels(msg_wheels)
+					self.pub_cmd_vel.publish(msg_wheels)
+
+				if "r" in self.toss:
+					t = xk * np.radians(55.0)
+					v = 0
+					Tq = 0.1
+					T = 1.0
+					t1 = Tq
+					t2 = t1 + T
+					t3 = t2 + T
+					t4 = t3 + Tq
+					if t_now < t1:
+						v = 0.0
+					elif t_now < t2:
+						v = (t_now - t1) / T
+					elif t_now < t3:
+						v = 0.3 - (t_now - t2*0.6) / T
+					elif t_now < t4:
+						v = 0.0
+					else:
+						self.active = False
+					msg_wheels.twist.angular.z = v * 3.0
+					msg_wheels.twist.linear.x = 0
+
+					msg_kin.position[1] = np.radians(75.0)
+					msg_kin.position[2] = t
+					msg_kin.position[3] = np.radians(30.0)
+					self.pub_kin.publish(msg_kin)
+					self.imp_report_wheels(msg_wheels)
+					self.pub_cmd_vel.publish(msg_wheels)
+
+			if self.stopb:
+				msg_kin.position[1] = np.radians(70.0)
+				msg_kin.position[2] = np.radians(0.0)
+				msg_kin.position[3] = np.radians(-20.0)
+				self.pub_kin.publish(msg_kin)
+
+			if self.ready:
+				msg_kin.position[1] = np.radians(0.0)
+				msg_kin.position[2] = np.radians(0.0)
+				msg_kin.position[3] = np.radians(0.0)
+				self.pub_kin.publish(msg_kin)
+
+			if self.dribble and not self.sensors is None:
+
+				msg_wheels.twist.linear.x = 0.1
+				msg_wheels.twist.angular.z = 0.0
+				self.pub_cmd_vel.publish(msg_wheels)
+				self.imp_report_wheels(msg_wheels)
+
+				if self.sensors.cliff.data[0] * 15.0 != 15.0:
+					msg_wheels.twist.angular.z = -1.0
+					self.pub_cmd_vel.publish(msg_wheels)
+					self.imp_report_wheels(msg_wheels)
+				elif self.sensors.light.data[1] * 15.0 != 15.0:
+					msg_wheels.twist.angular.z = 1.0
+					self.pub_cmd_vel.publish(msg_wheels)
+					self.imp_report_wheels(msg_wheels)
+
+			# state
+			time.sleep(0.02)
+			self.count = self.count + 1
+			t_now = t_now + 0.02
+
+	def __init__(self, args):
+
+		rospy.init_node("miro_gui")
 
 		# state
 		self.step = 0
 		self.state_file = None
 		self.count = 0
 		self.active = False
+
+		# pars
+		f_kin = 0.25
+		f_cos = 1.0
+
+		# state
+		t_now = 0.0
 
 		# input
 		self.report_input = True
@@ -95,28 +272,29 @@ class miro_gui:
 		self.ready = False
 
 		# handle args
-#		for arg in args:
-#			f = arg.find('=')
-#			if f == -1:
-#				key = arg
-#				val = ""
-#			else:
-#				key = arg[:f]
-#				val = arg[f+1:]
-#			if key == "shoot":
-#				self.shoot = True
-#			elif key == "passl":
-#				self.toss = "l"
-#			elif key == "passr":
-#				self.toss = "r"
-#			elif key == "stopb":
-#				self.stopb = True
-#			elif key == "dribble":
-#				self.dribble = True
-#			elif key == "ready":
-#				self.ready = True
-#			else:
-#				error("argument not recognised \"" + arg + "\"")
+		for arg in args:
+			f = arg.find('=')
+			if f == -1:
+				key = arg
+				val = ""
+			else:
+				key = arg[:f]
+				val = arg[f+1:]
+			if key == "shoot":
+				self.shoot = True
+			elif key == "passl":
+				self.toss = "l"
+			elif key == "passr":
+				self.toss = "r"
+			elif key == "stopb":
+				self.stopb = True
+			elif key == "dribble":
+				self.dribble = True
+			elif key == "ready":
+				self.ready = True
+				print("Ready")
+			else:
+				error("argument not recognised \"" + arg + "\"")
 
 		#Load GUI from glade file
 		self.builder = Gtk.Builder()
@@ -324,7 +502,8 @@ class miro_gui:
 		self.MicScrolledWindow.add_with_viewport(self.canvas)
 
 		# variables to store input data
-		self.input_package = None
+#		self.input_package = None
+		self.sensors = None
 		self.input_camera = [None, None]
 		self.t_input_camera = [[], []]
 		self.input_mics = np.zeros((self.x_len, self.no_of_mics))
@@ -356,6 +535,43 @@ class miro_gui:
 		self.auto_camera_zoom = [0, 0] # determine zoom from first received frame
 		self.frame_params = [180, '180w', 15]
 		self.meas_fps = ["", ""]
+
+		# compute drive signals
+		xk = math.sin(t_now * f_kin * 2 * math.pi)
+		xc = math.sin(t_now * f_cos * 2 * math.pi)
+		xc2 = math.sin(t_now * f_cos * 1 * math.pi)
+
+		if self.shoot:
+			self.LiftControl.set_value(0.0)
+			self.YawControl.set_value(0.0)
+			self.PitchControl.set_value(0.0)
+			self.kin_joints.position[lift] = math.radians(self.LiftControl.get_value())
+			self.kin_joints.position[pitch] = math.radians(self.PitchControl.get_value())
+			self.kin_joints.position[yaw] = math.radians(self.YawControl.get_value())
+
+			v = 0.0
+			Tq = 0.1
+			T = 1.0
+			t1 = Tq
+			t2 = t1 + T
+			t3 = t2 + T
+			t4 = t3 + Tq
+
+			if t_now < t1:
+				v = 0.0
+			elif t_now < t2:
+				v = (t_now - t1) / T
+			elif t_now < t3:
+				v = 0.5 - (t_now - t2) / T
+			elif t_now < t4:
+				v = 0.0
+			else:
+				self.active = False
+			self.VelControl.set_value(v * 4.0)
+			self.velocity.twist.linear.x = self.VelControl.get_value()
+			self.AngVelControl.set_value(0.0)
+			self.velocity.twist.angular.z = self.AngVelControl.get_value()
+
 
 		# set initial values
 		self.on_ResetCosButton_clicked()
@@ -391,172 +607,6 @@ class miro_gui:
 
 		# set to active
 		self.active = True
-
-#	def loop(self, *args):
-
-		# pars
-		f_kin = 0.25
-		f_cos = 1.0
-
-		# state
-		t_now = 0.0
-
-#		# loop
-#		while self.active and not rospy.core.is_shutdown():
-
-#			# break on loss of state file
-#			if not self.state_file is None:
-#				if not os.path.isfile(self.state_file):
-#					break
-
-#			# compute drive signals
-#			xk = math.sin(t_now * f_kin * 2 * math.pi)
-#			xc = math.sin(t_now * f_cos * 2 * math.pi)
-#			xc2 = math.sin(t_now * f_cos * 1 * math.pi)
-
-#			# feedback to user
-#			c = self.count % 10
-#			if c == 0 and self.report_input and not self.sensors is None:
-#				print "light", np.round(np.array(self.sensors.light.data) * 100.0)
-#				print "cliff", np.round(np.array(self.sensors.cliff.data) * 15.0)
-#				print "battery", np.round(np.array(self.sensors.battery.voltage) * 100.0) / 100.0
-#				print "touch_body", '{0:016b}'.format(self.sensors.touch_body.data)
-#				x = self.sensors.imu_head.linear_acceleration
-#				print "imu_head", [x.x, x.y, x.z]
-#				print "----------------------------------------------------------------"
-
-#			# send wheels
-#			if self.shoot:
-#				msg_kin.position[1] = np.radians(0.0)
-#				msg_kin.position[2] = np.radians(0.0)
-#				msg_kin.position[3] = np.radians(0.0)
-#				self.pub_kin.publish(msg_kin)
-
-#				v = 0.0
-#				Tq = 0.1
-#				T = 1.0
-#				t1 = Tq
-#				t2 = t1 + T
-#				t3 = t2 + T
-#				t4 = t3 + Tq
-
-#				if t_now < t1:
-#					v = 0.0
-#				elif t_now < t2:
-#					v = (t_now - t1) / T
-#				elif t_now < t3:
-#					v = 0.5 - (t_now - t2) / T
-#				elif t_now < t4:
-#					v = 0.0
-#				else:
-#					self.active = False
-#				msg_wheels.twist.linear.x = v * 4.0
-#				msg_wheels.twist.angular.z = 0.0
-#				self.pub_wheels.publish(msg_wheels)
-#				self.imp_report_wheels(msg_wheels)
-
-#			if len(self.toss): 
-#				if "l" in self.toss:
-#					t = xk * np.radians(55.0)
-#					v = 0
-#					Tq = 0.1
-#					T = 1.0
-#					t1 = Tq
-#					t2 = t1 + T
-#					t3 = t2 + T
-#					t4 = t3 + Tq
-#					if t_now < t1:
-#						v = 0.0
-#					elif t_now < t2:
-#						v = (t_now - t1) / T
-#					elif t_now < t3:
-#						v = 0.3 - (t_now - t2*0.6) / T
-#					elif t_now < t4:
-#						v = 0.0
-#					else:
-#						self.active = False
-#					msg_wheels.twist.angular.z = v * -3.0
-#					msg_wheels.twist.linear.x = 0
-
-#					msg_kin.position[1] = np.radians(75.0)
-#					msg_kin.position[2] = -t
-#					msg_kin.position[3] = np.radians(30.0)
-#					self.pub_kin.publish(msg_kin)
-#					self.imp_report_wheels(msg_wheels)
-#					self.pub_wheels.publish(msg_wheels)
-
-#				if "r" in self.toss:
-#					t = xk * np.radians(55.0)
-#					v = 0
-#					Tq = 0.1
-#					T = 1.0
-#					t1 = Tq
-#					t2 = t1 + T
-#					t3 = t2 + T
-#					t4 = t3 + Tq
-#					if t_now < t1:
-#						v = 0.0
-#					elif t_now < t2:
-#						v = (t_now - t1) / T
-#					elif t_now < t3:
-#						v = 0.3 - (t_now - t2*0.6) / T
-#					elif t_now < t4:
-#						v = 0.0
-#					else:
-#						self.active = False
-#					msg_wheels.twist.angular.z = v * 3.0
-#					msg_wheels.twist.linear.x = 0
-
-#					msg_kin.position[1] = np.radians(75.0)
-#					msg_kin.position[3] = np.radians(30.0)
-#					self.pub_kin.publish(msg_kin)
-#					self.imp_report_wheels(msg_wheels)
-#					self.pub_wheels.publish(msg_wheels)
-
-#			if self.stopb:
-#				msg_kin.position[1] = np.radians(70.0)
-#				msg_kin.position[2] = np.radians(0.0)
-#				msg_kin.position[3] = np.radians(-20.0)
-#				self.pub_kin.publish(msg_kin)
-
-		if self.ready:
-#			self.kin_joints.position = [0.0, 0.0, 0.0, 0.0]
-			self.LiftControl.set_value(0.0)
-			self.YawControl.set_value(0.0)
-			self.PitchControl.set_value(0.0)
-			self.kin_joints.position[lift] = math.radians(self.LiftControl.get_value())
-			self.kin_joints.position[pitch] = math.radians(self.PitchControl.get_value())
-			self.kin_joints.position[yaw] = math.radians(self.YawControl.get_value())
-
-#			if self.dribble and not self.sensors is None:
-
-#				msg_wheels.twist.linear.x = 0.1
-#				msg_wheels.twist.angular.z = 0.0
-#				self.pub_wheels.publish(msg_wheels)
-#				self.imp_report_wheels(msg_wheels)
-
-#				if self.sensors.cliff.data[0] * 15.0 != 15.0:
-#					msg_wheels.twist.angular.z = -1.0
-#					self.pub_wheels.publish(msg_wheels)
-#					self.imp_report_wheels(msg_wheels)
-#				elif self.sensors.light.data[1] * 15.0 != 15.0:
-#					msg_wheels.twist.angular.z = 1.0
-#					self.pub_wheels.publish(msg_wheels)
-#					self.imp_report_wheels(msg_wheels)
-
-#			# state
-#			time.sleep(0.02)
-#			self.count = self.count + 1
-#			t_now = t_now + 0.02
-#	def ready(self, *args):
-#		self.LiftControl.set_value(0.0)
-#		self.YawControl.set_value(0.0)
-#		self.PitchControl.set_value(0.0)
-#		self.kin_joints.position[lift] = math.radians(self.LiftControl.get_value())
-#		self.kin_joints.position[pitch] = math.radians(self.PitchControl.get_value())
-#		self.kin_joints.position[yaw] = math.radians(self.YawControl.get_value())
-#		k = self.kin_joints.position = [0.0, 0.0, 0.0, 0.0]
-#		return k
 
 
 	#Handle Closure of Main Window
@@ -871,7 +921,9 @@ def generate_argb(colour, bright):
 	def callback_package(self, msg):
 
 		# store for processing in update_gui
-		self.input_package = msg
+#		self.input_package = msg
+		self.sensors = msg
+
 
 	def callback_mics(self, data):
 
@@ -921,6 +973,17 @@ def generate_argb(colour, bright):
 				self.gui_CapResolutionSelection.set_active(i)
 				return
 
+	# def find_center(cnts):
+	# 	for i in cnts:
+	# 	# compute the center of the contour
+	# 		M = cv2.moments(i)
+	# 		coX = int(M["m10"] / M["m00"])
+	# 		coY = int(M["m01"] / M["m00"])
+	# 		# draw the contour and center of the shape on the image
+	# 		cv2.circle(image, (coX, coY), 7, (255, 255, 255), -1)
+	# 		cv2.putText(image, "center", (coX - 20, coY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+	# 	return coX, coY
+
 	def callback_cam(self, ros_image, index):
 
 		# discard data if GUI not displayed
@@ -932,74 +995,99 @@ def generate_argb(colour, bright):
 		try:
 			# convert compressed ROS image to raw CV image
 			image = self.image_converter.compressed_imgmsg_to_cv2(ros_image, "rgb8")
-			
-			################################### object detection #################################################
-			output = image.copy()
 
-			output = cv2.medianBlur(output,5)
-
-			imgHSV= cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
-
-			# cv2.imshow("detected object", imgHSV)
-			# 	# cv2.imshow("fill gap", maskClose)
-			# cv2.waitKey(0)
-
-			# green color boundary (RGB)
-			# ([0, 127, 0], [180, 240, 180])
-
-			# white (probably some gray) color boundary (RGB)
-			# ([128, 128, 128], [255, 255, 255])
-
-			# White color boundary (HSV)
-			# ([0, 0, 195], [255, 60, 255])
-
-			# Orange color boundary (HSV)
-			# ([1, 190, 200], [25, 255, 255])
-
-				
-			# define the list of boundaries
-			boundaries = [
-				([0, 0, 195], [255, 60, 255]),
-				# ([0, 50,50], [10, 255, 255]),
-				([170, 50,50], [172, 255, 255])
-			]
-
-			font = cv2.FONT_HERSHEY_SIMPLEX
-
-			count = 0
-
-			# loop over the boundaries
-			for (lower, upper) in boundaries:
-				# create NumPy arrays from the boundaries
-				lower = np.array(lower, dtype = "uint8")
-				upper = np.array(upper, dtype = "uint8")
-			 
-				# find the colors within the specified boundaries and apply
-				# the mask
-				mask = cv2.inRange(imgHSV, lower, upper)
-				# output = cv2.bitwise_and(image, image, mask = mask)
-
-				kernelOpen=np.ones((5,5))
-				kernelClose=np.ones((40,40))
-
-				maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
-				maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
-
-				maskFinal=maskClose.copy()
-				im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-				# cv2.drawContours(image,contours,-1,(255,0,0),3)
-
-				for i in range(len(contours)):
-					if count ==  0:
-						text = "MiRO"
-					else: 
-						text = "Football"
-						self.ready = True
-					x,y,w,h=cv2.boundingRect(contours[i])
-					cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
-					cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
-					
-				count += 1
+			# ################################### object detection #################################################
+			# output = image.copy()
+			#
+			#
+			# height, width, channel = output.shape
+			#
+			# ## perform a fake image cropping by cover up the upper image by a huge colour boxes
+			# output[0:(height/3+50), 0:width] = [0,0,0]
+			#
+			# output = cv2.medianBlur(output,5)
+			#
+			# imgHSV= cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
+			#
+			#
+			# ## Convert the navy blue patches on the football to the orange colour
+			# ## However, the black background might get mistaken as the football patches,
+			# ## so need to disable if black background is used
+			# football_patches = [([130, 50, 50], [150, 255, 255])]
+			#
+			# for (lower, upper) in football_patches:
+			# 	lower = np.array(lower, dtype = "uint8")
+			# 	upper = np.array(upper, dtype = "uint8")
+			# 	mask1 = cv2.inRange(imgHSV, lower, upper)
+			# 	imgHSV[mask1 != 0] = [176, 50, 50]
+			#
+			# # cv2.imshow("detected object", imgHSV)
+			# # 	# cv2.imshow("fill gap", maskClose)
+			# # cv2.waitKey(0)
+			#
+			# # green color boundary (RGB)
+			# # ([0, 127, 0], [180, 240, 180])
+			#
+			# # white (probably some gray) color boundary (RGB)
+			# # ([128, 128, 128], [255, 255, 255])
+			#
+			# # White color boundary (HSV)
+			# # ([0, 0, 195], [255, 60, 255])
+			#
+			# # Orange color boundary (HSV)
+			# # ([1, 190, 200], [25, 255, 255])
+			#
+			#
+			# # define the list of boundaries
+			# boundaries = [
+			# 	([0, 0, 195], [255, 60, 255]), #miro
+			# 	# ([0, 50,50], [10, 255, 255]),
+			# 	# ([170, 50,50], [175, 255, 255]), #football
+			# 	([170, 30,30], [176, 255, 255]), #football (new)
+			# 	# ([100,50,50], [150,255,255])
+			# ]
+			#
+			# font = cv2.FONT_HERSHEY_SIMPLEX
+			#
+			# count = 0
+			#
+			# # loop over the boundaries
+			# for (lower, upper) in boundaries:
+			# 	# create NumPy arrays from the boundaries
+			# 	lower = np.array(lower, dtype = "uint8")
+			# 	upper = np.array(upper, dtype = "uint8")
+			#
+			# 	# find the colors within the specified boundaries and apply
+			# 	# the mask
+			# 	mask = cv2.inRange(imgHSV, lower, upper)
+			# 	# output = cv2.bitwise_and(image, image, mask = mask)
+			#
+			# 	kernelOpen=np.ones((5,5))
+			# 	if count == 0:
+			# 		kernelClose=np.ones((30,30))
+			# 	else:
+			# 		kernelClose=np.ones((60,60))
+			#
+			# 	maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
+			# 	maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
+			#
+			# 	maskFinal=maskClose.copy()
+			# 	im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+			# 	# cv2.drawContours(image,contours,-1,(255,0,0),3)
+			#
+			# 	for i in range(len(contours)):
+			# 		if count ==  0:
+			# 			text = "MiRO"
+			# 		else:
+			# 			text = "Football"
+			# 			self.shoot = True
+			# 			self.ball_control()
+			#
+			# 		x,y,w,h=cv2.boundingRect(contours[i])
+			# 		cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
+			# 		cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+			#
+			# 	count += 1
 
 
 #################################################################################################################
@@ -1055,52 +1143,227 @@ def generate_argb(colour, bright):
 
 #################################### goal post detection #########################################################
 
-			# output = image.copy()
+			output = image.copy()
 
-			# output = cv2.medianBlur(output,5)
+			output = cv2.medianBlur(output,5)
 
-			# hsv = cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
-			# hsv = cv2.medianBlur(hsv,5)
+			hsv = cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
+			hsv = cv2.medianBlur(hsv,5)
 
-			#  # green color boundary
-			#  # ([0, 127, 0], [180, 240, 180])
+			 # green color boundary
+			 # ([0, 127, 0], [180, 240, 180])
 
-			#  # white (probably some gray) color boundary
-			#  # ([128, 128, 128], [255, 255, 255])
+			 # white (probably some gray) color boundary
+			 # ([128, 128, 128], [255, 255, 255])
 
-			#  # define the list of boundaries
-			# boundaries = [
-			# 	# ([36, 0, 0], [86, 255, 255])
-			# 	([0, 0, 0], [180, 255, 60])
-			# ]
+			 # define the list of boundaries
+			boundaries = [
+				# ([36, 0, 0], [86, 255, 255])
+				([0, 0, 0], [180, 255, 60])
+			]
 
-			#  # loop over the boundaries
-			# for (lower, upper) in boundaries:
-			# 	# create NumPy arrays from the boundaries
-			# 	lower = np.array(lower, dtype = "uint8")
-			#  	upper = np.array(upper, dtype = "uint8")
+			 # loop over the boundaries
+			for (lower, upper) in boundaries:
+				# create NumPy arrays from the boundaries
+				lower = np.array(lower, dtype = "uint8")
+			 	upper = np.array(upper, dtype = "uint8")
 
-			#  	# find the colors within the specified boundaries and apply
-			#  	# the mask
-			#  	mask = cv2.inRange(hsv, lower, upper)
-			#  	# cv2.imshow("detected object", mask)
-			#  	# cv2.waitKey(0)
+			 	# find the colors within the specified boundaries and apply
+			 	# the mask
+			 	mask = cv2.inRange(hsv, lower, upper)
+			 	# cv2.imshow("detected object", mask)
+			 	# cv2.waitKey(0)
 
 
-			#  	# output = cv2.bitwise_and(hsv, hsv, mask = mask)
+			 	# output = cv2.bitwise_and(hsv, hsv, mask = mask)
 
-			#  	kernelOpen=np.ones((5,5))
-			#  	kernelClose=np.ones((20,20))
+			 	kernelOpen=np.ones((5,5))
+			 	kernelClose=np.ones((20,20))
 
-			#  	maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
-			#  	maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
+			 	maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
+			 	maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
 
-			#  	maskFinal=maskClose.copy()
-			#  	im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+			 	maskFinal=maskClose.copy()
+			 	im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
 
-			#   	cv2.drawContours(image,contours,-1,(255,0,0),3)
+			  	cv2.drawContours(image,contours,-1,(255,0,0),3)
 
 ############################################################################################################################
+
+######################################distance and orientation detection####################################################
+
+			output = image.copy()
+			output = cv2.medianBlur(output,5)
+			imgHSV= cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
+
+			imgGray= cv2.cvtColor(output,cv2.COLOR_BGR2GRAY)
+			imgGray = cv2.GaussianBlur(imgGray, (5,5), 0)
+			thresh = cv2.threshold(imgGray, 60, 255, cv2.THRESH_BINARY)[1]
+
+			# find contours in the thresholded image
+			cntss = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
+			    cv2.CHAIN_APPROX_SIMPLE)
+			cntss = imutils.grab_contours(cntss)
+
+			# thresh = cv2.threshold(imgGray, 45, 255, cv2.THRESH_BINARY)[1]
+			# thresh = cv2.erode(thresh, None, iterations=2)
+			# thresh = cv2.dilate(thresh, None, iterations=2)
+			#
+			# cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
+			#     cv2.CHAIN_APPROX_SIMPLE)
+
+
+
+
+			# # show the output image
+			# # cv2.imshow("Image", image)
+			# # cv2.waitKey(0)
+			# # cv2.imshow("detected object", imgHSV)
+			# #     # cv2.imshow("fill gap", maskClose)
+			# # cv2.waitKey(0)
+
+			# # green color boundary (RGB)
+			# # ([0, 127, 0], [180, 240, 180])
+
+			# # white (probably some gray) color boundary (RGB)
+			# # ([128, 128, 128], [255, 255, 255])
+
+			# # White color boundary (HSV)
+			# # ([0, 0, 195], [255, 60, 255])
+
+			# # Orange color boundary (HSV)
+			# # ([1, 190, 200], [25, 255, 255])
+
+
+			# define the list of boundaries
+			boundaries = [
+			    ([0, 0, 195], [255, 60, 255]),
+				([170, 50,50], [172, 255, 255])
+			    # ([1, 190, 200], [25, 255, 255])
+			]
+
+
+
+			font = cv2.FONT_HERSHEY_SIMPLEX
+
+			count = 0
+
+			def find_center(cnts):
+				for i in cnts:
+				# compute the center of the contour
+					M = cv2.moments(i)
+					coX = int(M["m10"] / M["m00"])
+					coY = int(M["m01"] / M["m00"])
+					# draw the contour and center of the shape on the image
+					cv2.circle(image, (coX, coY), 7, (255, 255, 255), -1)
+					cv2.putText(image, "center", (coX - 20, coY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+				return coX, coY
+
+			def find_bottom(cnts):
+				for i in cnts:
+				# compute the center of the contour
+					M = cv2.moments(i)
+					coX = int(M["m10"] / M["m00"])
+					coY = int(M["m01"] / M["m00"])
+					# draw the contour and center of the shape on the image
+					cv2.circle(image, (coX, coY*2), 7, (255, 255, 255), -1)
+					cv2.putText(image, "bottom", (coX - 20, coY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+				return coX, coY
+
+			find_center(cntss)
+			find_bottom(cntss)
+			image_centerX, image_centerY = find_center(cntss)
+			print("X: ",image_centerX)
+			print("Y: ",image_centerY)
+
+			# loop over the boundaries
+			for (lower, upper) in boundaries:
+			    # create NumPy arrays from the boundaries
+			    lower = np.array(lower, dtype = "uint8")
+			    upper = np.array(upper, dtype = "uint8")
+
+			    # find the colors within the specified boundaries and apply
+			    # the mask
+			    mask = cv2.inRange(imgHSV, lower, upper)
+			    # output = cv2.bitwise_and(image, image, mask = mask)
+
+			    kernelOpen=np.ones((5,5))
+			    kernelClose=np.ones((20,20))
+			    maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
+			    maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
+
+			    maskFinal=maskClose.copy()
+			    im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+			    cnts = cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+			    cnts = imutils.grab_contours(cnts)
+			    c = max(cnts, key=cv2.contourArea)
+
+			    # extLeft = tuple(c[c[:, :, 0].argmin()][0])
+			    # extRight = tuple(c[c[:, :, 0].argmax()][0])
+			    # extTop = tuple(c[c[:, :, 1].argmin()][0])
+			    # extBot = tuple(c[c[:, :, 1].argmax()][0])
+
+
+			    for i in range(len(contours)):
+			        if count == 0:
+			            text = "MiRO"
+			        else:
+			            text = "Football"
+
+			        cv2.drawContours(image, [c], -1, (0, 255, 255), 2)
+			        # cv2.circle(image, extLeft, 8, (0, 0, 255), -1)
+			        # cv2.circle(image, extRight, 8, (0, 255, 0), -1)
+			        # cv2.circle(image, extTop, 8, (255, 0, 0), -1)
+			        # cv2.circle(image, extBot, 8, (255, 255, 0), -1)
+
+			        x,y,w,h=cv2.boundingRect(contours[i])
+			        # cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
+			        cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+			    count += 1
+			    # loop over the contours
+			    find_center(cnts)
+			    object_centerX, object_centerY = find_center(cnts)
+			    print("oX: ",object_centerX)
+			    print("oY: ",object_centerY)
+			    cv2.line(image, (int(image_centerX), int(image_centerY)*2), (int(object_centerX), int(object_centerY)),
+			            (255, 0, 0), 2)
+			    D = dist.euclidean((image_centerX, image_centerY*2), (object_centerX, object_centerY))
+			    # cv2.putText(image, "{:.1f}in".format(D), (int(object_centerX), int(object_centerY - 10)),
+			    #             cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 0, 0), 2)
+			    print("Distance: ", D)
+			    self.VelControl.set_value(0.05)
+			    if object_centerX>image_centerX:
+			        print("ball is at right")
+				self.AngVelControl.set_value(-0.3)
+#			        print("direction vector: ",object_centerX-image_centerX)
+			        if object_centerY>image_centerY:
+			            print("left down")
+#			            print("direction vector: ",object_centerY-image_centerY)
+			        elif object_centerY<image_centerY:
+			            print("left up")
+#			            print("direction vector: ",image_centerY-object_centerY)
+			    elif object_centerX<image_centerX:
+			        print("ball is at left")
+				self.AngVelControl.set_value(0.3)
+#			        print("direction vector: ",image_centerX-object_centerX)
+			        if object_centerY>image_centerY:
+			            print("right down")
+#			            print("direction vector: ",object_centerY-image_centerY)
+			        elif object_centerY<image_centerY:
+			            print("right up")
+#			            print("direction vector: ",image_centerY-object_centerY)
+			    elif object_centerX==image_centerX:
+			        if object_centerY>image_centerY:
+			            print("center down")
+#			            print("direction vector: ",object_centerY-image_centerY)
+			        elif object_centerY<image_centerY:
+			            print("center up")
+#			            print("direction vector: ",image_centerY-object_centerY)
+			        else:
+						self.shoot = True
+						self.ball_control()
+
+
 
 			# set camera zoom automatically if has not been set already
 			if not self.auto_camera_zoom is None:
@@ -1187,163 +1450,158 @@ def generate_argb(colour, bright):
 			return True
 
 ######################## Update Image Stitching ##################################
-	
 
-		# caml = self.input_camera[0]
-		# self.input_camera[0] = None
-		# while caml != None:
-		# images = []
+		# if self.input_camera[0] is not None:
+		# 	if self.input_camera[1] is not None:
+		# 		images = []
 
-		# caml = self.input_camera[0]
-		# camr = self.input_camera[1]
+		# 		caml = self.input_camera[0]
+		# 		caml = cv2.cvtColor(caml,cv2.COLOR_BGR2RGB)
+		# 		camr = self.input_camera[1]
+		# 		camr = cv2.cvtColor(camr,cv2.COLOR_BGR2RGB)
 
-		# # cv2.imshow("image", caml)
-		# # cv2.waitKey(0)
+		# 		# cv2.imshow("image", caml)
+		# 		# cv2.waitKey(0)
 
-		# images.append(caml)
-		# images.append(camr)
+		# 		images.append(caml)
+		# 		images.append(camr)
 
-		# # initialize OpenCV's image sticher object and then perform the image
-		# # stitching
-		# print("[INFO] stitching images...")
-		# # cv2.ocl.setUseOpenCL(False)
-		# stitcher = cv2.createStitcher() # if imutils.is_cv3() else cv2.Stitcher_create()
-		# (status, stitched) = stitcher.stitch(images)
-		# # cv2.imshow("image", stitched)
-		# # cv2.waitKey(0)
+		# 		# print(images)
+		# 		# cv2.imshow("1", images)
 
-		# print("[INFO] cropping...")
-		# stitched = cv2.copyMakeBorder(stitched, 10, 10, 10, 10,
-		# 	cv2.BORDER_CONSTANT, (0, 0, 0))
-
-		# # convert the stitched image to grayscale and threshold it
-		# # such that all pixels greater than zero are set to 255
-		# # (foreground) while all others remain 0 (background)
-		# gray = cv2.cvtColor(stitched, cv2.COLOR_BGR2GRAY)
-		# thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)[1]
-		# 		# find all external contours in the threshold image then find
-		# # the *largest* contour which will be the contour/outline of
-		# # the stitched image
-
-		# cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
-		# 	cv2.CHAIN_APPROX_SIMPLE)
-		# cnts = imutils.grab_contours(cnts)
-		# c = max(cnts, key=cv2.contourArea)
-
-		# # allocate memory for the mask which will contain the
-		# # rectangular bounding box of the stitched image region
-		# mask = np.zeros(thresh.shape, dtype="uint8")
-		# (x, y, w, h) = cv2.boundingRect(c)
-
-		# cv2.rectangle(mask, (x, y), (x + w, y + h), 255, -1)
-			
-		# # create two copies of the mask: one to serve as our actual
-		# # minimum rectangular region and another to serve as a counter
-		# # for how many pixels need to be removed to form the minimum
-		# # rectangular region
-		# minRect = mask.copy()
-		# sub = mask.copy()
-
-		# # keep looping until there are no non-zero pixels left in the
-		# # subtracted image
-		# while cv2.countNonZero(sub) > 0:
-		# 	# erode the minimum rectangular mask and then subtract
-		# 	# the thresholded image from the minimum rectangular mask
-		# 	# so we can count if there are any non-zero pixels left
-		# 	minRect = cv2.erode(minRect, None)
-		# 	sub = cv2.subtract(minRect, thresh)
+		# 		# initialize OpenCV's image sticher object and then perform the image
+		# 		# stitching
+		# 		# print("[INFO] stitching images...")
+		# 		# cv2.ocl.setUseOpenCL(False)
+		# 		stitcher = cv2.createStitcher() # if imutils.is_cv3() else cv2.Stitcher_create()
+		# 		(status, stitched) = stitcher.stitch(images)
+		# 		# print("i can stitch")
+		# 		# print(stitched.type)
+		# 		if stitched is not None:
+		# 			cv2.imwrite('1111.png',stitched)
 
 
-		# # find contours in the minimum rectangular mask and then
-		# # extract the bounding box (x, y)-coordinates
-		# cnts = cv2.findContours(minRect.copy(), cv2.RETR_EXTERNAL,
-		# 	cv2.CHAIN_APPROX_SIMPLE)
-		# cnts = imutils.grab_contours(cnts)
-		# c = max(cnts, key=cv2.contourArea)
-		# (x, y, w, h) = cv2.boundingRect(c)
-
-		# # use the bounding box coordinates to extract the our final
-		# # stitched image
-		# stitched = stitched[y:y + h, x:x + w]
+				# img= cv2.cvtColor(stitched,cv2.COLOR_RGB2HSV)
 
 
+				###### Cropping will make the gui super slow, and probably laggy and latency ################
+				# if stitched is not None:
 
-		# ################## Find Object ##########################
-		# output = stitched.copy()
+				# # cv2.imshow("image", stitched)
+				# # cv2.waitKey(0)
 
-		# output = cv2.medianBlur(output,5)
+				# # print("[INFO] cropping...")
+				# 	stitched = cv2.copyMakeBorder(stitched, 10, 10, 10, 10,
+				# 		cv2.BORDER_CONSTANT, (0, 0, 0))
 
-		# imgHSV= cv2.cvtColor(output,cv2.COLOR_BGR2HSV)
+				# 	# convert the stitched image to grayscale and threshold it
+				# 	# such that all pixels greater than zero are set to 255
+				# 	# (foreground) while all others remain 0 (background)
+				# 	gray = cv2.cvtColor(stitched, cv2.COLOR_RGB2GRAY)
+				# 	thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)[1]
+				# 			# find all external contours in the threshold image then find
+				# 	# the *largest* contour which will be the contour/outline of
+				# 	# the stitched image
 
-		# boundaries = [
-		# 	([0, 0, 195], [255, 60, 255]),
-		# 	# ([0, 50,50], [10, 255, 255]),
-		# 	([170, 50,50], [172, 255, 255])
-		# ]
+				# 	cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
+				# 		cv2.CHAIN_APPROX_SIMPLE)
+				# 	cnts = imutils.grab_contours(cnts)
+				# 	c = max(cnts, key=cv2.contourArea)
 
-		# font = cv2.FONT_HERSHEY_SIMPLEX
+				# 	# allocate memory for the mask which will contain the
+				# 	# rectangular bounding box of the stitched image region
+				# 	mask = np.zeros(thresh.shape, dtype="uint8")
+				# 	(x, y, w, h) = cv2.boundingRect(c)
 
-		# count = 0
+				# 	cv2.rectangle(mask, (x, y), (x + w, y + h), 255, -1)
 
-		# # loop over the boundaries
-		# for (lower, upper) in boundaries:
-		# 	# create NumPy arrays from the boundaries
-		# 	lower = np.array(lower, dtype = "uint8")
-		# 	upper = np.array(upper, dtype = "uint8")
-		 
-		# 	# find the colors within the specified boundaries and apply
-		# 	# the mask
-		# 	mask = cv2.inRange(imgHSV, lower, upper)
-		# 	# output = cv2.bitwise_and(image, image, mask = mask)
+				# 	# create two copies of the mask: one to serve as our actual
+				# 	# minimum rectangular region and another to serve as a counter
+				# 	# for how many pixels need to be removed to form the minimum
+				# 	# rectangular region
+				# 	minRect = mask.copy()
+				# 	sub = mask.copy()
 
-		# 	kernelOpen=np.ones((5,5))
-		# 	kernelClose=np.ones((20,20))
-
-		# 	maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
-		# 	maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
-
-		# 	maskFinal=maskClose.copy()
-		# 	im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-		# 	# cv2.drawContours(image,contours,-1,(255,0,0),3)
-
-		# 	for i in range(len(contours)):
-		# 		if count ==  0:
-		# 			text = "MiRO"
-		# 		else: 
-		# 			text = "Football"	    
-		# 		x,y,w,h=cv2.boundingRect(contours[i])
-		# 		cv2.rectangle(stitched,(x,y),(x+w,y+h),(0,0,255), 2)
-		# 		cv2.putText(stitched, text,(x,y+h),font,1.0,(0,255,255), True)
-				
-		# 	count += 1
+				# 	# keep looping until there are no non-zero pixels left in the
+				# 	# subtracted image
+				# 	while cv2.countNonZero(sub) > 0:
+				# 		# erode the minimum rectangular mask and then subtract
+				# 		# the thresholded image from the minimum rectangular mask
+				# 		# so we can count if there are any non-zero pixels left
+				# 		minRect = cv2.erode(minRect, None)
+				# 		sub = cv2.subtract(minRect, thresh)
 
 
-	
+				# 	# find contours in the minimum rectangular mask and then
+				# 	# extract the bounding box (x, y)-coordinates
+				# 	cnts = cv2.findContours(minRect.copy(), cv2.RETR_EXTERNAL,
+				# 		cv2.CHAIN_APPROX_SIMPLE)
+				# 	cnts = imutils.grab_contours(cnts)
+				# 	c = max(cnts, key=cv2.contourArea)
+				# 	(x, y, w, h) = cv2.boundingRect(c)
 
-		# 	tt = self.t_input_camera[i]
-		# 	tt.append(t)
-		# 	n_meas = 15
-		# 	tt = tt[-(n_meas+1):]
-		# 	if len(tt) == (n_meas+1):
-		# 		dt = (tt[n_meas] - tt[0]) / float(n_meas)
-		# 		fps = format_num(1.0 / dt, 1)
-		# 	else:
-		# 		fps = "???"
-		# 	self.meas_fps[i] = fps
+				# 	# use the bounding box coordinates to extract the our final
+				# 	# stitched image
+				# 	stitched = stitched[y:y + h, x:x + w]
+				# 	print("i am here")
+					# cv2.imwrite('1111.jpg',stitched)
 
-		# 	# update displayed image
-		# 	pb = GdkPixbuf.Pixbuf.new_from_data(image.tostring(),
-		# 				GdkPixbuf.Colorspace.RGB, False, 8,
-		# 				image.shape[1], image.shape[0],
-		# 				image.shape[2]*image.shape[1]
-		# 				)
-		# 	self.gui_Camera[0].set_from_pixbuf(pb.copy())
+				################## Find Object ##########################
+				# if stitched is not None:
+				# 	output = stitched.copy()
+
+				# 	output = cv2.medianBlur(output,5)
+
+				# 	imgHSV= cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
+
+				# 	boundaries = [
+				# 		([0, 0, 195], [255, 60, 255]),
+				# 		# ([0, 50,50], [10, 255, 255]),
+				# 		([170, 50,50], [172, 255, 255])
+				# 	]
+
+				# 	font = cv2.FONT_HERSHEY_SIMPLEX
+
+				# 	count = 0
+
+				# 	# loop over the boundaries
+				# 	for (lower, upper) in boundaries:
+				# 		# create NumPy arrays from the boundaries
+				# 		lower = np.array(lower, dtype = "uint8")
+				# 		upper = np.array(upper, dtype = "uint8")
+
+				# 		# find the colors within the specified boundaries and apply
+				# 		# the mask
+				# 		mask = cv2.inRange(imgHSV, lower, upper)
+				# 		# output = cv2.bitwise_and(image, image, mask = mask)
+
+				# 		kernelOpen=np.ones((5,5))
+				# 		kernelClose=np.ones((20,20))
+
+				# 		maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
+				# 		maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
+
+				# 		maskFinal=maskClose.copy()
+				# 		im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+				# 		# cv2.drawContours(image,contours,-1,(255,0,0),3)
+
+				# 		for i in range(len(contours)):
+				# 			if count ==  0:
+				# 				text = "MiRO"
+				# 			else:
+				# 				text = "Football"
+				# 			x,y,w,h=cv2.boundingRect(contours[i])
+				# 			cv2.rectangle(stitched,(x,y),(x+w,y+h),(0,0,255), 2)
+				# 			cv2.putText(stitched, text,(x,y+h),font,1.0,(0,255,255), True)
+
+				# 		count += 1
+
+				# 	print("i am getting object")
+
+
 
 ###########################################################################################################
-
-		# for each camera
 		for i in range(2):
-
 			# get image
 			image = self.input_camera[i]
 			self.input_camera[i] = None
@@ -1382,11 +1640,14 @@ def generate_argb(colour, bright):
 		self.step += 1
 		step_ = self.step % 100
 
-		if not self.input_package is None:
+#		if not self.input_package is None:
+		if not self.sensors is None:
 
 			# acquire
-			p = self.input_package
-			self.input_package = None
+#			p = self.input_package
+#			self.input_package = None
+			p = self.sensors
+			self.sensors = None
 
 			# update battery
 			x = p.battery.voltage
@@ -1566,11 +1827,6 @@ def generate_argb(colour, bright):
 ## MAIN
 
 if __name__ == "__main__":
-	main = miro_gui()
-	rospy.init_node("miro_gui")
+	main = miro_gui(sys.argv[1:])
 	Gtk.main()
 #	main.loop()
-
-
-
-
