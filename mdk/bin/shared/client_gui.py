@@ -956,73 +956,96 @@ def generate_argb(colour, bright):
 			image = self.image_converter.compressed_imgmsg_to_cv2(ros_image, "rgb8")
 
 			################################### object detection #################################################
-			# output = image.copy()
-
-			# output = cv2.medianBlur(output,5)
-
-			# imgHSV= cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
-
-			# # cv2.imshow("detected object", imgHSV)
-			# # 	# cv2.imshow("fill gap", maskClose)
-			# # cv2.waitKey(0)
-
-			# # green color boundary (RGB)
-			# # ([0, 127, 0], [180, 240, 180])
-
-			# # white (probably some gray) color boundary (RGB)
-			# # ([128, 128, 128], [255, 255, 255])
-
-			# # White color boundary (HSV)
-			# # ([0, 0, 195], [255, 60, 255])
-
-			# # Orange color boundary (HSV)
-			# # ([1, 190, 200], [25, 255, 255])
+			output = image.copy()
 
 
-			# # define the list of boundaries
-			# boundaries = [
-			# 	([0, 0, 195], [255, 60, 255]),
-			# 	# ([0, 50,50], [10, 255, 255]),
-			# 	([170, 50,50], [172, 255, 255])
-			# ]
+			height, width, channel = output.shape
 
-			# font = cv2.FONT_HERSHEY_SIMPLEX
+			## perform a fake image cropping by cover up the upper image by a huge colour boxes
+			output[0:(height/3+50), 0:width] = [0,0,0]
 
-			# count = 0
+			output = cv2.medianBlur(output,5)
 
-			# # loop over the boundaries
-			# for (lower, upper) in boundaries:
-			# 	# create NumPy arrays from the boundaries
-			# 	lower = np.array(lower, dtype = "uint8")
-			# 	upper = np.array(upper, dtype = "uint8")
+			imgHSV= cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
 
-# 				# find the colors within the specified boundaries and apply
-# 				# the mask
-# 				mask = cv2.inRange(imgHSV, lower, upper)
-# 				# output = cv2.bitwise_and(image, image, mask = mask)
 
-# 				kernelOpen=np.ones((5,5))
-# 				kernelClose=np.ones((40,40))
+			## Convert the navy blue patches on the football to the orange colour
+			## However, the black background might get mistaken as the football patches,
+			## so need to disable if black background is used
+			football_patches = [([130, 50, 50], [150, 255, 255])]
 
-# 				maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
-# 				maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
+			for (lower, upper) in football_patches:
+				lower = np.array(lower, dtype = "uint8")
+				upper = np.array(upper, dtype = "uint8")
+				mask1 = cv2.inRange(imgHSV, lower, upper)
+				imgHSV[mask1 != 0] = [176, 50, 50]
 
-# 				maskFinal=maskClose.copy()
-# 				im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-# 				# cv2.drawContours(image,contours,-1,(255,0,0),3)
+			# cv2.imshow("detected object", imgHSV)
+			# 	# cv2.imshow("fill gap", maskClose)
+			# cv2.waitKey(0)
 
-# 				for i in range(len(contours)):
-# 					if count ==  0:
-# 						text = "MiRO"
-# 					else:
-# 						text = "Football"
-# #						self.dribble = True
-# #						self.ball_control()
-# 					x,y,w,h=cv2.boundingRect(contours[i])
-# 					cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
-# 					cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+			# green color boundary (RGB)
+			# ([0, 127, 0], [180, 240, 180])
 
-			# 	count += 1
+			# white (probably some gray) color boundary (RGB)
+			# ([128, 128, 128], [255, 255, 255])
+
+			# White color boundary (HSV)
+			# ([0, 0, 195], [255, 60, 255])
+
+			# Orange color boundary (HSV)
+			# ([1, 190, 200], [25, 255, 255])
+
+
+			# define the list of boundaries
+			boundaries = [
+				([0, 0, 195], [255, 60, 255]), #miro
+				# ([0, 50,50], [10, 255, 255]),
+				# ([170, 50,50], [175, 255, 255]), #football
+				([170, 30,30], [176, 255, 255]), #football (new)
+				# ([100,50,50], [150,255,255])
+			]
+
+			font = cv2.FONT_HERSHEY_SIMPLEX
+
+			count = 0
+
+			# loop over the boundaries
+			for (lower, upper) in boundaries:
+				# create NumPy arrays from the boundaries
+				lower = np.array(lower, dtype = "uint8")
+				upper = np.array(upper, dtype = "uint8")
+
+				# find the colors within the specified boundaries and apply
+				# the mask
+				mask = cv2.inRange(imgHSV, lower, upper)
+				# output = cv2.bitwise_and(image, image, mask = mask)
+
+				kernelOpen=np.ones((5,5))
+				if count == 0:
+					kernelClose=np.ones((30,30))
+				else:
+					kernelClose=np.ones((60,60))
+
+				maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
+				maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
+
+				maskFinal=maskClose.copy()
+				im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+				# cv2.drawContours(image,contours,-1,(255,0,0),3)
+
+				for i in range(len(contours)):
+					if count ==  0:
+						text = "MiRO"
+					else:
+						text = "Football"
+#						self.dribble = True
+#						self.ball_control()
+					x,y,w,h=cv2.boundingRect(contours[i])
+					cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
+					cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+
+				count += 1
 
 
 #################################################################################################################
@@ -1384,96 +1407,99 @@ def generate_argb(colour, bright):
 
 ######################## Update Image Stitching ##################################
 	
-		if self.input_camera[0] is not None:
-			if self.input_camera[1] is not None:
-				images = []
+		# if self.input_camera[0] is not None:
+		# 	if self.input_camera[1] is not None:
+		# 		images = []
 
-				caml = self.input_camera[0]
-				caml = cv2.cvtColor(caml,cv2.COLOR_BGR2RGB)
-				camr = self.input_camera[1]
-				camr = cv2.cvtColor(camr,cv2.COLOR_BGR2RGB)
+		# 		caml = self.input_camera[0]
+		# 		caml = cv2.cvtColor(caml,cv2.COLOR_BGR2RGB)
+		# 		camr = self.input_camera[1]
+		# 		camr = cv2.cvtColor(camr,cv2.COLOR_BGR2RGB)
 
-				# cv2.imshow("image", caml)
-				# cv2.waitKey(0)
+		# 		# cv2.imshow("image", caml)
+		# 		# cv2.waitKey(0)
 
-				images.append(caml)
-				images.append(camr)
+		# 		images.append(caml)
+		# 		images.append(camr)
 
-				# print(images)
-				# cv2.imshow("1", images)
+		# 		# print(images)
+		# 		# cv2.imshow("1", images)
 
-				# initialize OpenCV's image sticher object and then perform the image
-				# stitching
-				# print("[INFO] stitching images...")
-				# cv2.ocl.setUseOpenCL(False)
-				stitcher = cv2.createStitcher() # if imutils.is_cv3() else cv2.Stitcher_create()
-				(status, stitched) = stitcher.stitch(images)
-				# print("i can stitch")
-				# print(stitched.type)
-				cv2.imwrite('1111.jpg',stitched)
+		# 		# initialize OpenCV's image sticher object and then perform the image
+		# 		# stitching
+		# 		# print("[INFO] stitching images...")
+		# 		# cv2.ocl.setUseOpenCL(False)
+		# 		stitcher = cv2.createStitcher() # if imutils.is_cv3() else cv2.Stitcher_create()
+		# 		(status, stitched) = stitcher.stitch(images)
+		# 		# print("i can stitch")
+		# 		# print(stitched.type)
+		# 		if stitched is not None:
+		# 			cv2.imwrite('1111.png',stitched)
+
+
 				# img= cv2.cvtColor(stitched,cv2.COLOR_RGB2HSV)
 
 
 				###### Cropping will make the gui super slow, and probably laggy and latency ################
 				# if stitched is not None:
 					
-				# cv2.imshow("image", stitched)
-				# cv2.waitKey(0)
+				# # cv2.imshow("image", stitched)
+				# # cv2.waitKey(0)
 
-				# print("[INFO] cropping...")
-					# stitched = cv2.copyMakeBorder(stitched, 10, 10, 10, 10,
-					# 	cv2.BORDER_CONSTANT, (0, 0, 0))
+				# # print("[INFO] cropping...")
+				# 	stitched = cv2.copyMakeBorder(stitched, 10, 10, 10, 10,
+				# 		cv2.BORDER_CONSTANT, (0, 0, 0))
 
-					# # convert the stitched image to grayscale and threshold it
-					# # such that all pixels greater than zero are set to 255
-					# # (foreground) while all others remain 0 (background)
-					# gray = cv2.cvtColor(stitched, cv2.COLOR_RGB2GRAY)
-					# thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)[1]
-					# 		# find all external contours in the threshold image then find
-					# # the *largest* contour which will be the contour/outline of
-					# # the stitched image
+				# 	# convert the stitched image to grayscale and threshold it
+				# 	# such that all pixels greater than zero are set to 255
+				# 	# (foreground) while all others remain 0 (background)
+				# 	gray = cv2.cvtColor(stitched, cv2.COLOR_RGB2GRAY)
+				# 	thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)[1]
+				# 			# find all external contours in the threshold image then find
+				# 	# the *largest* contour which will be the contour/outline of
+				# 	# the stitched image
 
-					# cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
-					# 	cv2.CHAIN_APPROX_SIMPLE)
-					# cnts = imutils.grab_contours(cnts)
-					# c = max(cnts, key=cv2.contourArea)
+				# 	cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
+				# 		cv2.CHAIN_APPROX_SIMPLE)
+				# 	cnts = imutils.grab_contours(cnts)
+				# 	c = max(cnts, key=cv2.contourArea)
 
-					# # allocate memory for the mask which will contain the
-					# # rectangular bounding box of the stitched image region
-					# mask = np.zeros(thresh.shape, dtype="uint8")
-					# (x, y, w, h) = cv2.boundingRect(c)
+				# 	# allocate memory for the mask which will contain the
+				# 	# rectangular bounding box of the stitched image region
+				# 	mask = np.zeros(thresh.shape, dtype="uint8")
+				# 	(x, y, w, h) = cv2.boundingRect(c)
 
-					# cv2.rectangle(mask, (x, y), (x + w, y + h), 255, -1)
+				# 	cv2.rectangle(mask, (x, y), (x + w, y + h), 255, -1)
 						
-					# # create two copies of the mask: one to serve as our actual
-					# # minimum rectangular region and another to serve as a counter
-					# # for how many pixels need to be removed to form the minimum
-					# # rectangular region
-					# minRect = mask.copy()
-					# sub = mask.copy()
+				# 	# create two copies of the mask: one to serve as our actual
+				# 	# minimum rectangular region and another to serve as a counter
+				# 	# for how many pixels need to be removed to form the minimum
+				# 	# rectangular region
+				# 	minRect = mask.copy()
+				# 	sub = mask.copy()
 
-					# # keep looping until there are no non-zero pixels left in the
-					# # subtracted image
-					# while cv2.countNonZero(sub) > 0:
-					# 	# erode the minimum rectangular mask and then subtract
-					# 	# the thresholded image from the minimum rectangular mask
-					# 	# so we can count if there are any non-zero pixels left
-					# 	minRect = cv2.erode(minRect, None)
-					# 	sub = cv2.subtract(minRect, thresh)
+				# 	# keep looping until there are no non-zero pixels left in the
+				# 	# subtracted image
+				# 	while cv2.countNonZero(sub) > 0:
+				# 		# erode the minimum rectangular mask and then subtract
+				# 		# the thresholded image from the minimum rectangular mask
+				# 		# so we can count if there are any non-zero pixels left
+				# 		minRect = cv2.erode(minRect, None)
+				# 		sub = cv2.subtract(minRect, thresh)
 
 
-					# # find contours in the minimum rectangular mask and then
-					# # extract the bounding box (x, y)-coordinates
-					# cnts = cv2.findContours(minRect.copy(), cv2.RETR_EXTERNAL,
-					# 	cv2.CHAIN_APPROX_SIMPLE)
-					# cnts = imutils.grab_contours(cnts)
-					# c = max(cnts, key=cv2.contourArea)
-					# (x, y, w, h) = cv2.boundingRect(c)
+				# 	# find contours in the minimum rectangular mask and then
+				# 	# extract the bounding box (x, y)-coordinates
+				# 	cnts = cv2.findContours(minRect.copy(), cv2.RETR_EXTERNAL,
+				# 		cv2.CHAIN_APPROX_SIMPLE)
+				# 	cnts = imutils.grab_contours(cnts)
+				# 	c = max(cnts, key=cv2.contourArea)
+				# 	(x, y, w, h) = cv2.boundingRect(c)
 
-					# # use the bounding box coordinates to extract the our final
-					# # stitched image
-					# stitched = stitched[y:y + h, x:x + w]
-					# print("i am here")
+				# 	# use the bounding box coordinates to extract the our final
+				# 	# stitched image
+				# 	stitched = stitched[y:y + h, x:x + w]
+				# 	print("i am here")
 					# cv2.imwrite('1111.jpg',stitched)
 
 				################## Find Object ##########################
