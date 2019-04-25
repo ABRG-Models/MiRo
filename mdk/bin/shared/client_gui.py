@@ -119,6 +119,7 @@ class miro_gui:
 
 			# send wheels
 			if self.shoot:
+				print('shooting')
 				self.LiftControl.set_value(0.0)
 				self.YawControl.set_value(0.0)
 				self.PitchControl.set_value(0.0)
@@ -1291,63 +1292,24 @@ def generate_argb(colour, bright):
 			    #             cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 0, 0), 2)
 			    print("Distance: ", D)
 			    # self.VelControl.set_value(0.05)
-			    if object_centerX>image_centerX:
-			        print("ball is at right")
-				self.AngVelControl.set_value(-0.3)
-#			        print("direction vector: ",object_centerX-image_centerX)
-#			        if object_centerY>image_centerY:
-#			            print("left down")
-#			            print("direction vector: ",object_centerY-image_centerY)
-#			        elif object_centerY<image_centerY:
-#			            print("left up")
-#			            print("direction vector: ",image_centerY-object_centerY)
-			    elif object_centerX<image_centerX:
-			        print("ball is at left")
-				self.AngVelControl.set_value(0.3)
-#			        print("direction vector: ",image_centerX-object_centerX)
-#			        if object_centerY>image_centerY:
-#			            print("right down")
-#			            print("direction vector: ",object_centerY-image_centerY)
-#			        elif object_centerY<image_centerY:
-#			            print("right up")
-#			            print("direction vector: ",image_centerY-object_centerY)
-#			    elif object_centerX==image_centerX:
-			    elif self.sensor.sonar.range == 0.4:
-#			        if object_centerY>image_centerY:
-#			            print("center down")
-#			            print("direction vector: ",object_centerY-image_centerY)
-#			        elif object_centerY<image_centerY:
-#			            print("center up")
-#			            print("direction vector: ",image_centerY-object_centerY)
-				t_now = 0.0
-				self.velocity.twist.linear.x = 0.0
-				self.velocity.twist.angular.z = 0.0
-				self.LiftControl.set_value(0.0)
-				self.YawControl.set_value(0.0)
-				self.PitchControl.set_value(0.0)
+                            if not self.sensors is None:
 
-				v = 0.0
-				Tq = 0.1
-				T = 1.0
-				t1 = Tq
-				t2 = t1 + T
-				t3 = t2 + T
-				t4 = t3 + Tq
-
-				if t_now < t1:
-					v = 0.0
-				elif t_now < t2:
-					v = (t_now - t1) / T
-				elif t_now < t3:
-					v = 0.5 - (t_now - t2) / T
-				elif t_now < t4:
-					v = 0.0
-				else:
-					self.active = False
-				self.velocity.twist.linear.x = v * 4.0
-				self.velocity.twist.angular.z = 0.0
-
-
+				p = self.sensors
+				# update sonar
+				x = p.sonar.range
+				print(format_num(x))
+				if object_centerX>image_centerX:
+					print("ball is at right")
+					self.AngVelControl.set_value(-0.3)
+		       		elif object_centerX<image_centerX:
+			        	print("ball is at left")
+					self.AngVelControl.set_value(0.3)
+			    	if format_num(x) <= 0.10:
+				    break
+				    self.AngVelControl.set_value(0.0)
+				    self.shoot = True
+				    self.ball_control()
+					
 
 			# set camera zoom automatically if has not been set already
 			if not self.auto_camera_zoom is None:
