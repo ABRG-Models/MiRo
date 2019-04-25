@@ -958,150 +958,198 @@ def generate_argb(colour, bright):
 			# convert compressed ROS image to raw CV image
 			image = self.image_converter.compressed_imgmsg_to_cv2(ros_image, "rgb8")
 
-			# ################################### object detection #################################################
+			################################### find circle (find football) (fail) ######################################
+
 			# output = image.copy()
-			#
-			#
+
 			# height, width, channel = output.shape
-			#
+
 			# ## perform a fake image cropping by cover up the upper image by a huge colour boxes
 			# output[0:(height/3+50), 0:width] = [0,0,0]
-			#
-			# output = cv2.medianBlur(output,5)
-			#
-			# imgHSV= cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
-			#
-			#
-			# ## Convert the navy blue patches on the football to the orange colour
-			# ## However, the black background might get mistaken as the football patches,
-			# ## so need to disable if black background is used
-			# football_patches = [([130, 50, 50], [150, 255, 255])]
-			#
-			# for (lower, upper) in football_patches:
-			# 	lower = np.array(lower, dtype = "uint8")
-			# 	upper = np.array(upper, dtype = "uint8")
-			# 	mask1 = cv2.inRange(imgHSV, lower, upper)
-			# 	imgHSV[mask1 != 0] = [176, 50, 50]
-			#
-			# # cv2.imshow("detected object", imgHSV)
-			# # 	# cv2.imshow("fill gap", maskClose)
-			# # cv2.waitKey(0)
-			#
-			# # green color boundary (RGB)
-			# # ([0, 127, 0], [180, 240, 180])
-			#
-			# # white (probably some gray) color boundary (RGB)
-			# # ([128, 128, 128], [255, 255, 255])
-			#
-			# # White color boundary (HSV)
-			# # ([0, 0, 195], [255, 60, 255])
-			#
-			# # Orange color boundary (HSV)
-			# # ([1, 190, 200], [25, 255, 255])
-			#
-			#
-			# # define the list of boundaries
-			# boundaries = [
-			# 	([0, 0, 195], [255, 60, 255]), #miro
-			# 	# ([0, 50,50], [10, 255, 255]),
-			# 	# ([170, 50,50], [175, 255, 255]), #football
-			# 	([170, 30,30], [176, 255, 255]), #football (new)
-			# 	# ([100,50,50], [150,255,255])
-			# ]
-			#
-			# font = cv2.FONT_HERSHEY_SIMPLEX
-			#
-			# count = 0
-			#
-			# # loop over the boundaries
-			# for (lower, upper) in boundaries:
-			# 	# create NumPy arrays from the boundaries
-			# 	lower = np.array(lower, dtype = "uint8")
-			# 	upper = np.array(upper, dtype = "uint8")
-			#
-			# 	# find the colors within the specified boundaries and apply
-			# 	# the mask
-			# 	mask = cv2.inRange(imgHSV, lower, upper)
-			# 	# output = cv2.bitwise_and(image, image, mask = mask)
-			#
-			# 	kernelOpen=np.ones((5,5))
-			# 	if count == 0:
-			# 		kernelClose=np.ones((30,30))
-			# 	else:
-			# 		kernelClose=np.ones((60,60))
-			#
-			# 	maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
-			# 	maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
-			#
-			# 	maskFinal=maskClose.copy()
-			# 	im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-			# 	# cv2.drawContours(image,contours,-1,(255,0,0),3)
-			#
-			# 	for i in range(len(contours)):
-			# 		if count ==  0:
-			# 			text = "MiRO"
-			# 		else:
-			# 			text = "Football"
-			#
-			# 		x,y,w,h=cv2.boundingRect(contours[i])
-			# 		cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
-			# 		cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
-			#
-			# 	count += 1
+
+			# gray = cv2.cvtColor(output,cv2.COLOR_RGB2GRAY)
+
+			# # cv2.imshow("temp", gray)
+
+			# # gray = cv2.GaussianBlur(gray,(20,20),0);
+			# gray = cv2.medianBlur(gray,5)
+
+			# # cv2.imshow("temp2", gray)
+
+			# # Adaptive Guassian Threshold is to detect sharp edges in the Image. For more information Google it.
+			# gray = cv2.adaptiveThreshold(gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,\
+			#         cv2.THRESH_BINARY,11,3.5)
+
+			# kernel = np.ones((5,5),np.uint8)
+			# gray = cv2.erode(gray,kernel,iterations = 1)
+			# # gray = erosion
+
+			# gray = cv2.dilate(gray,kernel,iterations = 1)
+			# # gray = dilation
+
+			# # cv2.imshow("temp3", gray)
+
+			# count = 0;
+
+			# circles = cv2.HoughCircles(gray,cv2.HOUGH_GRADIENT,1,20,param1=50,param2=30,minRadius=0,maxRadius=0)
+
+			# if circles is not None:
+			#     # convert the (x, y) coordinates and radius of the circles to integers
+			#     circles = np.round(circles[0, :]).astype("int")
+
+			#     # loop over the (x, y) coordinates and radius of the circles
+			#     for (x, y, r) in circles:
+			#         # draw the circle in the output image, then draw a rectangle
+			#         # corresponding to the center of the circle
+			#         cv2.circle(image, (x, y), r, (0, 255, 0), 4)
+			#         cv2.rectangle(image, (x - 5, y - 5), (x + 5, y + 5), (0, 128, 255), -1)
+			# count += 1
 
 
-#################################################################################################################
 
+			######################################################################################################
+
+			################################### object detection #################################################
+# 			output = image.copy()
+
+# 			height, width, channel = output.shape
+
+# 			## perform a fake image cropping by cover up the upper image by a huge colour boxes
+# 			output[0:(height/3+50), 0:width] = [0,0,0]
+
+# 			output = cv2.medianBlur(output,5)
+
+# 			imgHSV= cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
+
+
+# 			## Convert the navy blue patches on the football to the orange colour
+# 			## However, the black background might get mistaken as the football patches,
+# 			## so need to disable if black background is used
+# 			# football_patches = [([130, 50, 50], [150, 255, 255])]
+
+# 			# for (lower, upper) in football_patches:
+# 			# 	lower = np.array(lower, dtype = "uint8")
+# 			# 	upper = np.array(upper, dtype = "uint8")
+# 			# 	mask1 = cv2.inRange(imgHSV, lower, upper)
+# 			# 	imgHSV[mask1 != 0] = [176, 50, 50]
+
+# 			# cv2.imshow("detected object", imgHSV)
+# 			# 	# cv2.imshow("fill gap", maskClose)
+# 			# cv2.waitKey(0)
+
+# 			# green color boundary (RGB)
+# 			# ([0, 127, 0], [180, 240, 180])
+
+# 			# white (probably some gray) color boundary (RGB)
+# 			# ([128, 128, 128], [255, 255, 255])
+
+# 			# White color boundary (HSV)
+# 			# ([0, 0, 195], [255, 60, 255])
+
+# 			# Orange color boundary (HSV)
+# 			# ([1, 190, 200], [25, 255, 255])
+
+
+# 			# define the list of boundaries
+# 			boundaries = [
+# 				([0, 0, 195], [255, 60, 255]), #miro
+# 				# ([0, 50,50], [10, 255, 255]),
+# 				# ([170, 50,50], [175, 255, 255]), #football
+# 				([170, 30,30], [176, 255, 255]), #football (new)
+# 				# ([100,50,50], [150,255,255])
+# 			]
+
+# 			font = cv2.FONT_HERSHEY_SIMPLEX
+
+# 			count = 0
+
+# 			# loop over the boundaries
+# 			for (lower, upper) in boundaries:
+# 				# create NumPy arrays from the boundaries
+# 				lower = np.array(lower, dtype = "uint8")
+# 				upper = np.array(upper, dtype = "uint8")
+
+# 				# find the colors within the specified boundaries and apply
+# 				# the mask
+# 				mask = cv2.inRange(imgHSV, lower, upper)
+# 				# output = cv2.bitwise_and(image, image, mask = mask)
+
+# 				kernelOpen=np.ones((5,5))
+# 				if count == 0:
+# 					kernelClose=np.ones((30,30))
+# 				else:
+# 					kernelClose=np.ones((60,60))
+
+# 				maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
+# 				maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
+
+# 				maskFinal=maskClose.copy()
+# 				im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+# 				# cv2.drawContours(image,contours,-1,(255,0,0),3)
+
+# 				for i in range(len(contours)):
+# 					if count ==  0:
+# 						text = "MiRO"
+# 					else:
+# 						text = "Football"
+# #						self.dribble = True
+# #						self.ball_control()
+# 					x,y,w,h=cv2.boundingRect(contours[i])
+# 					cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
+# 					cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+
+# 				count += 1
 
 #################################### boundary detection #########################################################
 
-			# output = image.copy()
+# 			output = image.copy()
 
-			# output = cv2.medianBlur(output,5)
+# 			output = cv2.medianBlur(output,5)
 
-			# hsv = cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
-			# hsv = cv2.medianBlur(hsv,5)
+# 			hsv = cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
+# 			hsv = cv2.medianBlur(hsv,5)
 
-			#  # green color boundary
-			#  # ([0, 127, 0], [180, 240, 180])
+# 			 # green color boundary
+# 			 # ([0, 127, 0], [180, 240, 180])
 
-			#  # white (probably some gray) color boundary
-			#  # ([128, 128, 128], [255, 255, 255])
+# 			 # white (probably some gray) color boundary
+# 			 # ([128, 128, 128], [255, 255, 255])
 
-			#  # define the list of boundaries
-			# boundaries = [
-			# 	([36, 0, 0], [86, 255, 255])
-			# ]
+# 			 # define the list of boundaries
+# 			boundaries = [
+# 				([36, 0, 0], [86, 255, 255])
+# 			]
 
-			#  # loop over the boundaries
-			# for (lower, upper) in boundaries:
-			# 	# create NumPy arrays from the boundaries
-			# 	lower = np.array(lower, dtype = "uint8")
-			#  	upper = np.array(upper, dtype = "uint8")
+# 			 # loop over the boundaries
+# 			for (lower, upper) in boundaries:
+# 				# create NumPy arrays from the boundaries
+# 				lower = np.array(lower, dtype = "uint8")
+# 			 	upper = np.array(upper, dtype = "uint8")
 
-			#  	# find the colors within the specified boundaries and apply
-			#  	# the mask
-			#  	mask = cv2.inRange(hsv, lower, upper)
-			#  	# cv2.imshow("detected object", mask)
-			#  	# cv2.waitKey(0)
+# 			 	# find the colors within the specified boundaries and apply
+# 			 	# the mask
+# 			 	mask = cv2.inRange(imgHSV, lower, upper)
+# 			 	# cv2.imshow("detected object", mask)
+# 			 	# cv2.waitKey(0)
 
 
-			#  	# output = cv2.bitwise_and(hsv, hsv, mask = mask)
+# 			 	# output = cv2.bitwise_and(hsv, hsv, mask = mask)
 
-			#  	kernelOpen=np.ones((5,5))
-			#  	kernelClose=np.ones((40,40))
+# 			 	kernelOpen=np.ones((5,5))
+# 			 	kernelClose=np.ones((40,40))
 
-			#  	maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
-			#  	maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
+# 			 	maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
+# 			 	maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
 
-			#  	maskFinal=maskClose.copy()
-			#  	im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+# 			 	maskFinal=maskClose.copy()
+# 			 	im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
 
-			#   	cv2.drawContours(image,contours,-1,(255,0,0),3)
+# 			  	cv2.drawContours(image,contours,-1,(0,255,0),3)
 
-############################################################################################################################
+# ###########################################################################################################################
 
-#################################### goal post detection #########################################################
+# ################################### goal post detection #########################################################
+
 
 			output = image.copy()
 
@@ -1151,7 +1199,6 @@ def generate_argb(colour, bright):
 ############################################################################################################################
 
 ######################################distance and orientation detection####################################################
-
 			output = image.copy()
 			output = cv2.medianBlur(output,5)
 			imgHSV= cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
@@ -1311,6 +1358,7 @@ def generate_argb(colour, bright):
 				    self.ball_control()
 					
 
+
 			# set camera zoom automatically if has not been set already
 			if not self.auto_camera_zoom is None:
 				h = self.auto_camera_zoom[0]
@@ -1425,8 +1473,6 @@ def generate_argb(colour, bright):
 		# 		# print(stitched.type)
 		# 		if stitched is not None:
 		# 			cv2.imwrite('1111.png',stitched)
-
-
 				# img= cv2.cvtColor(stitched,cv2.COLOR_RGB2HSV)
 
 
