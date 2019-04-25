@@ -1,6 +1,3 @@
-#!/home/dbuxton/mdk/share/python/miro2/dashboard/.venv/bin/python
-
-# /usr/bin/env python
 # MiRo-E ROS interfaces
 from std_msgs.msg import Float32MultiArray, UInt32MultiArray, UInt16MultiArray, UInt8MultiArray, UInt16, UInt32, Int16MultiArray, String
 from geometry_msgs.msg import TwistStamped

@@ -19,6 +19,7 @@ import miro_interface as mi
 # Define line and arrow widths
 H_WIDTH = '7px'
 V_WIDTH = '5px'
+V_HEIGHT = '30px'
 A_WIDTH = '10px'
 A_HEIGHT = '20px'
 
@@ -107,7 +108,7 @@ css = {
 		'height'          : '100%',
 		'width'           : V_WIDTH,
 		'margin'          : 'auto',
-		'min-height'      : '30px'
+		'min-height'      : V_HEIGHT
 	},
 }
 
@@ -583,14 +584,15 @@ dashboard_rows = {
 					html.Div(style=css['line_horizontal']),
 					html.Div(style=css['arrow_right']),
 					# For some reason the standard vertical line results in a 1px offset here
-					# html.Div(style=css['line_vertical']),
-					html.Div(style={
-						'background-color': 'black',
-						'height'          : '100%',
-						'width'           : V_WIDTH,
-						'margin-left'     : '49%',
-						'min-height'      : '30px'
-					})
+					# (Now seems fixed??)
+					html.Div(style=css['line_vertical']),
+					# html.Div(style={
+					# 	'background-color': 'black',
+					# 	'height'          : '100%',
+					# 	'width'           : V_WIDTH,
+					# 	'margin-left'     : '49%',
+					# 	'min-height'      : V_HEIGHT
+					# })
 				],
 				width={
 					'size'  : 1,
@@ -790,6 +792,7 @@ dashboard_rows = {
 					[
 						dbc.CardHeader('Expression'),
 						dbc.CardBody(
+							# TODO: Can probably do better than a dog face for this card
 							dbc.CardImg(src=('/assets/express_dog.png')),
 							id='tooltip-expression'
 						),
