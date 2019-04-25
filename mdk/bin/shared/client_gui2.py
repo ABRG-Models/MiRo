@@ -122,9 +122,6 @@ class miro_gui:
 				self.LiftControl.set_value(0.0)
 				self.YawControl.set_value(0.0)
 				self.PitchControl.set_value(0.0)
-				self.kin_joints.position[lift] = math.radians(self.LiftControl.get_value())
-				self.kin_joints.position[pitch] = math.radians(self.PitchControl.get_value())
-				self.kin_joints.position[yaw] = math.radians(self.YawControl.get_value())
 
 				v = 0.0
 				Tq = 0.1
@@ -209,32 +206,33 @@ class miro_gui:
 					self.pub_cmd_vel.publish(msg_wheels)
 
 			if self.stopb:
-				msg_kin.position[1] = np.radians(70.0)
-				msg_kin.position[2] = np.radians(0.0)
-				msg_kin.position[3] = np.radians(-20.0)
-				self.pub_kin.publish(msg_kin)
+				self.LiftControl.set_value(70.0)
+				self.YawControl.set_value(0.0)
+				self.PitchControl.set_value(-20.0)
+				self.kin_joints.position[lift] = math.radians(self.LiftControl.get_value())
+				self.kin_joints.position[pitch] = math.radians(self.PitchControl.get_value())
+				self.kin_joints.position[yaw] = math.radians(self.YawControl.get_value())
+
 
 			if self.ready:
-				msg_kin.position[1] = np.radians(0.0)
-				msg_kin.position[2] = np.radians(0.0)
-				msg_kin.position[3] = np.radians(0.0)
-				self.pub_kin.publish(msg_kin)
+				self.LiftControl.set_value(90.0)
+				self.YawControl.set_value(0.0)
+				self.PitchControl.set_value(0.0)
+				self.kin_joints.position[lift] = math.radians(self.LiftControl.get_value())
+				self.kin_joints.position[pitch] = math.radians(self.PitchControl.get_value())
+				self.kin_joints.position[yaw] = math.radians(self.YawControl.get_value())
 
 			if self.dribble and not self.sensors is None:
 
-				msg_wheels.twist.linear.x = 0.1
-				msg_wheels.twist.angular.z = 0.0
-				self.pub_cmd_vel.publish(msg_wheels)
-				self.imp_report_wheels(msg_wheels)
+				self.velocity.twist.linear.x = 0.1
+				self.velocity.twist.angular.z = 0.0
+
 
 				if self.sensors.cliff.data[0] * 15.0 != 15.0:
-					msg_wheels.twist.angular.z = -1.0
-					self.pub_cmd_vel.publish(msg_wheels)
-					self.imp_report_wheels(msg_wheels)
+					self.velocity.twist.angular.z = -1.0
 				elif self.sensors.light.data[1] * 15.0 != 15.0:
-					msg_wheels.twist.angular.z = 1.0
-					self.pub_cmd_vel.publish(msg_wheels)
-					self.imp_report_wheels(msg_wheels)
+					self.velocity.twist.angular.z = 1.0
+
 
 			# state
 			time.sleep(0.02)
@@ -535,43 +533,6 @@ class miro_gui:
 		self.auto_camera_zoom = [0, 0] # determine zoom from first received frame
 		self.frame_params = [180, '180w', 15]
 		self.meas_fps = ["", ""]
-
-		# compute drive signals
-		xk = math.sin(t_now * f_kin * 2 * math.pi)
-		xc = math.sin(t_now * f_cos * 2 * math.pi)
-		xc2 = math.sin(t_now * f_cos * 1 * math.pi)
-
-		if self.shoot:
-			self.LiftControl.set_value(0.0)
-			self.YawControl.set_value(0.0)
-			self.PitchControl.set_value(0.0)
-			self.kin_joints.position[lift] = math.radians(self.LiftControl.get_value())
-			self.kin_joints.position[pitch] = math.radians(self.PitchControl.get_value())
-			self.kin_joints.position[yaw] = math.radians(self.YawControl.get_value())
-
-			v = 0.0
-			Tq = 0.1
-			T = 1.0
-			t1 = Tq
-			t2 = t1 + T
-			t3 = t2 + T
-			t4 = t3 + Tq
-
-			if t_now < t1:
-				v = 0.0
-			elif t_now < t2:
-				v = (t_now - t1) / T
-			elif t_now < t3:
-				v = 0.5 - (t_now - t2) / T
-			elif t_now < t4:
-				v = 0.0
-			else:
-				self.active = False
-			self.VelControl.set_value(v * 4.0)
-			self.velocity.twist.linear.x = self.VelControl.get_value()
-			self.AngVelControl.set_value(0.0)
-			self.velocity.twist.angular.z = self.AngVelControl.get_value()
-
 
 		# set initial values
 		self.on_ResetCosButton_clicked()
@@ -1080,8 +1041,6 @@ def generate_argb(colour, bright):
 			# 			text = "MiRO"
 			# 		else:
 			# 			text = "Football"
-			# 			self.shoot = True
-			# 			self.ball_control()
 			#
 			# 		x,y,w,h=cv2.boundingRect(contours[i])
 			# 		cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
@@ -1331,37 +1290,62 @@ def generate_argb(colour, bright):
 			    # cv2.putText(image, "{:.1f}in".format(D), (int(object_centerX), int(object_centerY - 10)),
 			    #             cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 0, 0), 2)
 			    print("Distance: ", D)
-			    self.VelControl.set_value(0.05)
+			    # self.VelControl.set_value(0.05)
 			    if object_centerX>image_centerX:
 			        print("ball is at right")
 				self.AngVelControl.set_value(-0.3)
 #			        print("direction vector: ",object_centerX-image_centerX)
-			        if object_centerY>image_centerY:
-			            print("left down")
+#			        if object_centerY>image_centerY:
+#			            print("left down")
 #			            print("direction vector: ",object_centerY-image_centerY)
-			        elif object_centerY<image_centerY:
-			            print("left up")
+#			        elif object_centerY<image_centerY:
+#			            print("left up")
 #			            print("direction vector: ",image_centerY-object_centerY)
 			    elif object_centerX<image_centerX:
 			        print("ball is at left")
 				self.AngVelControl.set_value(0.3)
 #			        print("direction vector: ",image_centerX-object_centerX)
-			        if object_centerY>image_centerY:
-			            print("right down")
+#			        if object_centerY>image_centerY:
+#			            print("right down")
 #			            print("direction vector: ",object_centerY-image_centerY)
-			        elif object_centerY<image_centerY:
-			            print("right up")
+#			        elif object_centerY<image_centerY:
+#			            print("right up")
 #			            print("direction vector: ",image_centerY-object_centerY)
-			    elif object_centerX==image_centerX:
-			        if object_centerY>image_centerY:
-			            print("center down")
+#			    elif object_centerX==image_centerX:
+			    elif self.sensor.sonar.range == 0.4:
+#			        if object_centerY>image_centerY:
+#			            print("center down")
 #			            print("direction vector: ",object_centerY-image_centerY)
-			        elif object_centerY<image_centerY:
-			            print("center up")
+#			        elif object_centerY<image_centerY:
+#			            print("center up")
 #			            print("direction vector: ",image_centerY-object_centerY)
-			        else:
-						self.shoot = True
-						self.ball_control()
+				t_now = 0.0
+				self.velocity.twist.linear.x = 0.0
+				self.velocity.twist.angular.z = 0.0
+				self.LiftControl.set_value(0.0)
+				self.YawControl.set_value(0.0)
+				self.PitchControl.set_value(0.0)
+
+				v = 0.0
+				Tq = 0.1
+				T = 1.0
+				t1 = Tq
+				t2 = t1 + T
+				t3 = t2 + T
+				t4 = t3 + Tq
+
+				if t_now < t1:
+					v = 0.0
+				elif t_now < t2:
+					v = (t_now - t1) / T
+				elif t_now < t3:
+					v = 0.5 - (t_now - t2) / T
+				elif t_now < t4:
+					v = 0.0
+				else:
+					self.active = False
+				self.velocity.twist.linear.x = v * 4.0
+				self.velocity.twist.angular.z = 0.0
 
 
 
