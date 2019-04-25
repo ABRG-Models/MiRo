@@ -110,5 +110,3 @@ venv.bak/
 \.idea/
 
 *.pyc
-
-mdk/share/python/miro2/dashboard/assets/

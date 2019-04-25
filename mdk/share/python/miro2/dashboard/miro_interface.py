@@ -17,28 +17,25 @@ import miro2 as miro
 import rospy
 
 
-# TODO: Add definitions for physical or sim. robot
 class MiroClient:
 	def __init__(self):
 
+		# TODO: Add test for physical or sim. robot
 		self.opt = {'Uncompressed': False}
 
 		# Set topic root
 		topic_root = "/miro"
 
-		# TODO: Add mics (or is that just priw?)
-
 		# Subscribe to ROS topics
 		rospy.Subscriber(topic_root + '/core/affect/state', miro.msg.affect_state, self.callback_core_affect)
 		rospy.Subscriber(topic_root + '/core/affect/time', UInt32, self.callback_core_time)
-
 		rospy.Subscriber(topic_root + '/core/pril', Image, self.callback_pril)
 		rospy.Subscriber(topic_root + '/core/prir', Image, self.callback_prir)
 		rospy.Subscriber(topic_root + '/core/priw', Image, self.callback_priw)
-
 		rospy.Subscriber(topic_root + '/core/detect_ball_l', UInt16MultiArray, self.callback_detect_ball_l)
 		rospy.Subscriber(topic_root + '/core/detect_ball_r', UInt16MultiArray, self.callback_detect_ball_r)
-
+		rospy.Subscriber(topic_root + '/core/detect_face_l', Float32MultiArray, self.callback_detect_face_l)
+		rospy.Subscriber(topic_root + '/core/detect_face_r', Float32MultiArray, self.callback_detect_face_r)
 		rospy.Subscriber(topic_root + '/core/selection/priority', Float32MultiArray, self.callback_selection_priority)
 		rospy.Subscriber(topic_root + '/core/selection/inhibition', Float32MultiArray, self.callback_selection_inhibition)
 
@@ -58,6 +55,8 @@ class MiroClient:
 		self.core_priw = None
 		self.core_detect_ball_l = None
 		self.core_detect_ball_r = None
+		self.core_detect_face_l = None
+		self.core_detect_face_r = None
 		self.selection_priority = None
 		self.selection_inhibition = None
 		self.sensors_caml = None
@@ -74,6 +73,12 @@ class MiroClient:
 
 	def callback_detect_ball_r(self, data):
 		self.core_detect_ball_r = data
+
+	def callback_detect_face_l(self, data):
+		self.core_detect_face_l = data
+
+	def callback_detect_face_r(self, data):
+		self.core_detect_face_r = data
 
 	def callback_selection_priority(self, data):
 		self.selection_priority = data

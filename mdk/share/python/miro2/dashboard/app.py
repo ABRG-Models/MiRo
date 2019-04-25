@@ -15,20 +15,16 @@ import rospy
 import numpy as np
 import miro_interface as mi
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-
+##########
+# Define line and arrow widths
 H_WIDTH = '7px'
 V_WIDTH = '5px'
 A_WIDTH = '10px'
 A_HEIGHT = '20px'
 
+##########
+# Define custom CSS
 css = {
-	'arrow': {
-		'font-size'  : 'xx-large',
-		'font-weight': 'bolder',
-		'text-align' : 'center',
-		'padding'    : '0px'
-	},
 	'arrow_down': {
 		'border-left' : A_WIDTH + ' solid white',
 		'border-right': A_WIDTH + ' solid white',
@@ -116,30 +112,69 @@ css = {
 }
 
 ##########
+# Define affect faces
+faces = {
+	'0.0': {
+		'0.0': 'assets/face_frowning.png',
+		'0.3': 'assets/face_crying.png',
+		'0.6': 'assets/face_crying_loud.png',
+		'0.9': 'assets/face_crying_loud.png',
+	},
+	'0.2': {
+		'0.0': 'assets/face_pensive.png',
+		'0.3': 'assets/face_frowning_slight.png',
+		'0.6': 'assets/face_anguished.png',
+		'0.9': 'assets/face_anguished.png',
+	},
+	'0.4': {
+		'0.0': 'assets/face_expressionless.png',
+		'0.3': 'assets/face_neutral.png',
+		'0.6': 'assets/face_open_mouth.png',
+		'0.9': 'assets/face_open_mouth.png',
+	},
+	'0.6': {
+		'0.0': 'assets/face_relieved.png',
+		'0.3': 'assets/face_smiling_slight.png',
+		'0.6': 'assets/face_grinning.png',
+		'0.9': 'assets/face_grinning.png',
+	},
+	'0.8': {
+		'0.0': 'assets/face_smiling.png',
+		'0.3': 'assets/face_smiling_eyes.png',
+		'0.6': 'assets/face_grinning_eyes.png',
+		'0.9': 'assets/face_grinning_eyes.png',
+	},
+}
+
+##########
 # Define dashboard items
 dashboard_alerts = {
-	'ball_left': dbc.Alert(
+	'ball': dbc.Alert(
 		"⚽",
-		id='ball-alert-left',
+		id='ball-alert',
 		color='info',
 		is_open=False,
 		style={
 			'font-size' : 'x-large',
+			'margin'    : '0px',
 			'text-align': 'center'
 		}
 	),
-	'ball_right': dbc.Alert(
-		"⚽",
-		id='ball-alert-right',
-		color='info',
+	'face': dbc.Alert(
+		"😀",
+		id='face-alert',
+		color='success',
 		is_open=False,
 		style={
 			'font-size' : 'x-large',
+			'margin'    : '0px',
 			'text-align': 'center'
 		}
-	)
+	),
 }
+
 dashboard_graphs = {
+	# TODO: Add a tab for viewing BG model information
 	'action': dcc.Graph(
 		id='action-graph',
 		config={'displayModeBar': False},
@@ -150,9 +185,11 @@ dashboard_graphs = {
 	),
 	'affect': dcc.Graph(
 		id='affect-graph',
-		animate=True,
+		# 'Animate' property is incompatible with changing images
+		# animate=True,
 		config={'displayModeBar': False},
 		style={
+			# FIXME: Ideally this shouldn't be a hardcoded value
 			'height': '400px',
 			'width' : '100%',
 		}
@@ -172,13 +209,85 @@ dashboard_graphs = {
 		animate=True,
 		config={'displayModeBar': False},
 		style={
-			'height': '100px',
+			'height': '100%',
 			'width' : '100%',
 		}
 	)
 }
 
-# TODO: Tidy up all double brackets
+# As arrows comprise multiple lines spread across multiple rows and columns,
+# and each tooltip requires a unique ID, tooltip messages must be repeated to occur along the entire arrow
+# Instead, tooltips currently only appear for arrow terminators
+dashboard_tooltips = html.Div([
+	# Row 1
+	dbc.Tooltip(
+		'Motor pattern output',
+		target='tooltip-top-sum'
+	),
+
+	# Row 3
+	dbc.Tooltip(
+		'Predicted state',
+		target='tooltip-motor-action',
+	),
+	dbc.Tooltip(
+		'Spatial priority',
+		target='tooltip-spatial-action',
+	),
+	dbc.Tooltip(
+		'Action success / failure',
+		target='tooltip-action-affect',
+	),
+	dbc.Tooltip(
+		'Downstream effects on affective state',
+		target='tooltip-top-affect',
+	),
+
+	# Row 4
+	dbc.Tooltip(
+		'Spatial bias and inhibition of return',
+		target='tooltip-top-spatial',
+	),
+
+	# Row 5
+	dbc.Tooltip(
+		'Current state',
+		target='tooltip-sensory-spatial',
+	),
+	dbc.Tooltip(
+		'Base arousal',
+		target='tooltip-circadian-affect',
+	),
+	dbc.Tooltip(
+		'Physical state',
+		target='tooltip-bottom-affect',
+	),
+
+	# Row 6
+	dbc.Tooltip(
+		'Current pose',
+		target='tooltip-sensory-motor',
+	),
+	dbc.Tooltip(
+		'Ears, eyelids, lights, tail, and vocalisation',
+		target='tooltip-expression',
+	),
+
+	# Row 7
+	dbc.Tooltip(
+		'Motor efferent',
+		target='tooltip-motor-bottom',
+	),
+	dbc.Tooltip(
+		'Motor afferent',
+		target='tooltip-bottom-sensory',
+	),
+	dbc.Tooltip(
+		'Light',
+		target='tooltip-bottom-circadian',
+	),
+
+])
 
 ##########
 # Define dashboard rows
@@ -200,6 +309,7 @@ dashboard_rows = {
 					html.Div(style=css['line_vertical']),
 					html.Div(style=css['arrow_down']),
 				],
+				id='tooltip-top-sum',
 				width={
 					'size'  : 1,
 					'offset': 3
@@ -208,7 +318,7 @@ dashboard_rows = {
 			dbc.Col(
 				html.Div(style=css['line_vertical']),
 				width={
-					'size'  : 1,
+			        'size'  : 1,
 					'offset': 0
 				}
 			),
@@ -247,20 +357,33 @@ dashboard_rows = {
 			dbc.Col(
 				[
 					dbc.Alert(
-						'Σ',
-						color='info',
-						style={
-							'font-size'  : 'xx-large',
-							'font-weight': 'bolder',
-							'margin'     : '0px',
-							'text-align' : 'center'
-						}
+						'Many up– and downstream connections omitted for clarity',
+						color='info'
+					)
+				],
+				width={
+					'size'  : 1,
+					'offset': 1
+				},
+			),
+			dbc.Col(
+				[
+					dbc.Card(
+						dbc.CardBody(
+							dbc.CardText('Σ'),
+							style={
+								'font-size'  : 'xx-large',
+								'font-weight': 'bolder',
+								'text-align' : 'center'
+							}
+						),
+						color='light'
 					),
 					html.Div(style=css['line_vertical']),
 				],
 				width={
 					'size'  : 1,
-					'offset': 3
+					'offset': 1
 				}
 			),
 			dbc.Col(
@@ -275,10 +398,14 @@ dashboard_rows = {
 				},
 			),
 			dbc.Col(
-				dbc.Card([
-					dbc.CardHeader('Action selection'),
-					dbc.CardBody(dashboard_graphs['action'])
-				]),
+				dbc.Card(
+					[
+						dbc.CardHeader('Action selection',),
+						dbc.CardBody(dashboard_graphs['action'])
+					],
+					color='warning',
+					outline=True,
+				),
 				width={
 					'size'  : 5,
 					'offset': 0
@@ -304,9 +431,7 @@ dashboard_rows = {
 				}
 			),
 			dbc.Col(
-				[
-					html.Div(style=css['line_vertical']),
-				],
+				html.Div(style=css['line_vertical']),
 				width={
 					'size'  : 1,
 					'offset': 0
@@ -317,6 +442,7 @@ dashboard_rows = {
 					html.Div(style=css['arrow_up']),
 					html.Div(style=css['line_vertical']),
 				],
+				id='tooltip-motor-action',
 				width={
 					'size'  : 1,
 					'offset': 0
@@ -327,6 +453,7 @@ dashboard_rows = {
 					html.Div(style=css['arrow_up']),
 					html.Div(style=css['line_vertical']),
 				],
+				id='tooltip-spatial-action',
 				width={
 					'size'  : 1,
 					'offset': 1
@@ -337,6 +464,7 @@ dashboard_rows = {
 					html.Div(style=css['line_vertical']),
 					html.Div(style=css['arrow_down']),
 				],
+				id='tooltip-action-affect',
 				width={
 					'size'  : 1,
 					'offset': 1
@@ -347,6 +475,7 @@ dashboard_rows = {
 					html.Div(style=css['line_vertical']),
 					html.Div(style=css['arrow_down']),
 				],
+				id='tooltip-top-affect',
 				width={
 					'size'  : 1,
 					'offset': 1
@@ -359,7 +488,8 @@ dashboard_rows = {
 		[
 			dbc.Col(
 				dbc.Card([
-					dbc.CardBody(dbc.CardText('[MiRo]'))
+					dbc.CardHeader('Environment'),
+					dbc.CardBody(dbc.CardImg(src=('/assets/miro_logo.png')))
 				]),
 				width={
 					'size'  : 1,
@@ -368,6 +498,8 @@ dashboard_rows = {
 			),
 			dbc.Col(
 				[
+					html.Div(style=css['line_horizontal_clear']),
+					html.Div(style=css['arrow_right_clear']),
 					html.Div(style=css['line_horizontal']),
 					html.Div(style=css['arrow_right']),
 					html.Div(style=css['line_horizontal']),
@@ -380,19 +512,24 @@ dashboard_rows = {
 			),
 			dbc.Col(
 				[
-					dbc.Card([
-						dbc.CardBody([
-							dbc.CardText(
-								'Motor reafferent noise filter',
-							    style={'font-size': '90%'}
-							),
-							# dbc.CardText('Noise filter')
-						]),
-						dbc.CardFooter(
-							'➡ Self-activity reports',
-							style={'font-size': 'x-small'}
-						)
-					],
+					dbc.Card(
+						[
+							dbc.CardBody([
+								dbc.CardText(
+									'Motor reafferent',
+								    style={'font-weight': 'bold'}
+								),
+								dbc.CardText(html.Hr()),
+								dbc.CardText(
+									'Noise filter',
+									style={'font-weight': 'bold'}
+								),
+							]),
+							dbc.CardFooter(
+								'➡ Self-activity reports',
+								style={'font-size': 'x-small'}
+							)
+						],
 						color='light'
 					),
 				],
@@ -437,7 +574,10 @@ dashboard_rows = {
 			dbc.Col(
 				[
 					html.Div(style=css['line_horizontal']),
-					html.Div(style=css['arrow_right']),
+					html.Div(
+						style=css['arrow_right'],
+						id='tooltip-top-spatial',
+					),
 					html.Div(style=css['line_horizontal']),
 					html.Div(style=css['arrow_right']),
 					html.Div(style=css['line_horizontal']),
@@ -458,37 +598,28 @@ dashboard_rows = {
 				}
 			),
 			dbc.Col(
-				dbc.Card([
-					dbc.CardHeader('Spatial attention'),
-					dbc.CardBody(
-						[
-							dashboard_graphs['aural'],
-							dashboard_graphs['cameras'],
-							dbc.Table(
-								html.Tbody(
-									html.Tr([
-										# TODO: Add face detection alert
-										html.Td(dashboard_alerts['ball_left']),
-										html.Td(dashboard_alerts['ball_right']),
-									])
-								),
-								borderless=True,
-								size='sm',
-								style={
-									'margin' : 0,
-									'padding': 0,
-								}
+				dbc.Card(
+					[
+						dbc.CardHeader('Spatial attention'),
+						dbc.CardBody(
+							[
+								dashboard_graphs['aural'],
+								dashboard_graphs['cameras'],
+								dashboard_alerts['ball'],
+								dashboard_alerts['face'],
+							]
+						),
+						dbc.CardFooter(
+							daq.BooleanSwitch(
+								id='cam-toggle',
+								label='Visual attention',
+								labelPosition='bottom',
 							)
-						]
-					),
-					dbc.CardFooter(
-						daq.BooleanSwitch(
-							id='cam-toggle',
-							label='Visual attention overlay',
-							labelPosition='bottom',
 						)
-					)
-				],
+					],
+					color='primary',
+					outline=True,
+					# Some cards are forced to 100% height so that arrows always connect cleanly
 					style={'height': '100%'}
 				),
 				width={
@@ -497,10 +628,13 @@ dashboard_rows = {
 				}
 			),
 			dbc.Col(
-				dbc.Card([
-					dbc.CardHeader('Affect'),
-					dbc.CardBody(dashboard_graphs['affect'])
-				],
+				dbc.Card(
+					[
+						dbc.CardHeader('Affect'),
+						dbc.CardBody(dashboard_graphs['affect'])
+					],
+					color='success',
+					outline=True,
 					style={'height': '100%'}
 				),
 				width={
@@ -535,6 +669,7 @@ dashboard_rows = {
 					html.Div(style=css['arrow_up']),
 					html.Div(style=css['line_vertical']),
 				],
+				id='tooltip-sensory-spatial',
 				width={
 					'size'  : 1,
 					'offset': 1
@@ -545,6 +680,7 @@ dashboard_rows = {
 					html.Div(style=css['arrow_up']),
 					html.Div(style=css['line_vertical']),
 				],
+				id='tooltip-circadian-affect',
 				width={
 					'size'  : 1,
 					'offset': 1
@@ -555,6 +691,7 @@ dashboard_rows = {
 					html.Div(style=css['arrow_up']),
 					html.Div(style=css['line_vertical']),
 				],
+				id='tooltip-bottom-affect',
 				width={
 					'size'  : 1,
 					'offset': 0
@@ -562,10 +699,6 @@ dashboard_rows = {
 			),
 			dbc.Col(
 				[
-					# html.Div(style=css['line_vertical']),
-					# html.Div(style=css['arrow_down']),
-					# html.Div(style=css['line_vertical_half_bottom']),
-					# html.Div(style=css['arrow_down']),
 					html.Div(style=css['line_vertical']),
 					html.Div(style=css['arrow_down']),
 				],
@@ -583,15 +716,20 @@ dashboard_rows = {
 				dbc.Card(
 					[
 						dbc.CardHeader('Body model (Motor)'),
-						dbc.CardBody(dbc.CardText('Lorem ipsum')),
+						dbc.CardBody(
+							dbc.CardImg(
+								# TODO: Get a more square-proportioned MiRo image
+								src=('/assets/miro_picture.jpg'),
+								style={'width': '120px'}
+							),
+							style={'text-align': 'center'}
+						),
 						dbc.CardFooter(
 							'➡ Self-activity reports',
 							style={'font-size': 'x-small'}
 						)
 					],
-					style={
-						'height': '100%'
-					}
+					style={'height': '100%'}
 				),
 				width={
 					'size'  : 3,
@@ -600,12 +738,10 @@ dashboard_rows = {
 			),
 			dbc.Col(
 				[
-					# html.Div(style=css['line_horizontal_clear_right']),
-					# html.Div(style=css['line_horizontal']),
-					# html.Div(style=css['arrow_left']),
 					html.Div(style=css['line_horizontal']),
 					html.Div(style=css['arrow_left']),
 				],
+				id='tooltip-sensory-motor',
 				width={
 					'size'  : 1,
 					'offset': 0
@@ -615,11 +751,12 @@ dashboard_rows = {
 				dbc.Card(
 					[
 						dbc.CardHeader('Body model (Sensory)'),
-						dbc.CardBody(dbc.CardText('Lorem ipsum'))
+						dbc.CardBody(
+							dbc.CardImg(src=('/assets/miro_picture.jpg')),
+							style={'text-align': 'center'}
+						),
 					],
-					style={
-						'height': '100%'
-					}
+					style={'height': '100%'}
 				),
 				width={
 					'size'  : 1,
@@ -632,13 +769,13 @@ dashboard_rows = {
 						dbc.CardHeader('Circadian rhythm'),
 						dbc.CardBody(dashboard_graphs['circadian'])
 					],
-					style={
-						'height': '100%'
-					}
+					color='secondary',
+					outline=True,
+					style={'height': '100%'}
 				),
 				width={
-					'size'  : 1,
-					'offset': 1
+					'size'  : 2,
+					'offset': 0
 				}
 			),
 			dbc.Col(
@@ -652,15 +789,16 @@ dashboard_rows = {
 				dbc.Card(
 					[
 						dbc.CardHeader('Expression'),
-						dbc.CardBody(dbc.CardText('Lorem ipsum')),
+						dbc.CardBody(
+							dbc.CardImg(src=('/assets/express_dog.png')),
+							id='tooltip-expression'
+						),
 						dbc.CardFooter(
 							'➡ Self-activity reports',
 							style={'font-size': 'x-small'}
 						)
 					],
-					style={
-						'height': '100%'
-					}
+					style={'height': '100%'}
 				),
 				width={
 					'size'  : 1,
@@ -677,6 +815,7 @@ dashboard_rows = {
 					html.Div(style=css['line_vertical']),
 					html.Div(style=css['arrow_down']),
 				],
+				id='tooltip-motor-bottom',
 				width={
 					'size'  : 1,
 					'offset': 4
@@ -687,6 +826,7 @@ dashboard_rows = {
 					html.Div(style=css['arrow_up']),
 					html.Div(style=css['line_vertical']),
 				],
+				id='tooltip-bottom-sensory',
 				width={
 					'size'  : 1,
 					'offset': 2
@@ -697,6 +837,7 @@ dashboard_rows = {
 					html.Div(style=css['arrow_up']),
 					html.Div(style=css['line_vertical']),
 				],
+				id='tooltip-bottom-circadian',
 				width={
 					'size'  : 1,
 					'offset': 1
@@ -733,30 +874,12 @@ dashboard_rows = {
 	)
 }
 
-# tooltips = html.Div(
-# 	[
-# 		# dbc.Tooltip(
-# 		# 	'Motor pattern output',
-# 		# 	target='top-sigma'
-# 		# ),
-# 		# dbc.Tooltip(
-# 		# 	'Spatial bias, inhibition of return',
-# 		# 	target='top-spatial'
-# 		# ),
-# 		# dbc.Tooltip(
-# 		# 	'Downstream effects on affective state',
-# 		# 	target='top-affect'
-# 		# ),
-# 	]
-# )
+##########
+# Define dashboard layout
+# See other included themes: https://bootswatch.com
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MINTY])
 
-
-# Dash Bootstrap CSS theme
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-
-# Default Dash CSS theme
-# app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-
+# TODO: Find out how to remove 'undo' button in the corner
 app.layout = html.Div(
 	[
 		dashboard_rows['Row_top'],
@@ -768,7 +891,7 @@ app.layout = html.Div(
 		dashboard_rows['Row_6'],
 		dashboard_rows['Row_7'],
 		dashboard_rows['Row_btm'],
-		# tooltips,
+		dashboard_tooltips,
 		dcc.Interval(
 			id='interval-fast',
 			interval=0.25 * 1000,
@@ -787,21 +910,20 @@ app.layout = html.Div(
 	]
 )
 
-# # This is only to suppress warnings TEMPORARILY
-# app.config['suppress_callback_exceptions'] = True
-
-# TODO: Just make a single ball alert
-@app.callback(Output('ball-alert-left', 'is_open'), [Input('interval-fast', 'n_intervals')])
-def alert_ball_left(n):
-	if len(miro_ros_data.core_detect_ball_l.data) > 1:
+##########
+# Define dashboard callbacks
+@app.callback(Output('ball-alert', 'is_open'), [Input('interval-fast', 'n_intervals')])
+def alert_ball(n):
+	if (len(miro_ros_data.core_detect_ball_l.data) > 1) or (len(miro_ros_data.core_detect_ball_r.data) > 1):
 		return True
 	else:
 		return False
 
 
-@app.callback(Output('ball-alert-right', 'is_open'), [Input('interval-fast', 'n_intervals')])
-def alert_ball_right(n):
-	if len(miro_ros_data.core_detect_ball_r.data) > 1:
+@app.callback(Output('face-alert', 'is_open'), [Input('interval-fast', 'n_intervals')])
+def alert_face(n):
+	# This is totally untested and assumes the same data structure as ball detection. No idea if it works!
+	if (len(miro_ros_data.core_detect_face_l.data) > 1) or (len(miro_ros_data.core_detect_face_r.data) > 1):
 		return True
 	else:
 		return False
@@ -852,15 +974,20 @@ def update_action(n):
 		},
 	)
 
-	# TODO: Colour each action individually and label actions appropriately
+	# DEBUG
+	# action_priority = (abs(action_priority))
+
+	# foo = np.round(-action_priority, decimals=3)
+
 	data = [
 		go.Bar(
 			y=action_list,
 			x=action_priority,
 			orientation='h',
 			name='Input',
-			# FIXME: Get proper action priority value
-			# text=abs(action_priority),
+			# FIXME: Format input and output values to be more easily readable
+			# np.round(-action_priority, decimals=3)
+			# hovertext=np.round(-action_priority, decimals=3),
 			# hoverinfo='text',
 			marker={
 				'color': 'mediumseagreen'
@@ -887,39 +1014,39 @@ def update_action(n):
 @app.callback(Output('affect-graph', 'figure'), [Input('interval-fast', 'n_intervals')])
 def update_affect(n):
 
-	layout = go.Layout(
-		legend={
-			'orientation': 'h',
-			'x'          : 0.5,
-			'xanchor'    : 'center',
-			'y'          : 1.1
-		},
+	# Affect axes are the same irrespective of data
+	affect_xaxis = {
+		'fixedrange'    : True,
+		'linewidth'     : 0.5,
+		'mirror'        : True,
+		'range'         : [0, 1],
+		'showgrid'      : False,
+		'showticklabels': False,
+		'title'         : 'Valence',
+		'zeroline'      : False,
+	}
+
+	affect_yaxis = {
+		'fixedrange'    : True,
+		'linewidth'     : 0.5,
+		'mirror'        : True,
+		'range'         : [0, 1],
+		'showgrid'      : False,
+		'showticklabels': False,
+		'title'         : 'Arousal',
+		'zeroline'      : False,
+	}
+
+	# Layout margins are slightly different without data
+	null_layout = go.Layout(
 		margin={
 			'b': 20,
 			'l': 20,
 			'r': 5,
-			't': 0
+			't': 20
 		},
-		xaxis={
-			'fixedrange'    : True,
-			'linewidth'     : 0.5,
-			'mirror'        : True,
-			'range'         : [0, 1],
-			'showgrid'      : False,
-			'showticklabels': False,
-			'title'         : 'Valence',
-			'zeroline'      : False,
-		},
-		yaxis={
-			'fixedrange'    : True,
-			'linewidth'     : 0.5,
-			'mirror'        : True,
-			'range'         : [0, 1],
-			'showgrid'      : False,
-			'showticklabels': False,
-			'title'         : 'Arousal',
-			'zeroline'      : False,
-		}
+		xaxis=affect_xaxis,
+		yaxis=affect_yaxis
 	)
 
 	# Update affect
@@ -972,6 +1099,44 @@ def update_affect(n):
 			)
 		}
 
+		# Get the appropriate face from the 'faces' dictionary based on current mood values
+		for x in np.arange(0, 1, 0.2):
+			for y in np.arange(0, 1, 0.3):
+				if (x < data['mood'].x <= x + 0.2) and (y < data['mood'].y <= y + 0.3):
+					# Round the results to nearest 0.1 to prevent floating point errors; inaccurate but unimportant
+					affect_face = faces['{0:.1f}'.format(x)]['{0:.1f}'.format(y)]
+
+		# Layout includes background face image and graph legend
+		layout = go.Layout(
+			images=[{
+				'layer'  : 'below',
+				'opacity': 0.8,
+				'sizing' : 'contain',
+				'sizex'  : 0.3,
+				'sizey'  : 0.3,
+				'source' : affect_face,
+				'x'      : 0.5,
+				'y'      : 0.5,
+				'xanchor': 'center',
+				'yanchor': 'middle'
+			}],
+			legend={
+				'orientation': 'h',
+				'x'          : 0.5,
+				'xanchor'    : 'center',
+				'y'          : 1.01,
+				'yanchor'    : 'bottom',
+			},
+			margin={
+				'b': 20,
+				'l': 20,
+				'r': 5,
+				't': 0
+			},
+			xaxis=affect_xaxis,
+			yaxis=affect_yaxis
+		)
+
 		return {
 			'data'  : [
 				data['emotion'],
@@ -982,16 +1147,7 @@ def update_affect(n):
 		}
 
 	else:
-		# TODO: Is this null data necessary?
-		null_data = go.Scatter(
-			x=np.array(-1),
-			y=np.array(-1),
-		)
-
-		return {
-			'data'  : [null_data],
-			'layout': affect_layout
-		}
+		return {'layout': null_layout}
 
 
 @app.callback(Output('aural-graph', 'figure'), [Input('interval-medium', 'n_intervals')])
@@ -1071,6 +1227,7 @@ def update_aural(n):
 
 @app.callback(Output('camera-graph', 'figure'), [Input('interval-medium', 'n_intervals'), Input('cam-toggle', 'on')])
 def update_cameras(n, toggle):
+	# Get camera data
 	caml = miro_ros_data.sensors_caml
 	camr = miro_ros_data.sensors_camr
 
@@ -1168,22 +1325,20 @@ def update_cameras(n, toggle):
 			'r': 0,
 			't': 60
 		},
-		shapes=[
-			{
-				'line': {
-					'color': 'black',
-					'dash' : 'dot',
-					'width': 1,
-				},
-				'type': 'line',
-				'x0'  : 0.5,
-				'x1'  : 0.5,
-				'xref': 'paper',
-				'y0'  : 0,
-				'y1'  : 1,
-				'yref': 'paper'
-			}
-		],
+		shapes=[{
+			'line': {
+				'color': 'black',
+				'dash' : 'dot',
+				'width': 1,
+			},
+			'type': 'line',
+			'x0'  : 0.5,
+			'x1'  : 0.5,
+			'xref': 'paper',
+			'y0'  : 0,
+			'y1'  : 1,
+			'yref': 'paper'
+		}],
 		title={
 			'pad'    : {
 				'b': 10,
@@ -1225,7 +1380,6 @@ def update_clock_graph(n):
 	hand_width = 2
 	hand_length = 0.9
 
-	# TODO: Add sun / moon glyphs or background image to plot
 	# TODO: Find out how to disable polar plot zoom
 
 	data = [
@@ -1265,12 +1419,12 @@ def update_clock_graph(n):
 				'period'       : 15,
 				'rotation'     : 270,
 				'showgrid'     : False,
-				'type'         : 'category'
+				'type'         : 'category',
 			},
 			'radialaxis' : {
 				'range'     : [0, 1],
 				'visible'   : False
-			}
+			},
 		},
 		showlegend=False
 	)
@@ -1283,11 +1437,14 @@ def update_clock_graph(n):
 
 if __name__ == '__main__':
 	# Initialise a new ROS node
-	# disable_rostime must be True to work in Pycharm
+	# 'disable_rostime' must be True to work in Pycharm
 	rospy.init_node("dash_listener", anonymous=True, disable_rostime=True)
 
 	# Initialise MiRo client
 	miro_ros_data = mi.MiroClient()
+
+	# # This is only to suppress warnings TEMPORARILY
+	# app.config['suppress_callback_exceptions'] = True
 
 	# Hot reloading seems to cause "IOError: [Errno 11] Resource temporarily unavailable" errors
 	app.run_server(debug=False)
