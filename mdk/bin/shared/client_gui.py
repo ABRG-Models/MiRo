@@ -974,13 +974,13 @@ def generate_argb(colour, bright):
 			## Convert the navy blue patches on the football to the orange colour
 			## However, the black background might get mistaken as the football patches,
 			## so need to disable if black background is used
-			# football_patches = [([130, 50, 50], [150, 255, 255])]
+			football_patches = [([130, 50, 50], [150, 255, 255])]
 
-			# for (lower, upper) in football_patches:
-			# 	lower = np.array(lower, dtype = "uint8")
-			# 	upper = np.array(upper, dtype = "uint8")
-			# 	mask1 = cv2.inRange(imgHSV, lower, upper)
-			# 	imgHSV[mask1 != 0] = [176, 50, 50]
+			for (lower, upper) in football_patches:
+				lower = np.array(lower, dtype = "uint8")
+				upper = np.array(upper, dtype = "uint8")
+				mask1 = cv2.inRange(imgHSV, lower, upper)
+				imgHSV[mask1 != 0] = [176, 50, 50]
 
 			# green color boundary (RGB)
 			# ([0, 127, 0], [180, 240, 180])
@@ -1003,7 +1003,7 @@ def generate_argb(colour, bright):
 				# ([170, 30,30], [176, 255, 255]), #football (new)
 				# ([100,50,50], [150,255,255])
 				([36, 0, 0], [86, 255, 255]), # Field boundary
-				([1, 0, 0], [180, 255, 60]) # Goal Post
+				([1, 0, 0], [150, 255, 60]) # Goal Post
 			]
 
 			font = cv2.FONT_HERSHEY_SIMPLEX
@@ -1022,6 +1022,7 @@ def generate_argb(colour, bright):
 				# output = cv2.bitwise_and(image, image, mask = mask)
 
 				kernelOpen=np.ones((5,5))
+				# kernelClose=np.ones((20,20))
 				if count == 0:
 					kernelClose=np.ones((30,30))
 				else:
@@ -1033,37 +1034,44 @@ def generate_argb(colour, bright):
 				maskFinal=maskClose.copy()
 				im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
 				# cv2.drawContours(image,contours,-1,(255,0,0),3)
+				# print contours
 
-				for i in range(len(contours)):
-					if count ==  0:
-						text = "MiRO"
-						# x,y,w,h=cv2.boundingRect(contours[i])
-						# cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
+				if count ==  0:
+					text = "MiRO"
+					# x,y,w,h=cv2.boundingRect(contours[i])
+					# cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
 
-						#find the biggest area
-						c = max(contours, key = cv2.contourArea)
-						x,y,w,h = cv2.boundingRect(c)
-						# draw the book contour (in green)
-						cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255),2)
-						cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
-					elif count == 1:
-						text = "Football"
-						# x,y,w,h=cv2.boundingRect(contours[i])
-						# cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
-
-						c = max(contours, key = cv2.contourArea)
-						x,y,w,h = cv2.boundingRect(c)
-						# draw the book contour (in green)
-						cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255),2)
-						cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
-					elif count == 2:
-						text = "Field Boundary"
-						cv2.drawContours(image,contours,-1,(0,255,0),3)
-						# cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+					#find the biggest area
+					# print ("miro"+contours)
+					if not contours:
+						print("No MiRo is found")
 					else:
-						text = "Goal Post"
-						cv2.drawContours(image,contours,-1,(255,0,0),3)
-						# cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+						largest_contour = max(contours, key = cv2.contourArea)
+						x,y,w,h = cv2.boundingRect(largest_contour)
+						# draw the book contour (in green)
+						cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255),2)
+						cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+				elif count == 1:
+					text = "Football"
+					# x,y,w,h=cv2.boundingRect(contours[i])
+					# cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
+
+					if not contours:
+						print("No Football is found")
+					else:						
+						largest_contour = max(contours, key = cv2.contourArea)
+						x,y,w,h = cv2.boundingRect(largest_contour)
+						# draw the book contour (in green)
+						cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255),2)
+						cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+				elif count == 2:
+					text = "Field Boundary"
+					cv2.drawContours(image,contours,-1,(0,255,0),3)
+					# cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+				else:
+					text = "Goal Post"
+					cv2.drawContours(image,contours,-1,(255,0,0),3)
+					# cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
 #						self.dribble = True
 #						self.ball_control()
 					
