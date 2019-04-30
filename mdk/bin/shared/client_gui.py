@@ -958,6 +958,9 @@ def generate_argb(colour, bright):
 			# convert compressed ROS image to raw CV image
 			image = self.image_converter.compressed_imgmsg_to_cv2(ros_image, "rgb8")
 
+			# image2 = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2RGB)
+			# cv2.imwrite("miro_view.png", image2)
+
 ################################### object detection, boundary detection, and goal post detecton ##########################
 			output = image.copy()
 
@@ -997,7 +1000,7 @@ def generate_argb(colour, bright):
 
 			 # define the list of boundaries
 			boundaries = [
-				([0, 0, 195], [255, 60, 255]), #miro
+				([0, 0, 195], [180, 60, 255]), #miro
 				# ([0, 50,50], [10, 255, 255]),
 				([170, 50,50], [175, 255, 255]), #football
 				# ([170, 30,30], [176, 255, 255]), #football (new)
@@ -1021,17 +1024,25 @@ def generate_argb(colour, bright):
 				mask = cv2.inRange(imgHSV, lower, upper)
 				# output = cv2.bitwise_and(image, image, mask = mask)
 
-				kernelOpen=np.ones((5,5))
-				# kernelClose=np.ones((20,20))
-				if count == 0:
-					kernelClose=np.ones((30,30))
+				# cv2.imwrite("mask"+str(count)+".png", mask)
+
+				if count != 3:
+					kernelOpen=np.ones((5,5))
+					# kernelClose=np.ones((20,20))
+					if count == 0:
+						kernelClose=np.ones((30,30))
+					else:
+						kernelClose=np.ones((60,60))
+
+					maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
+					maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
+
+					maskFinal=maskClose.copy()
 				else:
-					kernelClose=np.ones((60,60))
+					maskFinal = mask.copy()
 
-				maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
-				maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
+				# cv2.imwrite("final_mask"+str(count)+".png", maskFinal)
 
-				maskFinal=maskClose.copy()
 				im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
 				# cv2.drawContours(image,contours,-1,(255,0,0),3)
 				# print contours
@@ -1126,7 +1137,7 @@ def generate_argb(colour, bright):
 # 			# define the list of boundaries
 # 			boundaries = [
 # 			    ([0, 0, 195], [255, 60, 255]),
-# 				([170, 50,50], [172, 255, 255])
+# 				([170, 50,50], [175, 255, 255])
 # 			    # ([1, 190, 200], [25, 255, 255])
 # 			]
 
@@ -1161,8 +1172,8 @@ def generate_argb(colour, bright):
 # 			find_center(cntss)
 # 			find_bottom(cntss)
 # 			image_centerX, image_centerY = find_center(cntss)
-## 			print("X: ",image_centerX)
-## 			print("Y: ",image_centerY)
+# # 			print("X: ",image_centerX)
+# # 			print("Y: ",image_centerY)
 
 # 			# loop over the boundaries
 # 			for (lower, upper) in boundaries:
@@ -1211,42 +1222,238 @@ def generate_argb(colour, bright):
 # 			    # loop over the contours
 # 			    find_center(cnts)
 # 			    object_centerX, object_centerY = find_center(cnts)
-## 			    print("oX: ",object_centerX)
-## 			    print("oY: ",object_centerY)
+# # 			    print("oX: ",object_centerX)
+# # 			    print("oY: ",object_centerY)
 # 			    cv2.line(image, (int(image_centerX), int(image_centerY)*2), (int(object_centerX), int(object_centerY)),
 # 			            (255, 0, 0), 2)
 # 			    D = dist.euclidean((image_centerX, image_centerY*2), (object_centerX, object_centerY))
-## 			    print("Distance: ", D)
-#			    self.VelControl.set_value(0.05)
+# # 			    print("Distance: ", D)
+# 			    self.VelControl.set_value(0.05)
 
-#		            if not self.sensors is None:
+# 		            if not self.sensors is None:
 
-#			   	p = self.sensors
-#				self.sensors = None
+# 			   	p = self.sensors
+# 				self.sensors = None
 
-#			 	# update sonar
-#				x = p.sonar.range
-#				sonar = format_num(x)
+# 			 	# update sonar
+# 				x = p.sonar.range
+# 				sonar = format_num(x)
 
-#				def check(value):
-#					if 0.01 <= value <= 0.10:
-#						return True
-#					return False
-#			    	if check(x):
-#					print("ball at front")
-#					self.shoot = True
-#					self.ball_control()
+# 				def check(value):
+# 					if 0.01 <= value <= 0.10:
+# 						return True
+# 					return False
+# 			    	if check(x):
+# 					print("ball at front")
+# 					self.shoot = True
+# 					self.ball_control()
 
-#			    if object_centerX>image_centerX:
-#				print("ball is at right")
-#				self.AngVelControl.set_value(-0.3)
-#				break
+# 			    if object_centerX>image_centerX:
+# 				print("ball is at right")
+# 				self.AngVelControl.set_value(-0.3)
+# 				break
 
 #       			    elif object_centerX<image_centerX:
-#	        		print("ball is at left")
-#				self.AngVelControl.set_value(0.3)
-#				break				
+# 	        		print("ball is at left")
+# 				self.AngVelControl.set_value(0.3)
+# 				break
 
+####################### LEON AND ISSAC CODES MERGE ##################################
+
+# 			output = image.copy()
+
+# 			height, width, channel = output.shape
+
+# 			## perform a fake image cropping by cover up the upper image by a huge colour boxes
+# 			output[0:(height/3+50), 0:width] = [0,0,0]
+
+# 			output = cv2.medianBlur(output,5)
+
+# 			imgHSV= cv2.cvtColor(output,cv2.COLOR_RGB2HSV)
+# 			imgGray= cv2.cvtColor(output,cv2.COLOR_RGB2GRAY)
+
+# 			imgGray = cv2.GaussianBlur(imgGray, (5,5), 0)
+# 			thresh = cv2.threshold(imgGray, 60, 255, cv2.THRESH_BINARY)[1]
+
+# 			# find contours in the thresholded image
+# 			cntss = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
+# 			    cv2.CHAIN_APPROX_SIMPLE)
+# 			cntss = imutils.grab_contours(cntss)
+
+
+# 			## Convert the navy blue patches on the football to the orange colour
+# 			## However, the black background might get mistaken as the football patches,
+# 			## so need to disable if black background is used
+# 			football_patches = [([130, 50, 50], [150, 255, 255])]
+
+# 			for (lower, upper) in football_patches:
+# 				lower = np.array(lower, dtype = "uint8")
+# 				upper = np.array(upper, dtype = "uint8")
+# 				mask1 = cv2.inRange(imgHSV, lower, upper)
+# 				imgHSV[mask1 != 0] = [176, 50, 50]
+
+# 			# green color boundary (RGB)
+# 			# ([0, 127, 0], [180, 240, 180])
+
+# 			# white (probably some gray) color boundary (RGB)
+# 			# ([128, 128, 128], [255, 255, 255])
+
+# 			# White color boundary (HSV)
+# 			# ([0, 0, 195], [255, 60, 255])
+
+# 			# Orange color boundary (HSV)
+# 			# ([1, 190, 200], [25, 255, 255])
+
+
+# 			 # define the list of boundaries
+# 			boundaries = [
+# 				([0, 0, 195], [255, 60, 255]), #miro
+# 				# ([0, 50,50], [10, 255, 255]),
+# 				([170, 50,50], [175, 255, 255]), #football
+# 				# ([170, 30,30], [176, 255, 255]), #football (new)
+# 				# ([100,50,50], [150,255,255])
+# 				([36, 0, 0], [86, 255, 255]), # Field boundary
+# 				([1, 0, 0], [150, 255, 60]) # Goal Post
+# 			]
+
+# 			font = cv2.FONT_HERSHEY_SIMPLEX
+
+# 			count = 0
+
+# 			def find_center(cnts):
+# 				for i in cnts:
+# 				# compute the center of the contour
+# 					M = cv2.moments(i)
+# 					coX = int(M["m10"] / M["m00"])
+# 					coY = int(M["m01"] / M["m00"])
+# 					# draw the contour and center of the shape on the image
+# 					cv2.circle(image, (coX, coY), 7, (255, 255, 255), -1)
+# 					cv2.putText(image, "center", (coX - 20, coY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+# 				return coX, coY
+
+# 			def find_bottom(cnts):
+# 				for i in cnts:
+# 				# compute the center of the contour
+# 					M = cv2.moments(i)
+# 					coX = int(M["m10"] / M["m00"])
+# 					coY = int(M["m01"] / M["m00"])
+# 					# draw the contour and center of the shape on the image
+# 					cv2.circle(image, (coX, coY*2), 7, (255, 255, 255), -1)
+# 					cv2.putText(image, "bottom", (coX - 20, coY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+# 				return coX, coY		
+
+# 			find_center(cntss)
+# 			find_bottom(cntss)
+# 			image_centerX, image_centerY = find_center(cntss)
+
+# 			# loop over the boundaries
+# 			for (lower, upper) in boundaries:
+# 				# create NumPy arrays from the boundaries
+# 				lower = np.array(lower, dtype = "uint8")
+# 				upper = np.array(upper, dtype = "uint8")
+
+# 				# find the colors within the specified boundaries and apply
+# 				# the mask
+# 				mask = cv2.inRange(imgHSV, lower, upper)
+# 				# output = cv2.bitwise_and(image, image, mask = mask)
+
+# 				kernelOpen=np.ones((5,5))
+# 				kernelClose=np.ones((20,20))
+# 				if count == 0:
+# 					kernelClose=np.ones((30,30))
+# 				else:
+# 					kernelClose=np.ones((60,60))
+
+# 				maskOpen=cv2.morphologyEx(mask,cv2.MORPH_OPEN,kernelOpen)
+# 				maskClose=cv2.morphologyEx(maskOpen,cv2.MORPH_CLOSE,kernelClose)
+
+# 				maskFinal=maskClose.copy()
+# 				im2, contours, hierarchy=cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+# 				# cv2.drawContours(image,contours,-1,(255,0,0),3)
+# 				# print contours
+# 				cnts = cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+# 				cnts = imutils.grab_contours(cnts)
+
+# 				if count ==  0:
+# 					text = "MiRO"
+# 					# x,y,w,h=cv2.boundingRect(contours[i])
+# 					# cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
+
+# 					#find the biggest area
+# 					# print ("miro"+contours)
+# 					if not contours:
+# 						print("No MiRo is found")
+# 					else:
+# 						largest_contour = max(contours, key = cv2.contourArea)
+# 						x,y,w,h = cv2.boundingRect(largest_contour)
+# 						# draw the book contour (in green)
+# 						cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255),2)
+# 						cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+# 				elif count == 1:
+# 					text = "Football"
+# 					# x,y,w,h=cv2.boundingRect(contours[i])
+# 					# cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255), 2)
+
+# 					if not contours:
+# 						print("No Football is found")
+# 					else:						
+# 						largest_contour = max(contours, key = cv2.contourArea)
+# 						x,y,w,h = cv2.boundingRect(largest_contour)
+# 						# draw the book contour (in green)
+# 						cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255),2)
+# 						cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+# 				elif count == 2:
+# 					text = "Field Boundary"
+# 					cv2.drawContours(image,contours,-1,(0,255,0),3)
+# 					# cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+# 				else:
+# 					text = "Goal Post"
+# 					cv2.drawContours(image,contours,-1,(255,0,0),3)
+# 					# cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+# #						self.dribble = True
+# #						self.ball_control()	
+
+# 				count += 1
+# 				# loop over the contours
+# 				find_center(cnts)
+# 				object_centerX, object_centerY = find_center(cnts)
+# 				# 			    print("oX: ",object_centerX)
+# 				# 			    print("oY: ",object_centerY)
+# 				cv2.line(image, (int(image_centerX), int(image_centerY)*2), (int(object_centerX), int(object_centerY)),
+# 				(255, 0, 0), 2)
+# 				D = dist.euclidean((image_centerX, image_centerY*2), (object_centerX, object_centerY))
+# 				# 			    print("Distance: ", D)
+# 				self.VelControl.set_value(0.05)
+
+# 				if not self.sensors is None:
+
+# 					p = self.sensors
+# 					self.sensors = None
+
+# 					# update sonar
+# 					x = p.sonar.range
+# 					sonar = format_num(x)
+
+# 					def check(value):
+# 						if 0.01 <= value <= 0.10:
+# 							return True
+# 						return False
+# 					if check(x):
+# 						print("ball at front")
+# 						self.shoot = True
+# 						self.ball_control()
+
+# 				if object_centerX>image_centerX:
+# 					print("ball is at right")
+# 					self.AngVelControl.set_value(-0.3)
+# 					break
+
+# 				elif object_centerX<image_centerX:
+# 					print("ball is at left")
+# 					self.AngVelControl.set_value(0.3)
+# 					break
+
+#####################################################################################
 
 
 
