@@ -1338,8 +1338,12 @@ def generate_argb(colour, bright):
 # 				for i in cnts:
 # 				# compute the center of the contour
 # 					M = cv2.moments(i)
-# 					coX = int(M["m10"] / M["m00"])
-# 					coY = int(M["m01"] / M["m00"])
+# 					if M["m00"] != 0:
+# 						coX = int(M["m10"] / M["m00"])
+# 						coY = int(M["m01"] / M["m00"])
+# 					else:
+# 						coX, coY = 0,0
+
 # 					# draw the contour and center of the shape on the image
 # 					cv2.circle(image, (coX, coY), 7, (255, 255, 255), -1)
 # 					cv2.putText(image, "center", (coX - 20, coY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
@@ -1349,12 +1353,15 @@ def generate_argb(colour, bright):
 # 				for i in cnts:
 # 				# compute the center of the contour
 # 					M = cv2.moments(i)
-# 					coX = int(M["m10"] / M["m00"])
-# 					coY = int(M["m01"] / M["m00"])
+# 					if M["m00"] != 0:
+# 						coX = int(M["m10"] / M["m00"])
+# 						coY = int(M["m01"] / M["m00"])
+# 					else:
+# 						coX, coY = 0,0
 # 					# draw the contour and center of the shape on the image
 # 					cv2.circle(image, (coX, coY*2), 7, (255, 255, 255), -1)
 # 					cv2.putText(image, "bottom", (coX - 20, coY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-# 				return coX, coY		
+# 				return coX, coY
 
 # 			find_center(cntss)
 # 			find_bottom(cntss)
@@ -1387,6 +1394,18 @@ def generate_argb(colour, bright):
 # 				# print contours
 # 				cnts = cv2.findContours(maskFinal, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
 # 				cnts = imutils.grab_contours(cnts)
+# 				# c = max(cnts, key=cv2.contourArea)
+
+# 				# find_center(cnts)
+# 				# object_centerX, object_centerY = find_center(cnts)
+# 				# # print("oX: ",object_centerX)
+# 				# # print("oY: ",object_centerY)
+# 				# cv2.line(image, (int(image_centerX), int(image_centerY)*2), (int(object_centerX), int(object_centerY)),
+# 				# 		(255, 0, 0), 2)
+# 				# D = dist.euclidean((image_centerX, image_centerY*2), (object_centerX, object_centerY))
+# 				# # print("Distance: ", D)
+
+
 
 # 				if count ==  0:
 # 					text = "MiRO"
@@ -1403,6 +1422,14 @@ def generate_argb(colour, bright):
 # 						# draw the book contour (in green)
 # 						cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255),2)
 # 						cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+# 						find_center(largest_contour)
+# 						object_centerX, object_centerY = find_center(largest_contour)
+# 						# print("oX: ",object_centerX)
+# 						# print("oY: ",object_centerY)
+# 						cv2.line(image, (int(image_centerX), int(image_centerY)), (int(object_centerX), int(object_centerY)),
+# 								(255, 0, 0), 2)
+# 						D = dist.euclidean((image_centerX, image_centerY), (object_centerX, object_centerY))
+# 						# print("Distance: ", D)
 # 				elif count == 1:
 # 					text = "Football"
 # 					# x,y,w,h=cv2.boundingRect(contours[i])
@@ -1410,12 +1437,19 @@ def generate_argb(colour, bright):
 
 # 					if not contours:
 # 						print("No Football is found")
-# 					else:						
+# 					else:
 # 						largest_contour = max(contours, key = cv2.contourArea)
 # 						x,y,w,h = cv2.boundingRect(largest_contour)
 # 						# draw the book contour (in green)
 # 						cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255),2)
 # 						cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+# 						find_center(largest_contour)
+# 						object_centerX, object_centerY = find_center(largest_contour)
+# 						# print("oX: ",object_centerX)
+# 						# print("oY: ",object_centerY)
+# 						cv2.line(image, (int(image_centerX), int(image_centerY)), (int(object_centerX), int(object_centerY)),
+# 								(255, 0, 0), 2)
+# 						D = dist.euclidean((image_centerX, image_centerY), (object_centerX, object_centerY))
 # 				elif count == 2:
 # 					text = "Field Boundary"
 # 					cv2.drawContours(image,contours,-1,(0,255,0),3)
@@ -1425,18 +1459,11 @@ def generate_argb(colour, bright):
 # 					cv2.drawContours(image,contours,-1,(255,0,0),3)
 # 					# cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
 # #						self.dribble = True
-# #						self.ball_control()	
+# #						self.ball_control()
 
 # 				count += 1
 # 				# loop over the contours
-# 				find_center(cnts)
-# 				object_centerX, object_centerY = find_center(cnts)
-# 				# 			    print("oX: ",object_centerX)
-# 				# 			    print("oY: ",object_centerY)
-# 				cv2.line(image, (int(image_centerX), int(image_centerY)*2), (int(object_centerX), int(object_centerY)),
-# 				(255, 0, 0), 2)
-# 				D = dist.euclidean((image_centerX, image_centerY*2), (object_centerX, object_centerY))
-# 				# 			    print("Distance: ", D)
+
 # 				self.VelControl.set_value(0.05)
 
 # 				if not self.sensors is None:
@@ -1456,16 +1483,16 @@ def generate_argb(colour, bright):
 # 						print("ball at front")
 # 						self.shoot = True
 # 						self.ball_control()
-
-# 				if object_centerX>image_centerX:
-# 					print("ball is at right")
-# 					self.AngVelControl.set_value(-0.3)
-# 					break
-
-# 				elif object_centerX<image_centerX:
-# 					print("ball is at left")
-# 					self.AngVelControl.set_value(0.3)
-# 					break
+				# if count==0 or count==1:
+				# 	if object_centerX>image_centerX:
+				# 		print("ball is at right")
+				# 		self.AngVelControl.set_value(-0.3)
+				# 		break
+				#
+				# 	elif object_centerX<image_centerX:
+				# 		print("ball is at left")
+				# 		self.AngVelControl.set_value(0.3)
+				# 		break
 
 #####################################################################################
 			# image2 = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2RGB)
@@ -1556,7 +1583,7 @@ def generate_argb(colour, bright):
 			return True
 
 ######################## Update Image Stitching ##################################
-	
+
 		# if self.input_camera[0] is not None:
 		# 	if self.input_camera[1] is not None:
 		# 		images = []
