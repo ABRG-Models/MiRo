@@ -963,6 +963,7 @@ def generate_argb(colour, bright):
 
 ################################### object detection, boundary detection, and goal post detecton ##########################
 			output = image.copy()
+			# image_draw = image.copy()
 
 			height, width, channel = output.shape
 
@@ -1039,7 +1040,10 @@ def generate_argb(colour, bright):
 
 					maskFinal=maskClose.copy()
 				else:
-					maskFinal = mask.copy()
+					kernelClose=np.ones((10,10))
+					maskClose=cv2.morphologyEx(mask,cv2.MORPH_CLOSE,kernelClose)
+					# cv2.imwrite("mask_goalpost.png", maskClose)
+					maskFinal = maskClose.copy()
 
 				# cv2.imwrite("final_mask"+str(count)+".png", maskFinal)
 
@@ -1062,6 +1066,8 @@ def generate_argb(colour, bright):
 						# draw the book contour (in green)
 						cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255),2)
 						cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+
+						
 				elif count == 1:
 					text = "Football"
 					# x,y,w,h=cv2.boundingRect(contours[i])
@@ -1079,12 +1085,20 @@ def generate_argb(colour, bright):
 					text = "Field Boundary"
 					cv2.drawContours(image,contours,-1,(0,255,0),3)
 					# cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+
+					
 				else:
 					text = "Goal Post"
 					cv2.drawContours(image,contours,-1,(255,0,0),3)
+
+					# image2 = cv2.cvtColor(image_draw, cv2.COLOR_BGR2RGB)
+					# cv2.drawContours(image2,contours,-1,(0,255,0),3)
+					# cv2.imwrite("results_goalpost.png", image2)
 					# cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
 #						self.dribble = True
 #						self.ball_control()
+				# image2 = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2RGB)
+				# cv2.imwrite("results_"+str(count)+".png", image2)
 					
 
 				count += 1
@@ -1454,8 +1468,8 @@ def generate_argb(colour, bright):
 # 					break
 
 #####################################################################################
-
-
+			# image2 = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2RGB)
+			# cv2.imwrite("all_results.png", image2)
 
 			# set camera zoom automatically if has not been set already
 			if not self.auto_camera_zoom is None:
