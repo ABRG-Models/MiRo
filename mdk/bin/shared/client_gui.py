@@ -3,6 +3,7 @@ import time
 import gi
 import os
 import sys
+import argparse
 
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject, GdkPixbuf, Gdk
@@ -242,8 +243,6 @@ class miro_gui:
 
 	def __init__(self, args):
 
-		rospy.init_node("miro_gui")
-
 		# state
 		self.step = 0
 		self.state_file = None
@@ -271,30 +270,21 @@ class miro_gui:
 		self.ready = False
 
 		# handle args
-		for arg in args:
-			f = arg.find('=')
-			if f == -1:
-				key = arg
-				val = ""
-			else:
-				key = arg[:f]
-				val = arg[f+1:]
-			if key == "shoot":
-				self.shoot = True
-			elif key == "passl":
-				self.toss = "l"
-			elif key == "passr":
-				self.toss = "r"
-			elif key == "stopb":
-				self.stopb = True
-			elif key == "dribble":
-				self.dribble = True
-			elif key == "ready":
-				self.ready = True
-				print("Ready")
-			else:
-				error("argument not recognised \"" + arg + "\"")
+		parser = argparse.ArgumentParser()
+		parser.add_argument("--robot_name", type=str)
+		
+		parsed_args = parser.parse_args(args[1:])
 
+		# robot name
+		if parsed_args.robot_name is None:
+		    robot_name = os.getenv("MIRO_ROBOT_NAME")
+		else :
+		    robot_name = parsed_args.robot_name
+
+		print "Connecting with a robot called {} ".format(robot_name)
+		topic_base = "/" + robot_name + "/"
+		rospy.init_node("miro_gui_" + robot_name)
+		
 		#Load GUI from glade file
 		self.builder = Gtk.Builder()
 		self.builder.add_from_file("client_gui.glade")
@@ -541,9 +531,6 @@ class miro_gui:
 
 		# display GUI
 		self.MainWindow.show_all()
-
-		# robot name
-		topic_base = "/" + os.getenv("MIRO_ROBOT_NAME") + "/"
 
 		# publishers
 		self.pub_cmd_vel = rospy.Publisher(topic_base + "control/cmd_vel", TwistStamped, queue_size=0)
@@ -962,6 +949,27 @@ def generate_argb(colour, bright):
 			# cv2.imwrite("miro_view.png", image2)
 
 ################################### object detection, boundary detection, and goal post detecton ##########################
+			# height, width, channel = image.shape
+
+			# def normalise(image, h, w, c):
+			# 	# norm=np.zeros((h,w,c),np.float32)
+			# 	# norm_rgb=np.zeros((h,w,c),np.uint8)
+
+			# 	for i in range (h):
+			# 		for i in range (w):
+			# 			[b, g, r] = image[h, w]
+
+			# 			sum_colour = r+g+b
+
+			# 			b /= sum_colour
+			# 			g /= sum_colour
+		 #    			r /= sum_colour
+
+		 #    			image[h, w] = [b, g, r]
+		 #    	return image
+
+			# image = normalise(image, height, width, channel)
+
 			output = image.copy()
 			# image_draw = image.copy()
 
@@ -1959,6 +1967,6 @@ def generate_argb(colour, bright):
 ## MAIN
 
 if __name__ == "__main__":
-	main = miro_gui(sys.argv[1:])
+	main = miro_gui(sys.argv)
 	Gtk.main()
 #	main.loop()
