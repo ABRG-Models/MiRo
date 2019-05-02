@@ -148,64 +148,70 @@ class miro_gui:
 				# self.pub_cmd_vel.publish(msg_wheels)
 				# self.imp_report_wheels(msg_wheels)
 
-			if len(self.toss):
-				if "l" in self.toss:
-					t = xk * np.radians(55.0)
-					v = 0
-					Tq = 0.1
-					T = 1.0
-					t1 = Tq
-					t2 = t1 + T
-					t3 = t2 + T
-					t4 = t3 + Tq
-					if t_now < t1:
-						v = 0.0
-					elif t_now < t2:
-						v = (t_now - t1) / T
-					elif t_now < t3:
-						v = 0.3 - (t_now - t2*0.6) / T
-					elif t_now < t4:
-						v = 0.0
-					else:
-						self.active = False
-					msg_wheels.twist.angular.z = v * -3.0
-					msg_wheels.twist.linear.x = 0
+			if self.passl:
+				t = math.sin(t_now * f_kin * 2 * math.pi) * np.radians(55.0)
 
-					msg_kin.position[1] = np.radians(75.0)
-					msg_kin.position[2] = -t
-					msg_kin.position[3] = np.radians(30.0)
-					self.pub_kin.publish(msg_kin)
-					self.imp_report_wheels(msg_wheels)
-					self.pub_cmd_vel.publish(msg_wheels)
+				self.LiftControl.set_value(75.0)
+				self.YawControl.set_value(-t)
+				self.PitchControl.set_value(30.0)
 
-				if "r" in self.toss:
-					t = xk * np.radians(55.0)
-					v = 0
-					Tq = 0.1
-					T = 1.0
-					t1 = Tq
-					t2 = t1 + T
-					t3 = t2 + T
-					t4 = t3 + Tq
-					if t_now < t1:
-						v = 0.0
-					elif t_now < t2:
-						v = (t_now - t1) / T
-					elif t_now < t3:
-						v = 0.3 - (t_now - t2*0.6) / T
-					elif t_now < t4:
-						v = 0.0
-					else:
-						self.active = False
-					msg_wheels.twist.angular.z = v * 3.0
-					msg_wheels.twist.linear.x = 0
+				self.kin_joints.position[lift] = math.radians(self.LiftControl.get_value())
+				self.kin_joints.position[pitch] = math.radians(self.PitchControl.get_value())
+				self.kin_joints.position[yaw] = math.radians(self.YawControl.get_value())
 
-					msg_kin.position[1] = np.radians(75.0)
-					msg_kin.position[2] = t
-					msg_kin.position[3] = np.radians(30.0)
-					self.pub_kin.publish(msg_kin)
-					self.imp_report_wheels(msg_wheels)
-					self.pub_cmd_vel.publish(msg_wheels)
+
+				v = 0
+				Tq = 0.1
+				T = 1.0
+				t1 = Tq
+				t2 = t1 + T
+				t3 = t2 + T
+				t4 = t3 + Tq
+				if t_now < t1:
+					v = 0.0
+				elif t_now < t2:
+					v = (t_now - t1) / T
+				elif t_now < t3:
+					v = 0.3 - (t_now - t2*0.6) / T
+				elif t_now < t4:
+					v = 0.0
+				else:
+					self.active = False
+				self.velocity.twist.angular.z = v * -3.0
+				self.velocity.twist.linear.x = 0.0
+
+
+
+			if self.passr:
+				t = math.sin(t_now * f_kin * 2 * math.pi) * np.radians(55.0)
+
+				self.LiftControl.set_value(75.0)
+				self.YawControl.set_value(t)
+				self.PitchControl.set_value(30.0)
+
+				self.kin_joints.position[lift] = math.radians(self.LiftControl.get_value())
+				self.kin_joints.position[pitch] = math.radians(self.PitchControl.get_value())
+				self.kin_joints.position[yaw] = math.radians(self.YawControl.get_value())
+
+				v = 0
+				Tq = 0.1
+				T = 1.0
+				t1 = Tq
+				t2 = t1 + T
+				t3 = t2 + T
+				t4 = t3 + Tq
+				if t_now < t1:
+					v = 0.0
+				elif t_now < t2:
+					v = (t_now - t1) / T
+				elif t_now < t3:
+					v = 0.3 - (t_now - t2*0.6) / T
+				elif t_now < t4:
+					v = 0.0
+				else:
+					self.active = False
+				self.velocity.twist.angular.z = v * 3.0
+				self.velocity.twist.linear.x = 0.0
 
 			if self.stopb:
 				self.LiftControl.set_value(70.0)
@@ -264,10 +270,12 @@ class miro_gui:
 		# options
 		self.report_wheels = False
 		self.shoot = False
-		self.toss = ""
+		self.passl = False
+		self.passr = False
 		self.stopb = False
 		self.dribble = False
 		self.ready = False
+
 
 		# handle args
 		parser = argparse.ArgumentParser()
@@ -1468,8 +1476,41 @@ def generate_argb(colour, bright):
 	 					text = "Goal Post"
 	 					cv2.drawContours(image,contours,-1,(255,0,0),3)
 	 					# cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
-	 #						self.dribble = True
-	 #						self.ball_control()
+						if not contours:
+	 						print("No Goal post is found")
+	 					else:
+	 						largest_contour = max(contours, key = cv2.contourArea)
+	 						x,y,w,h = cv2.boundingRect(largest_contour)
+	 						# draw the book contour (in green)
+	 						cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255),2)
+	 						cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+	 						find_center(largest_contour)
+	 						object_centerX, object_centerY = find_center(largest_contour)
+	 						# print("oX: ",object_centerX)
+	 						# print("oY: ",object_centerY)
+	 						cv2.line(image, (int(image_centerX), int(image_centerY)), (int(object_centerX), int(object_centerY)),
+	 								(255, 0, 0), 2)
+	 						D = dist.euclidean((image_centerX, image_centerY), (object_centerX, object_centerY))
+
+							if object_centerX>image_centerX:
+								print("goal post is at right")
+								self.passr = True
+								self.passl = False
+								self.shoot = False	
+								break
+
+							if object_centerX<image_centerX:
+								print("goal post is at left")
+								self.passl = True
+								self.passr = False
+								self.shoot = False
+								break
+							if object_centerX==image_centerX:
+								print("goal post is at front")
+								self.passl = False
+								self.passr = False
+								self.shoot = True
+								break
 
 	 				count += 1
 	 				# loop over the contours
@@ -1491,7 +1532,8 @@ def generate_argb(colour, bright):
 	 						return False
 	 					if check(x):
 	 						print("ball at front")
-	 						self.shoot = True
+#	 						self.shoot = True
+#							self.passr = True
 	 						self.ball_control()
 
 
