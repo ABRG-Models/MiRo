@@ -958,29 +958,32 @@ def generate_argb(colour, bright):
 
 ################################### object detection, boundary detection, and goal post detecton ##########################
 
-			# height, width, channel = image.shape
+			## normalisation, did work but need to adjust the colour boundary again, 
+			## so will leave it unless it needed
+			## reference: http://akash0x53.github.io/blog/2013/04/29/RGB-Normalization/
+			# def normalized(rgb, h, w, c):
 
-			# def normalise(image, h, w, c):
-			# 	# norm=np.zeros((h,w,c),np.float32)
-			# 	# norm_rgb=np.zeros((h,w,c),np.uint8)
+			# 	norm=np.zeros((h,w,c),np.float32)
+			# 	norm_rgb=np.zeros((h,w,c),np.uint8)
 
-			# 	for i in range (h):
-			# 		for i in range (w):
-			# 			[b, g, r] = image[h, w]
+			# 	b=rgb[:,:,0]
+			# 	g=rgb[:,:,1]
+			# 	r=rgb[:,:,2]
 
-			# 			sum_colour = r+g+b
+			# 	sum=b+g+r
+			# 	# print sum
 
-			# 			b /= sum_colour
-			# 			g /= sum_colour
-		 #    			r /= sum_colour
+			# 	if sum.all() != 0:
+			# 		norm[:,:,0]=b/sum*255.0
+			# 		norm[:,:,1]=g/sum*255.0
+			# 		norm[:,:,2]=r/sum*255.0
+			# 	else:
+			# 		return rgb
 
-		 #    			image[h, w] = [b, g, r]
-		 #    	return image
-
-			# image = normalise(image, height, width, channel)
+			# 	norm_rgb=cv2.convertScaleAbs(norm)
+			# 	return norm_rgb
 
 			# output = image.copy()
-			# image_draw = image.copy()
 
 #			height, width, channel = output.shape
 
