@@ -13,7 +13,7 @@ import numpy as np
 import time
 import sys
 import os
-
+import argparse
 import miro2 as miro
 
 ################################################################
@@ -256,7 +256,21 @@ class controller:
 
 	def __init__(self, args):
 
-		rospy.init_node("client_test", anonymous=True)
+
+		parser = argparse.ArgumentParser()
+		parser.add_argument("--robot_name", type=str)
+
+		parsed_args = parser.parse_args(args[1:])
+
+		# robot name
+		if parsed_args.robot_name is None:
+		    robot_name = os.getenv("MIRO_ROBOT_NAME")
+		else :
+		    robot_name = parsed_args.robot_name
+
+		print "Connecting with a robot called {} ".format(robot_name)
+		topic_base = "/" + robot_name + "/"
+		rospy.init_node("client_test" + robot_name)
 
 		# state
 		self.state_file = None
@@ -271,40 +285,38 @@ class controller:
 
 		# options
 		self.report_wheels = False
-		self.shoot = False
+		self.shoot = True
 		self.toss = ""
 		self.stopb = False
 		self.dribble = False
 		self.ready = False
 
 
-		# handle args
-		for arg in args:
-			f = arg.find('=')
-			if f == -1:
-				key = arg
-				val = ""
-			else:
-				key = arg[:f]
-				val = arg[f+1:]
-			if key == "shoot":
-				self.shoot = True
-			elif key == "passl":
-				self.toss = "l"
-			elif key == "passr":
-				self.toss = "r"
-			elif key == "stopb":
-				self.stopb = True
-			elif key == "dribble":
-				self.dribble = True
-			elif key == "ready":
-				self.ready = True
-			else:
-				error("argument not recognised \"" + arg + "\"")
+#		# handle args
+#		for arg in args:
+#			f = arg.find('=')
+#			if f == -1:
+#				key = arg
+#				val = ""
+#			else:
+#				key = arg[:f]
+#				val = arg[f+1:]
+#			if key == "shoot":
+#				self.shoot = True
+#			elif key == "passl":
+#				self.toss = "l"
+#			elif key == "passr":
+#				self.toss = "r"
+#			elif key == "stopb":
+#				self.stopb = True
+#			elif key == "dribble":
+#				self.dribble = True
+#			elif key == "ready":
+#				self.ready = True
+#			else:
+#				error("argument not recognised \"" + arg + "\"")
 
-		# robot name
-		topic_base = "/" + os.getenv("MIRO_ROBOT_NAME") + "/"
-
+#		
 		# publish
 		topic = topic_base + "control/cmd_vel"
 		print ("publish", topic)
@@ -340,13 +352,6 @@ class controller:
 		print ("subscribe", topic)
 		self.sub_package = rospy.Subscriber(topic, miro.msg.sensors_package, self.callback_package)
 
-#		# subscribe
-#		topic = topic_base + "sensors/caml/compressed"
-#		print ("subscribe", topic)
-#		self.sub_caml = rospy.Subscriber(topic,
-#					CompressedImage, self.callback_caml)
-
-
 		# wait for connect
 		print "wait for connect..."
 		time.sleep(1)
@@ -379,7 +384,7 @@ if __name__ == "__main__":
 	"""
 
 	# normal singular invocation
-	main = controller(sys.argv[1:])
+	main = controller(sys.argv)
 	main.loop()
 
 

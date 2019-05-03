@@ -958,32 +958,29 @@ def generate_argb(colour, bright):
 
 ################################### object detection, boundary detection, and goal post detecton ##########################
 
-			## normalisation, did work but need to adjust the colour boundary again, 
-			## so will leave it unless it needed
-			## reference: http://akash0x53.github.io/blog/2013/04/29/RGB-Normalization/
-			# def normalized(rgb, h, w, c):
+			# height, width, channel = image.shape
 
-			# 	norm=np.zeros((h,w,c),np.float32)
-			# 	norm_rgb=np.zeros((h,w,c),np.uint8)
+			# def normalise(image, h, w, c):
+			# 	# norm=np.zeros((h,w,c),np.float32)
+			# 	# norm_rgb=np.zeros((h,w,c),np.uint8)
 
-			# 	b=rgb[:,:,0]
-			# 	g=rgb[:,:,1]
-			# 	r=rgb[:,:,2]
+			# 	for i in range (h):
+			# 		for i in range (w):
+			# 			[b, g, r] = image[h, w]
 
-			# 	sum=b+g+r
-			# 	# print sum
+			# 			sum_colour = r+g+b
 
-			# 	if sum.all() != 0:
-			# 		norm[:,:,0]=b/sum*255.0
-			# 		norm[:,:,1]=g/sum*255.0
-			# 		norm[:,:,2]=r/sum*255.0
-			# 	else:
-			# 		return rgb
+			# 			b /= sum_colour
+			# 			g /= sum_colour
+		 #    			r /= sum_colour
 
-			# 	norm_rgb=cv2.convertScaleAbs(norm)
-			# 	return norm_rgb
+		 #    			image[h, w] = [b, g, r]
+		 #    	return image
+
+			# image = normalise(image, height, width, channel)
 
 			# output = image.copy()
+			# image_draw = image.copy()
 
 #			height, width, channel = output.shape
 
@@ -1481,39 +1478,39 @@ def generate_argb(colour, bright):
 	 					# cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
 						if not contours:
 	 						print("No Goal post is found")
-	 					else:
-	 						largest_contour = max(contours, key = cv2.contourArea)
-	 						x,y,w,h = cv2.boundingRect(largest_contour)
-	 						# draw the book contour (in green)
-	 						cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255),2)
-	 						cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
-	 						find_center(largest_contour)
-	 						object_centerX, object_centerY = find_center(largest_contour)
-	 						# print("oX: ",object_centerX)
-	 						# print("oY: ",object_centerY)
-	 						cv2.line(image, (int(image_centerX), int(image_centerY)), (int(object_centerX), int(object_centerY)),
-	 								(255, 0, 0), 2)
-	 						D = dist.euclidean((image_centerX, image_centerY), (object_centerX, object_centerY))
+#	 					else:
+#	 						largest_contour = max(contours, key = cv2.contourArea)
+#	 						x,y,w,h = cv2.boundingRect(largest_contour)
+#	 						# draw the book contour (in green)
+#	 						cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255),2)
+#	 						cv2.putText(image, text,(x,y+h),font,1.0,(0,255,255), True)
+#	 						find_center(largest_contour)
+#	 						object_centerX, object_centerY = find_center(largest_contour)
+#	 						# print("oX: ",object_centerX)
+#	 						# print("oY: ",object_centerY)
+#	 						cv2.line(image, (int(image_centerX), int(image_centerY)), (int(object_centerX), int(object_centerY)),
+#	 								(255, 0, 0), 2)
+#	 						D = dist.euclidean((image_centerX, image_centerY), (object_centerX, object_centerY))
 
-							if object_centerX>image_centerX:
-								print("goal post is at right")
-								self.passr = True
-								self.passl = False
-								self.shoot = False	
-								break
+#							if object_centerX>image_centerX:
+#								print("goal post is at right")
+#								self.passr = True
+#								self.passl = False
+#								self.shoot = False	
+#								break
 
-							if object_centerX<image_centerX:
-								print("goal post is at left")
-								self.passl = True
-								self.passr = False
-								self.shoot = False
-								break
-							if object_centerX==image_centerX:
-								print("goal post is at front")
-								self.passl = False
-								self.passr = False
-								self.shoot = True
-								break
+#							if object_centerX<image_centerX:
+#								print("goal post is at left")
+#								self.passl = True
+#								self.passr = False
+#								self.shoot = False
+#								break
+#							if object_centerX==image_centerX:
+#								print("goal post is at front")
+#								self.passl = False
+#								self.passr = False
+#								self.shoot = True
+#								break
 
 	 				count += 1
 	 				# loop over the contours
@@ -1530,13 +1527,13 @@ def generate_argb(colour, bright):
 	 					sonar = format_num(x)
 
 	 					def check(value):
-	 						if 0.01 <= value <= 0.11:
+	 						if 0.01 <= value <= 0.15:
 	 							return True
 	 						return False
 	 					if check(x):
 	 						print("ball at front")
-#	 						self.shoot = True
-#							self.passr = True
+	 						self.shoot = True
+#							self.passl = True
 	 						self.ball_control()
 
 
