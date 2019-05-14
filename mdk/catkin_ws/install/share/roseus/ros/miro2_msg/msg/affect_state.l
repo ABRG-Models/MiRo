@@ -104,19 +104,20 @@
 #	Consequential Robotics http://consequentialrobotics.com
 #	
 #	@section LICENSE
-#	For a full copy of the license agreement, see LICENSE in the
-#	MDK root directory.
+#	For a full copy of the license agreement, and a complete
+#	definition of \"The Software\", see LICENSE in the MDK root
+#	directory.
 #	
 #	Subject to the terms of this Agreement, Consequential
 #	Robotics grants to you a limited, non-exclusive, non-
 #	transferable license, without right to sub-license, to use
-#	MIRO Developer Kit in accordance with this Agreement and any
+#	\"The Software\" in accordance with this Agreement and any
 #	other written agreement with Consequential Robotics.
-#	Consequential Robotics does not transfer the title of MIRO
-#	Developer Kit to you; the license granted to you is not a
-#	sale. This agreement is a binding legal agreement between
-#	Consequential Robotics and the purchasers or users of MIRO
-#	Developer Kit.
+#	Consequential Robotics does not transfer the title of \"The
+#	Software\" to you; the license granted to you is not a sale.
+#	This agreement is a binding legal agreement between
+#	Consequential Robotics and the purchasers or users of \"The
+#	Software\".
 #	
 #	THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY
 #	KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
@@ -126,6 +127,7 @@
 #	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 #	OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 #	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	
 
 #	DOCLINK AFFECT FLAGS
 #
@@ -155,19 +157,20 @@ MSG: miro2_msg/affect
 #	Consequential Robotics http://consequentialrobotics.com
 #	
 #	@section LICENSE
-#	For a full copy of the license agreement, see LICENSE in the
-#	MDK root directory.
+#	For a full copy of the license agreement, and a complete
+#	definition of \"The Software\", see LICENSE in the MDK root
+#	directory.
 #	
 #	Subject to the terms of this Agreement, Consequential
 #	Robotics grants to you a limited, non-exclusive, non-
 #	transferable license, without right to sub-license, to use
-#	MIRO Developer Kit in accordance with this Agreement and any
+#	\"The Software\" in accordance with this Agreement and any
 #	other written agreement with Consequential Robotics.
-#	Consequential Robotics does not transfer the title of MIRO
-#	Developer Kit to you; the license granted to you is not a
-#	sale. This agreement is a binding legal agreement between
-#	Consequential Robotics and the purchasers or users of MIRO
-#	Developer Kit.
+#	Consequential Robotics does not transfer the title of \"The
+#	Software\" to you; the license granted to you is not a sale.
+#	This agreement is a binding legal agreement between
+#	Consequential Robotics and the purchasers or users of \"The
+#	Software\".
 #	
 #	THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY
 #	KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
@@ -177,6 +180,7 @@ MSG: miro2_msg/affect
 #	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 #	OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 #	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	
 #
 #	The \"affect\" state is two-dimensional, encoding valence
 #	(-ve = sad, +ve = happy) and arousal (-ve = relaxed, +ve = alert).
@@ -196,19 +200,20 @@ MSG: miro2_msg/sleep
 #	Consequential Robotics http://consequentialrobotics.com
 #	
 #	@section LICENSE
-#	For a full copy of the license agreement, see LICENSE in the
-#	MDK root directory.
+#	For a full copy of the license agreement, and a complete
+#	definition of \"The Software\", see LICENSE in the MDK root
+#	directory.
 #	
 #	Subject to the terms of this Agreement, Consequential
 #	Robotics grants to you a limited, non-exclusive, non-
 #	transferable license, without right to sub-license, to use
-#	MIRO Developer Kit in accordance with this Agreement and any
+#	\"The Software\" in accordance with this Agreement and any
 #	other written agreement with Consequential Robotics.
-#	Consequential Robotics does not transfer the title of MIRO
-#	Developer Kit to you; the license granted to you is not a
-#	sale. This agreement is a binding legal agreement between
-#	Consequential Robotics and the purchasers or users of MIRO
-#	Developer Kit.
+#	Consequential Robotics does not transfer the title of \"The
+#	Software\" to you; the license granted to you is not a sale.
+#	This agreement is a binding legal agreement between
+#	Consequential Robotics and the purchasers or users of \"The
+#	Software\".
 #	
 #	THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY
 #	KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
@@ -218,6 +223,7 @@ MSG: miro2_msg/sleep
 #	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 #	OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 #	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	
 #
 #	The \"sleep\" state is two-dimensional, encoding \"wakefulness\"
 #	(0.0 to 1.0, what it sounds like) and \"pressure\" (0.0 to 1.0,

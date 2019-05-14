@@ -1,10 +1,12 @@
+#!/usr/bin/python
+
 import rospy
 from std_msgs.msg import UInt8, UInt16, UInt32, Float32MultiArray, UInt16MultiArray, UInt32MultiArray
 from nav_msgs.msg import Odometry
 
 import geometry_msgs
 from geometry_msgs.msg import Twist, TwistStamped
-from sensor_msgs.msg import JointState, Imu, CompressedImage
+from sensor_msgs.msg import JointState, Imu
 
 import math
 import numpy as np
@@ -26,13 +28,17 @@ def usage():
 	print ("""
 Usage:
 	client_test.py wheels kin cos
+
 	Without arguments, this help page is displayed. To run the
 	client you must specify at least one option.
+
 Options:
 	wheels
 		test the wheels (robot will move).
+
 	kin
 		test the kin(ematic) joints.
+
 	cos
 		test the cos(metic) joints.
 	""")
@@ -429,8 +435,11 @@ if __name__ == "__main__":
 
 	"""
 	if len(sys.argv) >= 2 and sys.argv[1] == "governed":
+
 		state_file = os.getenv("MIRO_DIR_STATE") + "/client_test"
+
 		while True:
+
 			# wait for state file
 			if not os.path.isfile(state_file):
 				print "."
@@ -449,6 +458,7 @@ if __name__ == "__main__":
 	# normal singular invocation
 	main = controller(sys.argv[1:])
 	main.loop()
+
 
 
 
