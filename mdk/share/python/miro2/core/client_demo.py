@@ -7,20 +7,19 @@
 #	Consequential Robotics http://consequentialrobotics.com
 #	
 #	@section LICENSE
-#	For a full copy of the license agreement, and a complete
-#	definition of "The Software", see LICENSE in the MDK root
-#	directory.
+#	For a full copy of the license agreement, see LICENSE in the
+#	MDK root directory.
 #	
 #	Subject to the terms of this Agreement, Consequential
 #	Robotics grants to you a limited, non-exclusive, non-
 #	transferable license, without right to sub-license, to use
-#	"The Software" in accordance with this Agreement and any
+#	MIRO Developer Kit in accordance with this Agreement and any
 #	other written agreement with Consequential Robotics.
-#	Consequential Robotics does not transfer the title of "The
-#	Software" to you; the license granted to you is not a sale.
-#	This agreement is a binding legal agreement between
-#	Consequential Robotics and the purchasers or users of "The
-#	Software".
+#	Consequential Robotics does not transfer the title of MIRO
+#	Developer Kit to you; the license granted to you is not a
+#	sale. This agreement is a binding legal agreement between
+#	Consequential Robotics and the purchasers or users of MIRO
+#	Developer Kit.
 #	
 #	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
 #	KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
@@ -30,7 +29,6 @@
 #	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 #	OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 #	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#	
 
 import os
 import sys
@@ -235,6 +233,9 @@ class DemoSystem(object):
 		self.output = DemoOutput()
 		self.nodes = DemoNodes(self.client_type)
 
+		# instantiate nodes
+		self.nodes.instantiate(self)
+
 		# state
 		self.active_counter = 1
 		self.active = False
@@ -257,21 +258,17 @@ class DemoSystem(object):
 				self.publish('core/priw', sensor_msgs.msg.Image)
 				]
 
-			# publish control outputs
+			# publish
 			self.pub_cos = self.publish('control/cosmetic_joints', std_msgs.msg.Float32MultiArray)
+
+			# publish
 			self.pub_illum = self.publish('control/illum', std_msgs.msg.UInt32MultiArray)
 
-			# publish core states
-			self.pub_affect_state = self.publish('core/affect/state', miro.msg.affect_state)
-			self.pub_affect_time = self.publish('core/affect/time', std_msgs.msg.UInt32)
-			self.pub_sel_prio = self.publish('core/selection/priority', std_msgs.msg.Float32MultiArray)
-			self.pub_sel_inhib = self.publish('core/selection/inhibition', std_msgs.msg.Float32MultiArray)
+			# publish
+			self.pub_affect = self.publish('core/affect', miro.msg.affect_state)
 
-			# reference core states output messages in output array
-			self.output.affect_state = self.pub_affect_state.msg
-			self.output.affect_time = self.pub_affect_time.msg
-			self.output.sel_prio = self.pub_sel_prio.msg
-			self.output.sel_inhib = self.pub_sel_inhib.msg
+			# reference pub_affect msg in output.affect
+			self.output.affect = self.pub_affect.msg
 
 			# publish
 			self.pub_flags = self.publish('control/flags', std_msgs.msg.UInt32)
@@ -313,9 +310,6 @@ class DemoSystem(object):
 			# publish
 			self.pub_mics = self.publish('core/audio_event', std_msgs.msg.Float32MultiArray)
 
-		# instantiate nodes
-		self.nodes.instantiate(self)
-
 		# finalize parameters
 		self.pars.finalize()
 
@@ -345,14 +339,14 @@ class DemoSystem(object):
 
 			# subscribe
 			self.subscribe('sensors/cam' + self.camera_sub + '/compressed', sensor_msgs.msg.CompressedImage, self.callback_cam)
-			self.subscribe('core/affect/state', miro.msg.affect_state, self.callback_affect_state)
+			self.subscribe('core/affect', miro.msg.affect_state, self.callback_affect_state)
 
 		# select client type
 		if self.client_type == "mics":
 
 			# subscribe
 			self.subscribe('sensors/mics', std_msgs.msg.Int16MultiArray, self.callback_mics)
-			self.subscribe('core/affect/state', miro.msg.affect_state, self.callback_affect_state)
+			self.subscribe('core/affect', miro.msg.affect_state, self.callback_affect_state)
 
 		# wait for connection before moving off
 		print "waiting for connection..."
@@ -433,18 +427,15 @@ class DemoSystem(object):
 		self.pub_illum.msg.data = self.output.illum
 		self.pub_illum.publish()
 
-		# publish core states
-		self.output.affect_state.flags = 0
+		# publish
+		self.output.affect.flags = 0
 		if self.pars.flags.EXPRESS_THROUGH_VOICE != 0:
-			self.output.affect_state.flags |= miro.constants.AFFECT_EXPRESS_THROUGH_VOICE
+			self.output.affect.flags |= miro.constants.AFFECT_EXPRESS_THROUGH_VOICE
 		if self.pars.flags.EXPRESS_THROUGH_NECK != 0:
-			self.output.affect_state.flags |= miro.constants.AFFECT_EXPRESS_THROUGH_NECK
+			self.output.affect.flags |= miro.constants.AFFECT_EXPRESS_THROUGH_NECK
 		if self.pars.flags.EXPRESS_THROUGH_WHEELS != 0:
-			self.output.affect_state.flags |= miro.constants.AFFECT_EXPRESS_THROUGH_WHEELS
-		self.pub_affect_state.publish()
-		self.pub_affect_time.publish()
-		self.pub_sel_prio.publish()
-		self.pub_sel_inhib.publish()
+			self.output.affect.flags |= miro.constants.AFFECT_EXPRESS_THROUGH_WHEELS
+		self.pub_affect.publish()
 
 		# publish motor output
 		if self.use_external_kc:

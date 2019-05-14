@@ -1,5 +1,59 @@
-!! MiRo Software Suite
+MIRO Developer Kit
 Copyright (C) 2019 Consequential Robotics Ltd
+
+
+
+*** SUMMARY TERMS ***
+
+Herein, "The MDK" is taken to mean all materials that may be
+supplied as part of or in association with the MIRO
+Developer Kit (MDK) software package and the MIRO robot
+itself, including all software installed on a MIRO robot at
+the time of supply to the end user, and any additional
+software (such as software updates) supplied to the end user
+in connection with their use of the MIRO robot or the MDK
+software package, as well as any other products and services
+supplied to the user in association with their use of any of
+the aforementioned products.
+
+Use of "The MDK" is not permitted without agreement to the
+terms herein. Any use of "The MDK", accordingly, indicates
+your acceptance of these terms in full. For full licensing
+information, you should consult the section "LICENSE"
+(below), which specifies in detail the terms under which you
+are supplied with "The MDK". The remainder of this section
+is a general summary of these terms of use.
+
+A set of third-party materials are supplied along with the
+MDK in the directory "image/extern". These materials are
+covered by separate licenses (including GPL, LGPL, MIT, BSD,
+and Apache licenses) and export constraints. For full
+details, you should review the licensing terms supplied in
+that directory. This summary section may not accurately
+represent the terms of use of these third-party materials.
+
+Broadly, you are permitted to use "The MDK" within your
+organisation for non-commercial use. You are not permitted
+to distribute any part of "The MDK" nor to make use of any
+part of "The MDK" in a commercial product, in general,
+though exceptions to this constraint may be granted on
+application. You idemnify Consequential Robotics, its
+employees, as well as any agents acting on its behalf
+against any liability for any harm or damage however caused
+through the use of "The MDK".
+
+The MIRO robot is a research tool designed solely for use in
+professional establishments for the purposes of research and
+development; it is not a finished consumer product.
+Furthermore, it is not certified for sale as a consumer
+product (for example, the MIRO robot does not carry European
+CE marking which would indicate compliance with essential
+Health & Safety regulations that apply in that
+jurisdiction). Use of the MIRO robot may, therefore, pose
+hazards that would not be expected during the use of
+certified consumer equipment. Before any use of the MIRO
+robot you should, accordingly, perform your own risk
+assessment.
 
 
 
@@ -10,102 +64,107 @@ THIS SOFTWARE.
 
 0. SCOPE
 
-Herein, "The Software" is taken to mean all materials
-supplied as part of or in association with the MiRo robot,
-the MiRo Developer Kit (MDK), MiRoCODE, MIROapp, or any
-other part of the MiRo product collection, except as
-explicitly excluded. This includes all software installed on
-a MiRo robot at the time of supply to the end user, any
-additional software (including supplementary software and
-software updates) supplied to the end user in connection
-with their use of the MiRo product collection, and any other
-products and services supplied to the user in association
-with their use of any of these products, including non-
-software elements such as documentation, and including web-
-delivered elements that are not installed on the user's
-computer. This excludes those third-party software elements
-that are listed below and for which licensing information is
-made explicit in separate sections below:
-
-* Raspbian Linux system and installed packages
-* STM32 embedded development libraries
+Herein, "The MDK" is taken to mean all materials that may be
+supplied as part of or in association with the MIRO
+Developer Kit (MDK) software package and the MIRO robot
+itself, including all software installed on a MIRO robot at
+the time of supply to the end user, and any additional
+software (such as software updates) supplied to the end user
+in connection with their use of the MIRO robot or the MDK
+software package, as well as any other products and services
+supplied to the user in association with their use of any of
+the aforementioned products.
 
 1. LICENSE
 
-By receiving, opening, and/or using any part of "The
-Software", you agree that this End User License Agreement
-(EULA) is a legally binding and valid contract and agree to
-be bound by it. You agree to abide by the intellectual
-property laws and all of the terms and conditions of this
-Agreement.
+By receiving, opening, and/or using any part of "The MDK",
+you agree that this End User User License Agreement (EULA)
+is a legally binding and valid contract and agree to be
+bound by it. You agree to abide by the intellectual property
+laws and all of the terms and conditions of this Agreement.
 
 Unless you have a different license agreement signed by
-Consequential Robotics your use of "The Software" indicates
-your acceptance of this license agreement and warranty.
+Consequential Robotics your use of "The MDK" indicates your
+acceptance of this license agreement and warranty.
 
 Subject to the terms of this Agreement, Consequential
 Robotics grants to you a limited, non-exclusive, non-
 transferable license, without right to sub-license, to use
-"The Software" in accordance with this Agreement and any
-other written agreement with Consequential Robotics.
-Consequential Robotics does not transfer the title of "The
-Software" to you; the license granted to you is not a sale.
-This agreement is a binding legal agreement between
-Consequential Robotics and the purchasers or users of "The
-Software".
+"The MDK" in accordance with this Agreement and any other
+written agreement with Consequential Robotics. Consequential
+Robotics does not transfer the title of "The MDK" to you;
+the license granted to you is not a sale. This agreement is
+a binding legal agreement between Consequential Robotics and
+the purchasers or users of "The MDK".
 
 If you do not agree to be bound by this agreement, remove
-"The Software" from your computer now and, if applicable,
+"The MDK" from your computer now and, if applicable,
 promptly return to Consequential Robotics by mail any copies
-of "The Software" and related documentation and packaging in
-your possession.
+of "The MDK" and related documentation and packaging in your
+possession.
 
 2. DISTRIBUTION
 
-"The Software" and the license herein granted shall not be
+"The MDK" and the license herein granted shall not be
 copied, shared, distributed, re-sold, offered for re-sale,
 transferred or sub-licensed in whole or in part except that
 you may make one copy for archive purposes only. For
-information about redistribution of "The Software" contact
+information about redistribution of "The MDK" contact
 Consequential Robotics.
 
 3. USER AGREEMENT
 
 3.1 Use
 
-Your license to use "The Software" is limited to the number
-of licenses purchased by you. You shall not allow others to
-use, copy or evaluate copies of "The Software".
+Your license to use "The MDK" is limited to the number of
+licenses purchased by you. You shall not allow others to
+use, copy or evaluate copies of "The MDK".
 
-3.2 Hazards
+3.2 Status
 
-Use of the MiRo robot may pose unexpected hazards - for
-example, it is low to the ground and may be a trip hazard.
-Before any use of the MiRo robot you should, accordingly,
-perform your own risk assessment. You must read and
-understand the Owner's Guide before handling the robot and
-before completing the aforementioned risk assessment.
+The MIRO robot is a research tool designed solely for use in
+professional establishments for the purposes of research and
+development; it is not a finished consumer product.
+Furthermore, it is not certified for sale as a consumer
+product (for example, the MIRO robot does not carry European
+CE marking which would indicate compliance with essential
+Health & Safety regulations that apply in that
+jurisdiction). Use of the MIRO robot may, therefore, pose
+hazards that would not be expected during the use of
+certified consumer equipment. Before any use of the MIRO
+robot you should, accordingly, perform your own risk
+assessment.
 
 3.3 Use Restrictions
 
-You shall use "The Software" in compliance with all
-applicable laws and not for any unlawful purpose. Without
-limiting the foregoing, use, display or distribution of "The
-Software" together with material that is pornographic,
-racist, vulgar, obscene, defamatory, libelous, abusive,
-promoting hatred, discriminating or displaying prejudice
-based on religion, ethnic heritage, race, sexual orientation
-or age is strictly prohibited.
+You shall use "The MDK" in compliance with all applicable
+laws and not for any unlawful purpose. Without limiting the
+foregoing, use, display or distribution of "The MDK"
+together with material that is pornographic, racist, vulgar,
+obscene, defamatory, libelous, abusive, promoting hatred,
+discriminating or displaying prejudice based on religion,
+ethnic heritage, race, sexual orientation or age is strictly
+prohibited.
 
-The assignment, sublicense, networking, sale, or
-distribution of copies of "The Software" are strictly
+Each licensed copy of "The MDK" may be used on one single
+computer location by one user. Use of "The MDK" means that
+you have loaded, installed, or run "The MDK" on a computer
+or similar device. If you install "The MDK" onto a multi-
+user platform, server or network, each and every individual
+user of "The MDK" must be licensed separately.
+
+You may make one copy of "The MDK" for backup purposes,
+providing you only have one copy installed on one computer
+being used by one person. Other users may not use your copy
+of "The MDK". The assignment, sublicense, networking, sale,
+or distribution of copies of "The MDK" are strictly
 forbidden without the prior written consent of Consequential
 Robotics. It is a violation of this agreement to assign,
 sell, share, loan, rent, lease, borrow, network or transfer
-the use of "The Software". If any person other than yourself
-uses "The Software" registered in your name, regardless of
-whether it is at the same time or different times, then this
-agreement is being violated and you are responsible for that
+the use of "The MDK". If any person other than yourself uses
+"The MDK" registered in your name, regardless of whether it
+is at the same time or different times, then this agreement
+is being violated and you are responsible for that
 violation!
 
 3.4 Copyright Restriction
@@ -113,20 +172,20 @@ violation!
 This Software contains copyrighted material, trade secrets
 and other proprietary material. You shall not, and shall not
 attempt to, modify, reverse engineer, disassemble or
-decompile "The Software". Nor can you create any derivative
-works or other works that are based upon or derived from
-"The Software" in whole or in part.
+decompile "The MDK". Nor can you create any derivative works
+or other works that are based upon or derived from "The MDK"
+in whole or in part.
 
 Consequential Robotics's name, logo and graphics file that
-represents "The Software" shall not be used in any way to
-promote products developed with "The Software".
-Consequential Robotics retains sole and exclusive ownership
-of all right, title and interest in and to "The Software"
-and all Intellectual Property rights relating thereto.
+represents "The MDK" shall not be used in any way to promote
+products developed with "The MDK". Consequential Robotics
+retains sole and exclusive ownership of all right, title and
+interest in and to "The MDK" and all Intellectual Property
+rights relating thereto.
 
 Copyright law and international copyright treaty provisions
-protect all parts of "The Software", products and services.
-No program, code, part, image, audio sample, or text may be
+protect all parts of "The MDK", products and services. No
+program, code, part, image, audio sample, or text may be
 copied or used in any way by the user except as intended
 within the bounds of the single user program. All rights not
 expressly granted hereunder are reserved for Consequential
@@ -147,20 +206,19 @@ incidental, indirect, special or punitive damages whatsoever
 (including, without limitation, damages for loss of profits,
 loss of use, business interruption, loss of information or
 data, or pecuniary loss), in connection with or arising out
-of or related to this Agreement, "The Software" or the use
-or inability to use "The Software" or the furnishing,
-performance or use of any other matters hereunder whether
-based upon contract, tort or any other theory including
-negligence.
+of or related to this Agreement, "The MDK" or the use or
+inability to use "The MDK" or the furnishing, performance or
+use of any other matters hereunder whether based upon
+contract, tort or any other theory including negligence.
 
 Consequential Robotics's entire liability, without
 exception, is limited to the customers' reimbursement of the
-purchase price of "The Software" (maximum being the lesser
-of the amount paid by you and the suggested retail price as
-listed by Consequential Robotics ) in exchange for the
-return of the product, all copies, registration papers and
-manuals, and all materials that constitute a transfer of
-license from the customer back to Consequential Robotics.
+purchase price of "The MDK" (maximum being the lesser of the
+amount paid by you and the suggested retail price as listed
+by Consequential Robotics ) in exchange for the return of
+the product, all copies, registration papers and manuals,
+and all materials that constitute a transfer of license from
+the customer back to Consequential Robotics.
 
 3.6 Warranties
 
@@ -184,9 +242,9 @@ provisions.
 
 3.8 Commercial Use
 
-"The Software" is not for commercial use: the use of "The
-Software", or any parts of "The Software", in a commercial
-product is not permitted.
+"The MDK" is not for commercial use: the use of "The MDK",
+or any parts of "The MDK" (hardware or software), in a
+commercial product is not permitted.
 
 3.9 Termination
 
@@ -194,155 +252,26 @@ Any failure to comply with the terms and conditions of this
 Agreement will result in automatic and immediate termination
 of this license. Upon termination of this license granted
 herein for any reason, you agree to immediately cease use of
-"The Software" and destroy all copies of "The Software"
-supplied under this Agreement. The financial obligations
-incurred by you shall survive the expiration or termination
-of this license.
+"The MDK" and destroy all copies of "The MDK" supplied under
+this Agreement. The financial obligations incurred by you
+shall survive the expiration or termination of this license.
 
 4. DISCLAIMER OF WARRANTY
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
-KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+THE MDK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
 WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
 PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
 OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+MDK OR THE USE OR OTHER DEALINGS IN THE MDK.
 
+5. CONSENT OF USE OF DATA
 
-
-!! Raspbian Linux system and installed packages
-
-The MiRo robot ships with an installation of Raspbian Linux
-on the embedded Raspberry Pi computer which includes a set
-of installed software packages. This installation is
-licensed separately and provided to you without modification
-other than to configuration files in the usual way. On
-request, we will supply to customers a copy of the source
-code of those elements for which it is available (please
-note that these sources are available much more immediately
-via raspberrypi.org or by downloading direct to your
-Raspbian system using the command $apt-get source
-&lt;package>$).
-
-Various licenses apply to the system and packages---to see
-the license information for individual installed packages,
-run the command $grep ^ /usr/share/doc/*/copyright$ on board
-the MiRo robot.
-
-For the avoidance of doubt, the Raspberry Pi foundation do
-not endorse or promote any products of Consequential
-Robotics.
-
-
-!! STM32 embedded development libraries
-
-MiRo embedded software is built against libraries supplied
-by ST Microelectronics; these are licensed separately as
-detailed below. For the avoidance of doubt, ST
-Microelectronics do not endorse or promote any products of
-Consequential Robotics.
-
-!!! STM32Cube_FW_H7_V1.1.0
-
-Copyright 2017 STMicroelectronics and licensed under
-STMicroelectronics "software_license_agreement_liberty_v2".
-
-!!! STM32F0-Discovery_FW_V1.0.0
-
-Copyright 2012 STMicroelectronics and licensed under
-STMicroelectronics "software_license_agreement_liberty_v2".
-
-!!! STMicroelectronics
-"software_license_agreement_liberty_v2"
-
-(Following license text obtained from
-[[http://www.st.com/software_license_agreement_liberty_v2]]
-on 24 Jan 2019)
-
-SLA0044 Rev5/February 2018
-
-BY INSTALLING COPYING, DOWNLOADING, ACCESSING OR OTHERWISE
-USING THIS SOFTWARE OR ANY PART THEREOF (AND THE RELATED
-DOCUMENTATION) FROM STMICROELECTRONICS INTERNATIONAL N.V,
-SWISS BRANCH AND/OR ITS AFFILIATED COMPANIES
-(STMICROELECTRONICS), THE RECIPIENT, ON BEHALF OF HIMSELF OR
-HERSELF, OR ON BEHALF OF ANY ENTITY BY WHICH SUCH RECIPIENT
-IS EMPLOYED AND/OR ENGAGED AGREES TO BE BOUND BY THIS
-SOFTWARE LICENSE AGREEMENT.
-
-Under STMicroelectronics' intellectual property rights, the
-redistribution, reproduction and use in source and binary
-forms of the software or any part thereof, with or without
-modification, are permitted provided that the following
-conditions are met:
-1.      Redistribution of source code (modified or not) must
-retain any copyright notice, this list of conditions and the
-disclaimer set forth below as items 10 and 11.
-2.      Redistributions in binary form, except as embedded
-into microcontroller or microprocessor device manufactured
-by or for STMicroelectronics or a software update for such
-device, must reproduce any copyright notice provided with
-the binary code, this list of conditions, and the disclaimer
-set forth below as items 10 and 11, in documentation and/or
-other materials provided with the distribution.
-3.      Neither the name of STMicroelectronics nor the names
-of other contributors to this software may be used to
-endorse or promote products derived from this software or
-part thereof without specific written permission.
-4.      This software or any part thereof, including
-modifications and/or derivative works of this software, must
-be used and execute solely and exclusively on or in
-combination with a microcontroller or microprocessor device
-manufactured by or for STMicroelectronics.
-5.      No use, reproduction or redistribution of this
-software partially or totally may be done in any manner that
-would subject this software to any Open Source Terms. "Open
-Source Terms" shall mean any open source license which
-requires as part of distribution of software that the source
-code of such software is distributed therewith or otherwise
-made available, or open source license that substantially
-complies with the Open Source definition specified at
-www.opensource.org and any other comparable open source
-license such as for example GNU General Public License
-(GPL), Eclipse Public License (EPL), Apache Software
-License, BSD license or MIT license.
-6.      STMicroelectronics has no obligation to provide any
-maintenance, support or updates for the software.
-7.      The software is and will remain the exclusive
-property of STMicroelectronics and its licensors. The
-recipient will not take any action that jeopardizes
-STMicroelectronics and its licensors' proprietary rights or
-acquire any rights in the software, except the limited
-rights specified hereunder.
-8.      The recipient shall comply with all applicable laws
-and regulations affecting the use of the software or any
-part thereof including any applicable export control law or
-regulation.
-9.      Redistribution and use of this software or any part
-thereof other than as permitted under this license is void
-and will automatically terminate your rights under this
-license.
-10.     THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS, IMPLIED OR STATUTORY
-WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE AND NON-INFRINGEMENT OF THIRD PARTY INTELLECTUAL
-PROPERTY RIGHTS, WHICH ARE DISCLAIMED TO THE FULLEST EXTENT
-PERMITTED BY LAW. IN NO EVENT SHALL STMICROELECTRONICS OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-11.     EXCEPT AS EXPRESSLY PERMITTED HEREUNDER, NO LICENSE
-OR OTHER RIGHTS, WHETHER EXPRESS OR IMPLIED, ARE GRANTED
-UNDER ANY PATENT OR OTHER INTELLECTUAL PROPERTY RIGHTS OF
-STMICROELECTRONICS OR ANY THIRD PARTY.
-
-
-
+You agree that Consequential Robotics may collect and use
+information gathered in any manner as part of the product
+support services provided to you, if any, related to "The
+MDK". Consequential Robotics may also use this information
+to provide notices to you which may be of use or interest to
+you.

@@ -121,10 +121,6 @@ class streamer:
 
 		# periodic reports
 		count = 0
-		
-		# safety dropout if receiver not present
-		dropout_data_r = -1
-		dropout_count = 3
 
 		# loop
 		while not rospy.core.is_shutdown():
@@ -154,23 +150,13 @@ class streamer:
 			if self.data_r >= len(self.data):
 				break
 
-			# report once per second
+			# report
 			if count == 0:
 				count = 10
 				print "streaming:", self.data_r, "/", len(self.data), "bytes"
-				
-				# check at those moments if we are making progress, also
-				if dropout_data_r == self.data_r:
-					if dropout_count == 0:
-						print "dropping out because of no progress..."
-						break
-					print "dropping out in", str(dropout_count) + "..."
-					dropout_count -= 1
-				else:
-					dropout_data_r = self.data_r
-			
-			# count tenths
 			count -= 1
+
+			# state
 			time.sleep(0.1)
 
 	def __init__(self):

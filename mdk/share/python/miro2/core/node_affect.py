@@ -5,20 +5,19 @@
 #	Consequential Robotics http://consequentialrobotics.com
 #	
 #	@section LICENSE
-#	For a full copy of the license agreement, and a complete
-#	definition of "The Software", see LICENSE in the MDK root
-#	directory.
+#	For a full copy of the license agreement, see LICENSE in the
+#	MDK root directory.
 #	
 #	Subject to the terms of this Agreement, Consequential
 #	Robotics grants to you a limited, non-exclusive, non-
 #	transferable license, without right to sub-license, to use
-#	"The Software" in accordance with this Agreement and any
+#	MIRO Developer Kit in accordance with this Agreement and any
 #	other written agreement with Consequential Robotics.
-#	Consequential Robotics does not transfer the title of "The
-#	Software" to you; the license granted to you is not a sale.
-#	This agreement is a binding legal agreement between
-#	Consequential Robotics and the purchasers or users of "The
-#	Software".
+#	Consequential Robotics does not transfer the title of MIRO
+#	Developer Kit to you; the license granted to you is not a
+#	sale. This agreement is a binding legal agreement between
+#	Consequential Robotics and the purchasers or users of MIRO
+#	Developer Kit.
 #	
 #	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
 #	KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
@@ -28,7 +27,6 @@
 #	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 #	OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 #	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#	
 
 import numpy as np
 import time
@@ -67,13 +65,10 @@ class RTC(object):
 
 		# get normalised time (0.0 to 1.0 during day)
 		now = datetime.datetime.now()
-		t = (now.hour * 60.0 + now.minute) / 1440.0
-		
+		t = (now.hour * 60 + now.minute) / 1440
+
 		# cosine map
-		arousal = -np.cos(t * 2.0 * np.pi)
-		
-		# ok
-		return (now.hour, arousal)
+		return -np.cos(t * 2.0 * np.pi)
 
 		"""
 	def get_time( self ):
@@ -804,11 +799,8 @@ class NodeAffect(node.Node):
 
 			# adjustment from circadian rhythm
 			if self.pars.flags.AFFECT_FROM_CLOCK:
-				(t, x) = self.rtc.get_time_based_arousal()
+				x = self.rtc.get_time_based_arousal()
 				arousal_target += x * self.pars.affect.arousal_gain_rtc
-				
-				# store hour for monitoring
-				self.output.affect_time.data = t
 
 			# store target from circadian rhythm
 			self.pars.affect.arousal_target_circadian = arousal_target
@@ -905,7 +897,7 @@ class NodeAffect(node.Node):
 		self.state.wakefulness = self.sleep.wakefulness
 
 		# load affect output message
-		msg = self.output.affect_state
+		msg = self.output.affect
 		msg.sleep.pressure = self.sleep.pressure
 		msg.sleep.wakefulness = self.sleep.wakefulness
 		msg.mood.valence = self.mood.valence

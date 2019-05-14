@@ -180,7 +180,7 @@ namespace message_traits
 
 
 // BOOLTRAITS {'IsFixedSize': False, 'IsMessage': True, 'HasHeader': True}
-// {'nav_msgs': ['/opt/ros/kinetic/share/nav_msgs/cmake/../msg'], 'std_msgs': ['/opt/ros/kinetic/share/std_msgs/cmake/../msg'], 'actionlib_msgs': ['/opt/ros/kinetic/share/actionlib_msgs/cmake/../msg'], 'sensor_msgs': ['/opt/ros/kinetic/share/sensor_msgs/cmake/../msg'], 'miro2_msg': ['/tmp/miro2/release/190407/mdk/catkin_ws/src/miro2_msg/msg'], 'geometry_msgs': ['/opt/ros/kinetic/share/geometry_msgs/cmake/../msg']}
+// {'nav_msgs': ['/opt/ros/kinetic/share/nav_msgs/cmake/../msg'], 'std_msgs': ['/opt/ros/kinetic/share/std_msgs/cmake/../msg'], 'actionlib_msgs': ['/opt/ros/kinetic/share/actionlib_msgs/cmake/../msg'], 'sensor_msgs': ['/opt/ros/kinetic/share/sensor_msgs/cmake/../msg'], 'miro2_msg': ['/tmp/miro2/release/190211/mdk/catkin_ws/src/miro2_msg/msg'], 'geometry_msgs': ['/opt/ros/kinetic/share/geometry_msgs/cmake/../msg']}
 
 // !!!!!!!!!!! ['__class__', '__delattr__', '__dict__', '__doc__', '__eq__', '__format__', '__getattribute__', '__hash__', '__init__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', '_parsed_fields', 'constants', 'fields', 'full_name', 'has_header', 'header_present', 'names', 'package', 'parsed_fields', 'short_name', 'text', 'types']
 
@@ -254,20 +254,19 @@ struct Definition< ::miro2_msg::sensors_package_<ContainerAllocator> >
 #	Consequential Robotics http://consequentialrobotics.com\n\
 #	\n\
 #	@section LICENSE\n\
-#	For a full copy of the license agreement, and a complete\n\
-#	definition of \"The Software\", see LICENSE in the MDK root\n\
-#	directory.\n\
+#	For a full copy of the license agreement, see LICENSE in the\n\
+#	MDK root directory.\n\
 #	\n\
 #	Subject to the terms of this Agreement, Consequential\n\
 #	Robotics grants to you a limited, non-exclusive, non-\n\
 #	transferable license, without right to sub-license, to use\n\
-#	\"The Software\" in accordance with this Agreement and any\n\
+#	MIRO Developer Kit in accordance with this Agreement and any\n\
 #	other written agreement with Consequential Robotics.\n\
-#	Consequential Robotics does not transfer the title of \"The\n\
-#	Software\" to you; the license granted to you is not a sale.\n\
-#	This agreement is a binding legal agreement between\n\
-#	Consequential Robotics and the purchasers or users of \"The\n\
-#	Software\".\n\
+#	Consequential Robotics does not transfer the title of MIRO\n\
+#	Developer Kit to you; the license granted to you is not a\n\
+#	sale. This agreement is a binding legal agreement between\n\
+#	Consequential Robotics and the purchasers or users of MIRO\n\
+#	Developer Kit.\n\
 #	\n\
 #	THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY\n\
 #	KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE\n\
@@ -277,7 +276,6 @@ struct Definition< ::miro2_msg::sensors_package_<ContainerAllocator> >
 #	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR\n\
 #	OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\n\
 #	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\
-#	\n\
 #\n\
 #	This message packages all the messages in /sensors into one\n\
 #	container so that a subscriber can receive them succinctly,\n\
