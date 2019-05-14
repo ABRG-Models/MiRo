@@ -12,3 +12,20 @@ create_release: R190211_RC1
 ################################################################
 create_release: R190211_RC2
 
+
+User-facing changes since R190211:
+- Updated on-board web interface to support latest MIROcode implementation.
+- Updated LICENSE information.
+- Fixed bug in example_kc.py.
+- Exposed some additional core states on ROS interface.
+- Various improvements to robustness of start-up procedure against network problems.
+
+
+
+################################################################
+create_release: R190407_RC1
+
+
+################################################################
+create_release: R190407_RC2
+

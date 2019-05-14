@@ -5,19 +5,20 @@
 #	Consequential Robotics http://consequentialrobotics.com
 #	
 #	@section LICENSE
-#	For a full copy of the license agreement, see LICENSE in the
-#	MDK root directory.
+#	For a full copy of the license agreement, and a complete
+#	definition of "The Software", see LICENSE in the MDK root
+#	directory.
 #	
 #	Subject to the terms of this Agreement, Consequential
 #	Robotics grants to you a limited, non-exclusive, non-
 #	transferable license, without right to sub-license, to use
-#	MIRO Developer Kit in accordance with this Agreement and any
+#	"The Software" in accordance with this Agreement and any
 #	other written agreement with Consequential Robotics.
-#	Consequential Robotics does not transfer the title of MIRO
-#	Developer Kit to you; the license granted to you is not a
-#	sale. This agreement is a binding legal agreement between
-#	Consequential Robotics and the purchasers or users of MIRO
-#	Developer Kit.
+#	Consequential Robotics does not transfer the title of "The
+#	Software" to you; the license granted to you is not a sale.
+#	This agreement is a binding legal agreement between
+#	Consequential Robotics and the purchasers or users of "The
+#	Software".
 #	
 #	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
 #	KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
@@ -27,6 +28,7 @@
 #	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 #	OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 #	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	
 
 import numpy as np
 import time
@@ -44,6 +46,8 @@ from action.action_orient import ActionOrient
 from action.action_flee import ActionFlee
 from action.action_avert import ActionAvert
 from action.action_retreat import ActionRetreat
+
+from std_msgs.msg import MultiArrayDimension
 
 
 
@@ -75,6 +79,17 @@ class NodeAction(node.Node):
 		self.push = None
 		self.retreatable_push = None
 		self.debug_tick = 0
+
+		# output
+		nchan = len(self.actions)
+		self.output.sel_prio.layout.dim = [MultiArrayDimension()]
+		self.output.sel_prio.layout.dim[0].label = "channel"
+		self.output.sel_prio.layout.dim[0].size = nchan
+		self.output.sel_prio.layout.dim[0].stride = 1
+		self.output.sel_inhib.layout.dim = [MultiArrayDimension()]
+		self.output.sel_inhib.layout.dim[0].label = "channel"
+		self.output.sel_inhib.layout.dim[0].size = nchan
+		self.output.sel_inhib.layout.dim[0].stride = 1
 
 	def apply_push(self, push, retreatable):
 
@@ -185,8 +200,8 @@ class NodeAction(node.Node):
 			self.action_input.sonar_range = msg.sonar.range
 			self.action_input.cliff = msg.cliff.data
 			self.action_input.priority_peak = self.state.priority_peak
-			self.action_input.emotion = copy.copy(self.output.affect.emotion)
-			self.action_input.sleep = copy.copy(self.output.affect.sleep)
+			self.action_input.emotion = copy.copy(self.output.affect_state.emotion)
+			self.action_input.sleep = copy.copy(self.output.affect_state.sleep)
 			self.action_input.wheel_speed_opto = self.input.sensors_package.wheel_speed_opto.data
 			self.action_input.wheel_speed_back_emf = self.input.sensors_package.wheel_speed_back_emf.data
 			self.action_input.wheel_effort_pwm = self.input.sensors_package.wheel_effort_pwm.data
@@ -313,6 +328,10 @@ class NodeAction(node.Node):
 
 		# update selection mechanism
 		self.selector.update(self.actions)
+
+		# and store its state for monitoring
+		self.output.sel_prio.data = self.selector.prio
+		self.output.sel_inhib.data = self.selector.inhib
 
 		# for each action
 		for action in self.actions:

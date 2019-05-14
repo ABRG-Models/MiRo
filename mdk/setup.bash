@@ -6,19 +6,20 @@
 #	Consequential Robotics http://consequentialrobotics.com
 #	
 #	@section LICENSE
-#	For a full copy of the license agreement, see LICENSE in the
-#	MDK root directory.
+#	For a full copy of the license agreement, and a complete
+#	definition of "The Software", see LICENSE in the MDK root
+#	directory.
 #	
 #	Subject to the terms of this Agreement, Consequential
 #	Robotics grants to you a limited, non-exclusive, non-
 #	transferable license, without right to sub-license, to use
-#	MIRO Developer Kit in accordance with this Agreement and any
+#	"The Software" in accordance with this Agreement and any
 #	other written agreement with Consequential Robotics.
-#	Consequential Robotics does not transfer the title of MIRO
-#	Developer Kit to you; the license granted to you is not a
-#	sale. This agreement is a binding legal agreement between
-#	Consequential Robotics and the purchasers or users of MIRO
-#	Developer Kit.
+#	Consequential Robotics does not transfer the title of "The
+#	Software" to you; the license granted to you is not a sale.
+#	This agreement is a binding legal agreement between
+#	Consequential Robotics and the purchasers or users of "The
+#	Software".
 #	
 #	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
 #	KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
@@ -28,6 +29,7 @@
 #	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 #	OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 #	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	
 
 # caller can skip slow parts if desired
 if [[ "$MIRO_SETUP_QUICK" == "" ]];
@@ -81,13 +83,19 @@ miro_get_dynamic_address()
 miro_resolve_network_address()
 {
 	# static
-	[[ "$MIRO_NETWORK_MODE" == "static" ]] && { MIRO_LOCAL_IP=$MIRO_STATIC_IP; return; }
+	[[ "$MIRO_NETWORK_MODE" == "static" ]] && { MIRO_LOCAL_IP=$MIRO_STATIC_IP; }
 
 	# dynamic
-	[[ "$MIRO_NETWORK_MODE" == "dynamic" ]] && { miro_get_dynamic_address; MIRO_LOCAL_IP=$MIRO_DYNAMIC_IP; return; }
+	[[ "$MIRO_NETWORK_MODE" == "dynamic" ]] && { miro_get_dynamic_address; MIRO_LOCAL_IP=$MIRO_DYNAMIC_IP; }
 
 	# loopback
-	[[ "$MIRO_NETWORK_MODE" == "loopback" ]] && { MIRO_LOCAL_IP=127.0.0.1; return; }
+	[[ "$MIRO_NETWORK_MODE" == "loopback" ]] && { MIRO_LOCAL_IP=127.0.0.1; }
+	
+	# resolve to something in case no network was available
+	if [[ "$1" == "resolve" ]];
+	then
+		[[ "$MIRO_LOCAL_IP" == "" ]] && { MIRO_LOCAL_IP=127.0.0.1; miro_warn "network address not available, using loopback"; }
+	fi
 }
 
 # MIRO edition
@@ -145,8 +153,12 @@ then
 
 	# locate user setup file if there is one, else select default
 	export MIRO_USER_SETUP=$MIRO_DIR_CONFIG/user_setup.bash
-	if [ ! -e "$MIRO_USER_SETUP" ];
+	if [ -e "$MIRO_USER_SETUP" ];
 	then
+		# if present, source default one first to ensure all settings
+		# are loaded, even ones that are new and not in the user file
+		source $MIRO_DIR_SHARE/config/user_setup.bash
+	else
 		MIRO_USER_SETUP=$MIRO_DIR_SHARE/config/user_setup.bash
 	fi
 
@@ -154,7 +166,7 @@ then
 	source $MIRO_USER_SETUP || { miro_config_error "failed to source user_setup.bash"; }
 
 	# resolve network address
-	miro_resolve_network_address
+	miro_resolve_network_address resolve
 
 	# set ROS network variables
 	[[ "$ROS_MASTER_IP" == "" ]] && ROS_MASTER_IP=localhost
