@@ -90,7 +90,7 @@ class BasalGanglia(object):
 			self.prio[0] -= abs(np.random.normal() * self.pars.selection_noise_mag)
 
 		# Select action with maximum priority (winner take all)
-		selected = np.argmax(prios)
+		selected = np.argmax(self.prio)
 
 		# update selection
 		if self.selected != selected:
