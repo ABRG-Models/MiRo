@@ -26,8 +26,7 @@ Once you've done that, it's recommended you follow the [official MiRo-E document
 ### Docker
 If you don't want to install Ubuntu 16 on your machine, it should be possible to run a virtualised instance of the MiRo simulator through [Docker](https://www.docker.com) (as long as you're still running some Linux variant). [Install Docker CE](https://docs.docker.com/install/linux/docker-ce/ubuntu/) and then:
 1. Run `docker pull tacd/miro_sim` to get the MiRo simulator Docker image
-2. [Enable GUI access for Docker containers](http://wiki.ros.org/docker/Tutorials/GUI)
-3. Run `docker run -it --net host -v /tmp/.X11-unix:/tmp/.X11-unix tacd/miro_sim` (or a variant of this if needed by step 2)
+2. Run `docker run -it --net host -v $XAUTHORITY:/root/.Xauthority -v /tmp/.X11-unix:/tmp/.X11-unix tacd/miro_sim` to launch the Docker image
 
 If all goes well, Gazebo should open with a virtual MiRo already loaded.
 
