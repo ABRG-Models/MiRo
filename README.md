@@ -30,3 +30,10 @@ If you don't want to install Ubuntu 16 on your machine, it should be possible to
 
 If all goes well, Gazebo should open with a virtual MiRo already loaded.
 
+## Connecting to a physical robot
+To connect to the ROS core on your MiRo robot you will need to ensure three environment variables are set correctly:
+* `ROS_IP` must be set to your machine's IP address (of the interface used to communicate with MiRo)
+* `ROS_MASTER_URI` must be set to `http://<MiRo's IP>:11311`
+* `MIRO_ROBOT_NAME` must be set to your MiRo's ROS name - this can easily be viewed in the MiRo app
+You can test these are set correctly by running `rostopic list` from the terminal; you should be presented with a list of all the available ROS topics on the robot.
+
