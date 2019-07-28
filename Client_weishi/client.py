@@ -41,7 +41,9 @@ class controller:
         # convert compressed ROS image to raw CV image
         image = self.image_converter.compressed_imgmsg_to_cv2(ros_image, "bgr8")
 
+        # detect face and return the "face"
         self.detected_faces = face_detection(image)
+        
 
 
 
@@ -60,6 +62,10 @@ class controller:
             # yield
             time.sleep(0.01)
             self.t_now = self.t_now + 0.01
+            
+            # face recognition  run once/sec
+            self.is_primary = face_reco(self.detected_faces)
+            time.sleep(1000)
 
         cv2.destroyAllWindows()
 
