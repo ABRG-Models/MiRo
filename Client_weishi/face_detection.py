@@ -21,3 +21,6 @@ def face_detection(self, image):
             self.roi_color = image[y:y + h, x:x + w]
 
     return self.detected_faces
+
+def face_recognition(self, image):
+
