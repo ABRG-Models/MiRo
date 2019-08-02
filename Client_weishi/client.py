@@ -41,6 +41,8 @@ class controller:
 
         # detect face and return the "face"
         self.detected_faces, self.roi_color = face_detection(image)
+        
+
 
     def loop(self):
         # loop
@@ -51,8 +53,11 @@ class controller:
                 #face recognition
                 #self.is_primary = face_recognition(self.detected_faces)
 
+            # detect the face
             if self.roi_color != None:
+                save_face(self.roi_color)
                 cv2.imshow('face', self.roi_color)
+                face_recognition(self.roi_color)
                 cv2.waitKey(1)
 		
             # yield
@@ -67,6 +72,7 @@ class controller:
 
     def __init__(self, args):
         rospy.init_node("client", anonymous=True)
+       # init_rekognition()
 
         # state
         self.t_now = 0.0
