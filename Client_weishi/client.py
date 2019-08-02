@@ -40,10 +40,7 @@ class controller:
         image = self.image_converter.compressed_imgmsg_to_cv2(ros_image, "bgr8")
 
         # detect face and return the "face"
-        self.detected_faces = face_detection(image)
-        
-
-
+        self.detected_faces, self.roi_color = face_detection(image)
 
     def loop(self):
         # loop
@@ -52,9 +49,7 @@ class controller:
                 cv2.imshow('image', self.detected_faces)
                 cv2.waitKey(1)
                 #face recognition
-                self.is_primary = face_recognition(self.detected_faces)
-
-                
+                #self.is_primary = face_recognition(self.detected_faces)
 
             if self.roi_color != None:
                 cv2.imshow('face', self.roi_color)
@@ -65,7 +60,7 @@ class controller:
             self.t_now = self.t_now + 0.01
             
             # face recognition  run once/sec
-            time.sleep(1000)
+            #time.sleep(1000)
 
         cv2.destroyAllWindows()
 
@@ -118,10 +113,6 @@ class controller:
 
         # set to active
         self.active = True
-
-
-
-
 
 if __name__ == "__main__":
     main = controller(sys.argv[1:])
