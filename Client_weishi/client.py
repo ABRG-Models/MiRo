@@ -31,6 +31,10 @@ def error(msg):
 
 class controller:
     def callback_caml(self, ros_image):
+
+        print(self.i, 'th callback_caml: ', time.time()-self.t)
+        self.i += 1
+
         # ignore until active
         if not self.active:
             return
@@ -57,7 +61,21 @@ class controller:
             if self.roi_color != None:
                 save_face(self.roi_color)
                 cv2.imshow('face', self.roi_color)
-                face_recognition(self.roi_color)
+
+                print(self.j, 'th face recognition: ')
+                st = time.time()
+                print('Start time: ', st-self.t)
+                self.j += 1
+                
+                face_recognition(self.roi_color, self.rekognition, self.collectionId, self.path, self.path_fr)
+                
+                et = time.time()
+                print('End time: ', et-self.t)
+                print('time of fr: ', et - st )
+               
+                # delay
+                #time.sleep(3000)
+
                 cv2.waitKey(1)
 		
             # yield
@@ -72,7 +90,11 @@ class controller:
 
     def __init__(self, args):
         rospy.init_node("client", anonymous=True)
-       # init_rekognition()
+        
+        # sim
+        self.t = time.time()
+        self.i = 0
+        self.j = 0
 
         # state
         self.t_now = 0.0
@@ -82,6 +104,16 @@ class controller:
         self.package = None
         self.detected_faces = None
         self.roi_color = None
+
+	# init aws rekognition
+	self.rekognition = boto3.client('rekognition', region_name='us-east-2')
+        self.collectionId = 'primary_user'
+        # create a collection
+        # rekognition.create_collection(CollectionId=collectionId)
+        # path of the training pics library of the primary user
+        self.path = '/home/miro/jodie/MiRo/lib/fr_lib/train'
+        self.path_fr = './user_pic.png'
+        self.username = 'MOM'
 
         # handle args
         for arg in args:

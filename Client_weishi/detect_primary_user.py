@@ -31,24 +31,15 @@ def face_detection (image):
 def save_face(face):
     cv2.imwrite('./user_pic.png', face)
 
-def init_rekognition():
-    rekognition = boto3.client('rekognition', region_name='us-east-2')
-    collectionId = 'primary_user'
-# create a collection
-#rekognition.create_collection(CollectionId=collectionId)
-    # path of the training pics library of the primary user
-    path = '/home/miro/jodie/MiRo/lib/fr_lib/train'
-    path_fr = './user_pic.png'
-    username = 'MOM'
 
-def face_recognition(face):
-    rekognition = boto3.client('rekognition', region_name='us-east-2')
-    collectionId = 'primary_user'
-# create a collection
-#rekognition.create_collection(CollectionId=collectionId)
+def face_recognition(face, rekognition, collectionId, path, path_fr):
+    #rekognition = boto3.client('rekognition', region_name='us-east-2')
+    #collectionId = 'primary_user'
+    # create a collection
+    # rekognition.create_collection(CollectionId=collectionId)
     # path of the training pics library of the primary user
-    path = '/home/miro/jodie/MiRo/lib/fr_lib/train'
-    path_fr = './user_pic.png'
+    #path = '/home/miro/jodie/MiRo/lib/fr_lib/train'
+    #path_fr = './user_pic.png'
     username = 'MOM'
     for r, d, f in os.walk(path):
         for file in f:
@@ -57,7 +48,6 @@ def face_recognition(face):
                 imageSource = open(sourceFile, 'rb')
                 # adding faces to a Collection
                 response = rekognition.index_faces(Image={'Bytes': imageSource.read()}, ExternalImageId=username, CollectionId=collectionId)
-   # rekognition.describe_collection(CollectionId=collectionId)
 
 # test function: index_faces
 # for faceRecord in response['FaceRecords']:
@@ -107,5 +97,5 @@ def face_recognition(face):
             draw.line(points, fill='#00d400', width=2)
             # fnt = ImageFont.truetype('/Library/Fonts/Arial.ttf', 15)
             # draw.text((x1, y2), response['FaceMatches'][0]['Face']['ExternalImageId'], font=fnt, fill=(255, 255, 0))
-            draw.text((x1, y2), response['FaceMatches'][0]['Face']['ExternalImageId'], fill=(255, 255, 0))
+            draw.text((x1, 0), response['FaceMatches'][0]['Face']['ExternalImageId'], fill=(255, 255, 0))
     image.show()
