@@ -5,9 +5,11 @@ import time
 import sys
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 
 import std_msgs
-
+#import scipy.io.wavfile as wavfile
+import wave
 ################################################################
 
 def error(msg):
@@ -32,8 +34,25 @@ class client_mics:
 
 	# array is [ L, R, H, B] mics
 	# add to top of buffer
-		self.mics = np.flipud(data[:,0])
-		print "left ear data", self.mics
+                self.input_mics = np.vstack((data,self.input_mics[:119500,:]))
+		mics = np.flipud(self.input_mics[:,0])
+		print "left ear data", self.input_mics.shape
+	# save wav file
+#		wavfile.write("tmp/output.wav",44100,data)
+#		np.savetxt('/home/miro/Documents/chennan/output', data)
+		self.saveWave(mics)
+
+	def saveWave(self,data):
+		data = np.asarray(data,dtype=np.int16)
+		print data
+		f=wave.open(r"/home/miro/Documents/chennan/output3.wav","wb")
+		f.setnchannels(1)
+		f.setsampwidth(2)
+		f.setframerate(20000)
+	#	plt.plot(data)
+	#	plt.show()
+		f.writeframes(data)
+		f.close()
 
 	def loop(self):
 
@@ -41,13 +60,16 @@ class client_mics:
 		while not rospy.core.is_shutdown():
 
 			# sleep
-			time.sleep(0.01)
+			time.sleep(1)
 
 	def __init__(self):
 
 		# config
-		self.mics = np.zeros(500)
+
 		self.no_of_mics = 4
+		self.seconds = 5
+                self.input_mics = np.zeros((self.seconds*40000, self.no_of_mics))
+
 		# robot name
 		topic_base = "/" + os.getenv("MIRO_ROBOT_NAME") + "/"
 
