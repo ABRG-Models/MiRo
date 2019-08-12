@@ -51,16 +51,16 @@ def error(msg):
 ################################################################
 
 # if no argument provided
-if len(sys.argv) != 2:
+#if len(sys.argv) != 2:
 
 	# show usage
-	print "pass one of the following arguments:"
-	print "\t- record: record stereo audio (ear mics) and store to /tmp/client_audio.wav"
-	print "\t- record4: record all four mics (centre and tail mics as well as ear mics)"
-	print "\t- echo: record audio then stream back to platform immediately"
+#	print "pass one of the following arguments:"
+#	print "\t- record: record stereo audio (ear mics) and store to /tmp/client_audio.wav"
+#	print "\t- record4: record all four mics (centre and tail mics as well as ear mics)"
+#	print "\t- echo: record audio then stream back to platform immediately"
 
 	# done
-	exit()
+#	exit()
 	
 	
 ################################################################
@@ -107,28 +107,28 @@ class client:
 			# state
 			time.sleep(0.02)
 
-			# write output file
-			outfilename = '/tmp/client_audio.wav'
-			file = wave.open(outfilename, 'wb')
-			file.setsampwidth(2)
-			file.setframerate(MIC_SAMPLE_RATE)
+		# write output file
+		outfilename = '/home/miro/Documents/chennan/output.wav'          # '/tmp/client_audio.wav'
+		file = wave.open(outfilename, 'wb')
+		file.setsampwidth(2)
+		file.setframerate(MIC_SAMPLE_RATE)
 
-			print "writing two channels to file (LEFT and RIGHT)..."
-			file.setnchannels(2)
-			x = np.reshape(self.outbuf[:, [0, 1]], (-1))
-			for s in x:
-				file.writeframes(struct.pack('<h', s))
+		print "writing two channels to file (LEFT and RIGHT)..."
+		file.setnchannels(2)
+		x = np.reshape(self.outbuf[:, [0, 1]], (-1))
+		for s in x:
+			file.writeframes(struct.pack('<h', s))
 
-			# close file
-			file.close()
-			print "wrote output file at", outfilename
+		# close file
+		file.close()
+		print "wrote output file at", outfilename
 
-			# recognize the speech
-			S2T = Speech2Text.SpeechToText(-1)  # use -1 for the microphone index on Miro as we have no direct stream access that Google would recognise for Miro's microphones - therefore you cannot use the getTextfromSpeech call on Miro for this reason
+		# recognize the speech
+		S2T = Speech2Text.SpeechToText(-1)  # use -1 for the microphone index on Miro as we have no direct stream access that Google would recognise for Miro's microphones - therefore you cannot use the getTextfromSpeech call on Miro for this reason
 
-			print("Sentiment from audio files")
-			print("**************************")
-			print("Sentiment for client_audio.wav): " + str(S2T.getSentiment(outfilename)))
+		print("Sentiment from audio files")
+		print("**************************")
+		print("Sentiment for client_audio.wav): " + str(S2T.getSentiment(outfilename)))
 
 
 
@@ -227,19 +227,19 @@ class client:
 		# 	file.close()
 		# 	print "wrote output file at", outfilename
 
-	def __init__(self, mode):
+	def __init__(self):
 
 		# state
 		self.micbuf = np.zeros((0, 4), 'uint16')
 		self.outbuf = None
 		self.buffer_stuff = 0
-		self.mode = mode
+		#self.mode = mode
 		self.playchan = 0
 		self.playsamp = 0
 		
 		# check mode
-		if not (mode == "echo" or mode == "record" or mode == "record4"):
-			error("argument not recognised")
+		#if not (mode == "echo" or mode == "record" or mode == "record4"):
+		#	error("argument not recognised")
 
 		# robot name
 		topic_base_name = "/" + os.getenv("MIRO_ROBOT_NAME")
@@ -265,7 +265,7 @@ class client:
 if __name__ == "__main__":
 
 	rospy.init_node("client_audio", anonymous=True)
-	main = client(sys.argv[1])
+	main = client()
 	main.loop()
 
 
