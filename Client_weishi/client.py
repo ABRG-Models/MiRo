@@ -45,7 +45,7 @@ class controller:
         image = self.image_converter.compressed_imgmsg_to_cv2(ros_image, "bgr8")
 
         # detect face and return the "face"
-        self.detected_faces, self.roi_color = face_detection(image)
+        self.detected_faces, self.roi_color = self.det_pri_user.face_detection(image)
         
 
 
@@ -61,11 +61,11 @@ class controller:
 
             # have detected the face
             if self.roi_color != None:
-                #save_face(self.roi_color)
-                #cv2.imshow('face', self.roi_color)
+                self.det_pri_user.save_face(self.roi_color)
+                cv2.imshow('face', self.roi_color)
 
                 st = time.time()
-                face_recognition(self.roi_color, self.rekognition, self.collectionId, self.path, self.path_fr)
+                self.det_pri_user.face_recognition(self.roi_color)
                 et = time.time()
                 print('time of fr: ', et - st )
                
@@ -101,7 +101,8 @@ class controller:
         self.detected_faces = None
         self.roi_color = None
 
-	# init aws rekognition
+	'''
+        # init aws rekognition
 	self.rekognition = boto3.client('rekognition', region_name='us-east-2')
         self.collectionId = 'primary_user'
         # create a collection
@@ -110,6 +111,11 @@ class controller:
         self.path = '/home/miro/jodie/MiRo/lib/fr_lib/train'
         self.path_fr = './user_pic.png'
         self.username = 'MOM'
+        '''
+
+        # the object of detect_primary_user
+        self.det_pri_user = detect_primary_user()
+        
 
         # handle args
         for arg in args:

@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 class detect_primary_user:
 
-    def face_detection (image):
+    def face_detection (self, image):
 
         detected_faces = image
         roi_color = None
@@ -30,12 +30,15 @@ class detect_primary_user:
         return detected_faces, roi_color
 
     #save face
-    def save_face(face):
-        cv2.imwrite('./user_pic.png', face)
+    def save_face(self, face):
+        cv2.imwrite(self.path_test, face)
 
 
-    def face_recognition(face, rekognition, collectionId, path, path_fr):
+    def face_recognition(self, face):
         username = 'MOM'
+        path = self.path_train
+        rekognition = self.rekognition
+        collectionId = self.collectionId
         for r, d, f in os.walk(path):
             for file in f:
                 if file != '.DS_Store':
@@ -45,13 +48,13 @@ class detect_primary_user:
                     response = rekognition.index_faces(Image={'Bytes': imageSource.read()}, ExternalImageId=username, CollectionId=collectionId)
 
         # face search
-        imageSource=open(path_fr,'rb')
+        imageSource=open(self.path_test,'rb')
         resp = rekognition.detect_faces(Image={'Bytes': imageSource.read()})
         all_faces = resp['FaceDetails']
         len(all_faces)
 
 
-        image = Image.open(path_fr)
+        image = Image.open(self.path_test)
         image_width, image_height = image.size
 
         for face in all_faces:
@@ -91,13 +94,13 @@ class detect_primary_user:
         image.show()
 
     def __init__ (self):
-        rekognition = boto3.client('rekognition', region_name='us-east-2')
-        collectionId = 'primary_user'
+        self.rekognition = boto3.client('rekognition', region_name='us-east-2')
+        self.collectionId = 'primary_user'
         # create a collection
         # rekognition.create_collection(CollectionId=collectionId)
-        # path of the training pics library of the primary user
-        path = '/home/miro/jodie/MiRo/lib/fr_lib/train'
-        path_fr = './user_pic.png'
+        # self.path of the training pics library of the primary user
+        self.path_train = '/home/miro/jodie/MiRo/lib/fr_lib/train'
+        self.path_test = './user_pic.png'
 
 
 
