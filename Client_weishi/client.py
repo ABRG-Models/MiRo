@@ -31,6 +31,7 @@ def error(msg):
 
 class controller:
     def callback_caml(self, ros_image):
+        print('callback here')
 
         print(self.i, 'th callback_caml: ', time.time()-self.t)
         self.i += 1
@@ -49,6 +50,7 @@ class controller:
 
 
     def loop(self):
+        print('loop here')
         # loop
         while self.active and not rospy.core.is_shutdown():
             if self.detected_faces != None:
@@ -57,24 +59,18 @@ class controller:
                 #face recognition
                 #self.is_primary = face_recognition(self.detected_faces)
 
-            # detect the face
+            # have detected the face
             if self.roi_color != None:
-                save_face(self.roi_color)
-                cv2.imshow('face', self.roi_color)
+                #save_face(self.roi_color)
+                #cv2.imshow('face', self.roi_color)
 
-                print(self.j, 'th face recognition: ')
                 st = time.time()
-                print('Start time: ', st-self.t)
-                self.j += 1
-                
                 face_recognition(self.roi_color, self.rekognition, self.collectionId, self.path, self.path_fr)
-                
                 et = time.time()
-                print('End time: ', et-self.t)
                 print('time of fr: ', et - st )
                
                 # delay
-                #time.sleep(3000)
+                #time.sleep(3)
 
                 cv2.waitKey(1)
 		
