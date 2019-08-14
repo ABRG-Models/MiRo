@@ -44,7 +44,7 @@ class client_map:
 		
 		# demonstrate mapping from camera image space to FOOT
 		# using a pixel near the middle of a camera image
-		p = [160, 90]
+		p = [320, 360]
 		
 		# of the zeroth (left) camera
 		stream_index = 0
@@ -68,7 +68,11 @@ class client_map:
 		
 		# so we can, finally, map the target into WORLD
 		ow = self.kc.changeFrameAbs(miro.constants.LINK_HEAD, miro.constants.LINK_WORLD, oh)
-		
+
+		print "target in Pose", self.pose
+
+		print "target in HEAD", oh
+
 		# report
 		print "target in WORLD", ow
 		
@@ -84,13 +88,13 @@ class client_map:
 
 		# state
 		self.cam = miro.utils.camera_model.CameraModel()
-		self.kc = miro.utils.kc.kc_miro()
+		self.kc = miro.utils.kc_interf.kc_miro()
 		self.pose = np.array([0.0, 0.0, 0.0])
 
 		# this needs to be set based on the actual frame size, which
 		# can be obtained from the camera frame topic. here, we just
 		# assume the default frame size is in use.
-		self.cam.set_frame_size(320, 180)
+		self.cam.set_frame_size(640, 360)
 
 		# robot name
 		topic_base = "/" + os.getenv("MIRO_ROBOT_NAME") + "/"
