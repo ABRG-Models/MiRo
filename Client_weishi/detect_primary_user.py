@@ -13,7 +13,9 @@ class detect_primary_user:
 
         detected_faces = image
         roi_color = None
-
+        face_x_coord = None
+        face_y_coord = None
+        
         face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -23,12 +25,12 @@ class detect_primary_user:
         if len(faces) > 0:
             for (x, y, w, h) in faces:
                 cv2.rectangle(detected_faces, (x, y), (x + w, y + h), (255, 0, 0), 2)
-                #face_x_coord = x + w / 2;
-                #face_y_coord = y + h / 2;
+                face_x_coord = x + w / 2;
+                face_y_coord = y + h / 2;
                 #roi_gray = gray[y:y + h, x:x + w]
                 roi_color = image[y:y + h, x:x + w]
 
-        return detected_faces, roi_color
+        return detected_faces, roi_color, face_x_coord, face_y_coord
 
 
     #save face
@@ -84,6 +86,7 @@ class detect_primary_user:
                     )
 
             if len(response['FaceMatches']) > 0:
+                print('=====FACE MATCH=====')
                 #draw = ImageDraw.Draw(image)
                 x_face = (x1 + x2) / 2.0 
                 y_face = (y1 + y2) / 2.0

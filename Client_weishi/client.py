@@ -48,27 +48,35 @@ class controller:
         df = x_face - width/2
 
         #=====================test===============================
-        print('face_x: ', x_face, 'face_y: ' , y_face, 'image_width: ' , width, 'image_height: ' , height)
+        print('============coordinate of face center=================')
+        print('face_x: ', x_face, 'face_y: ' , y_face)
         print('df: ', df, 'hf: ', hf)
+        print()
         #========================================================
 
         # Horizon
         if df > epsilon and self.kin_joints.position[yaw] > miro.constants.YAW_RAD_MIN:
             # Move head to the right
-            self.kin_joints.position[yaw] = self.kin_joints.position[yaw] - (df*miro.constants.YAW_RAD_MIN/width)
-            
+            print('df > epsilon. move head to the right')
+            print('before rad: ', self.kin_joints.position[yaw])
+            self.kin_joints.position[yaw] = self.kin_joints.position[yaw] + (df*miro.constants.YAW_RAD_MIN/width)
+            print('after rad: ', self.kin_joints.position[yaw])
+
         elif df < -epsilon  and self.kin_joints.position[yaw] <  miro.constants.YAW_RAD_MAX:
             # Move head to the left
-            self.kin_joints.position[yaw] = self.kin_joints.position[yaw] + (df*miro.constants.YAW_RAD_MAX/width)
+            print('df < epsilon. move head to the left')
+            print('before rad: ', self.kin_joints.position[yaw])
+            self.kin_joints.position[yaw] = self.kin_joints.position[yaw] - (df*miro.constants.YAW_RAD_MAX/width)
+            print('after rad: ', self.kin_joints.position[yaw])
 
         # Vertical
         # if hf > epsilon and self.kin_joints.position[lift] > miro.constants.LIFT_RAD_MIN:
         #     # Move head up
-        #     self.kin_joints.position[lift] = self.kin_joints.position[lift] - math.radians(10.0)
+        #     self.kin_joints.position[lift] = self.kin_joints.position[lift] + math.radians(10.0)
         #
         # elif hf < -epsilon and self.kin_joints.position[lift] > miro.constants.LIFT_RAD_MIN:
         #     # Move head down
-        #     self.kin_joints.position[lift] = self.kin_joints.position[lift] + math.radians(10.0)
+        #     self.kin_joints.position[lift] = self.kin_joints.position[lift] - math.radians(10.0)
 
         self.pub_kin.publish(self.kin_joints)
         self.primary_detected = False
@@ -76,18 +84,22 @@ class controller:
 
     def do_recognition(self):
         # detect face and return the "face"
-        self.detected_faces, self.roi_color = self.det_pri_user.face_detection(self.image)
+        st = time.time()
+        print('The current time: ', st)
+        self.detected_faces, self.roi_color, self.x_primary, self.y_primary = self.det_pri_user.face_detection(self.image)
+        et = time.time()
+        print('time of detection: ', et - st)
 
-        if self.roi_color != None:
+       # if self.roi_color != None:
             # save ROI
-            self.det_pri_user.save_face(self.detected_faces)
+           # self.det_pri_user.save_face(self.roi_color)
 
             # PRIMARY USER RECOGNITION, GET X,Y OF THE PRIMARY USER
-            st = time.time()
-            self.primary_detected, self.x_primary, self.y_primary, width, height = self.det_pri_user.face_recognition(
-                self.roi_color)
-            et = time.time()
-            print('time of fr: ', et - st)
+           # st = time.time()
+           # self.primary_detected, self.x_primary, self.y_primary, width, height = self.det_pri_user.face_recognition(
+           #     self.roi_color)
+           # et = time.time()
+           # print('time of fr: ', et - st)
 
         self.image = None
 
@@ -103,6 +115,16 @@ class controller:
         self.image_converter = CvBridge()
         # convert compressed ROS image to raw CV image
         self.image = self.image_converter.compressed_imgmsg_to_cv2(ros_image, "bgr8")
+            
+        if self.image != None:
+            self.do_recognition()
+
+        #if self.primary_detected == True:
+            #self.track( self.x_primary, self.y_primary, 640, 360 )
+
+        if self.x_primary != None:
+            self.track( self.x_primary, self.y_primary, 640, 360 )
+
 
 
     def reset(self):
@@ -122,13 +144,6 @@ class controller:
                 cv2.imshow('face', self.roi_color)
                 cv2.waitKey(1)
                 
-            if self.image != None:
-                self.do_recognition()
-
-            if self.primary_detected == True:
-                self.track( self.x_primary, self.y_primary, 640, 360 )
-
-
             # yield
             time.sleep(0.01)
             self.t_now = self.t_now + 0.01
@@ -155,6 +170,7 @@ class controller:
         self.package = None
         self.detected_faces = None
         self.roi_color = None
+        self.x_primary = None
 
 
         # the object of detect_primary_user
