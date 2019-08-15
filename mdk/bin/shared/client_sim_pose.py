@@ -3,11 +3,13 @@
 import rospy
 import time
 import sys
-import os
+import os#
+import datetime
 import numpy as np
 
 import std_msgs
 from geometry_msgs.msg import Pose2D
+from geometry_msgs.msg import TwistStamped
 
 ################################################################
 
@@ -22,24 +24,50 @@ class client_mics:
 
 	def callback_pose(self, msg):
 
-		mag = msg
-		print "received", mag
+		self.pose = msg
+		# print "received", mag
 
 	def loop(self):
 
+		start = datetime.datetime.now()
+		restart = False
+
 		# loop
 		while not rospy.core.is_shutdown():
+			print "received", self.pose
+			end = datetime.datetime.now()
 
-			# sleep
-			time.sleep(0.01)
+			if (end-start).seconds > 5:
+				self.velocity.twist.linear.x=0.0
+				self.pub_cmd_vel.publish(self.velocity)
+				restart = True
+				time.sleep(1)
+			else:
+				self.velocity.twist.linear.x = 0.1
+				self.pub_cmd_vel.publish(self.velocity)
+				restart = False
+
+			if (end-start).seconds>6 and restart == True:
+				start = datetime.datetime.now()
+
+		# sleep
+			#time.sleep(1)
+			# self.velocity.twist.linear.x=0.0
+			# self.pub_cmd_vel.publish(self.velocity)
+
+
 
 	def __init__(self):
 
 		# config
-		self.mics = []
+		self.pose = []
 
 		# robot name
 		topic_base = "/" + os.getenv("MIRO_ROBOT_NAME") + "/"
+
+		self.velocity = TwistStamped()
+
+		self.pub_cmd_vel = rospy.Publisher(topic_base + "control/cmd_vel", TwistStamped, queue_size=0)
 
 		# subscribe
 		topic = topic_base + "sensors/body_pose"

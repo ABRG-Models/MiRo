@@ -68,11 +68,7 @@ class client_map:
 		
 		# so we can, finally, map the target into WORLD
 		ow = self.kc.changeFrameAbs(miro.constants.LINK_HEAD, miro.constants.LINK_WORLD, oh)
-
-		# print "target in p", p
-		# print "target in VL", v
-		# print "target in HEAD", oh
-		print "state", self.kc.getState()
+		
 		# report
 		print "target in WORLD", ow
 		
