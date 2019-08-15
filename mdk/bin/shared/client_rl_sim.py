@@ -62,13 +62,13 @@ class client_Qlearning:
 	def callback_package(self, msg):
 
 		x = msg.sonar.range
-		#print "sonar", x
+		# print "sonar", x
 
 
 	def callback_pose(self, msg):
 
 		self.pose = np.array([msg.x, msg.y, msg.theta])
-		print "received pose", self.pose
+		# print "received pose", self.pose
 
 	def loop(self):
 
@@ -80,7 +80,7 @@ class client_Qlearning:
 				state = self.pose
 				# Discretize state
 				state_adj = self.Q.discretize_state(state)
-
+				step = 0
 				while done!=True:
 					if (np.random.random() < self.Q.epsilon):
 						action = self.action_space_sample()
@@ -99,6 +99,12 @@ class client_Qlearning:
 						self.Q.learn(state_adj, action, reward, state2_adj)
 
 					state_adj = state2_adj
+					step += 1
+
+					if step > 100:
+						done = True
+
+
 
 			# sleep
 			time.sleep(0.01)
