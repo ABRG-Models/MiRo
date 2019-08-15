@@ -75,11 +75,15 @@ class client_Qlearning:
 		# loop
 		while not rospy.core.is_shutdown():
 
+			f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
+
 			for i in range(self.episode):
 				done = False
 				state = self.pose
 				# Discretize state
 				state_adj = self.Q.discretize_state(state)
+
+				step=0
 
 				while done!=True:
 					if (np.random.random() < self.Q.epsilon):
@@ -99,6 +103,10 @@ class client_Qlearning:
 						self.Q.learn(state_adj, action, reward, state2_adj)
 
 					state_adj = state2_adj
+					step +=1
+
+				self.Q.epsilon = f(i,0.1)
+				print "steps", step
 
 			# sleep
 			time.sleep(0.01)
@@ -133,7 +141,7 @@ class client_Qlearning:
 
 	def step(self, action_i):
 		action = self.action_space[action_i]
-		if self.sonar<0.13:
+		if self.sonar < 0.13:
 			action = 'DOWN'
 		# give the speed to go 0.5m and stop
 		if action == 'UP':
