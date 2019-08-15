@@ -61,14 +61,14 @@ class client_Qlearning:
 
 	def callback_package(self, msg):
 
-		x = msg.sonar.range
-		#print "sonar", x
+		self.sonar = msg.sonar.range
+		print "sonar", self.sonar
 
 
 	def callback_pose(self, msg):
 
 		self.pose = np.array([msg.x, msg.y, msg.theta])
-		print "received pose", self.pose
+		# print "received pose", self.pose
 
 	def loop(self):
 
@@ -107,6 +107,7 @@ class client_Qlearning:
 
 		# config
 		self.pose = np.array([0, 0, 0])
+		self.sonar = 0.58
 
 		self.velocity = TwistStamped()
 		self.action_space = ['UP', 'DOWN', 'LEFT', 'RIGHT']
@@ -132,6 +133,8 @@ class client_Qlearning:
 
 	def step(self, action_i):
 		action = self.action_space[action_i]
+		if self.sonar<0.13:
+			action = 'DOWN'
 		# give the speed to go 0.5m and stop
 		if action == 'UP':
 			self.action_up()
