@@ -24,8 +24,7 @@ def error(msg):
 ################################################################
 
 class QLearningTable:
-	def __init__(self, actions, learning_rate=0.2, discount=0.9, e_greedy=0.9):
-		self.actions = actions  # a list
+	def __init__(self, learning_rate=0.2, discount=0.9, e_greedy=0.9):
 		self.lr = learning_rate
 		self.gamma = discount
 		self.epsilon = e_greedy
@@ -42,7 +41,7 @@ class QLearningTable:
 		# print('E',self.E_table)
 
 	def discretize_state(self, pose):
-		state_adj = int((pose - self.states_low) / self.scale)
+		state_adj = (pose - self.states_low) / self.scale
 		return state_adj.astype(int)
 
 	def choose_action(self, state):
@@ -63,12 +62,12 @@ class client_Qlearning:
 	def callback_package(self, msg):
 
 		x = msg.sonar.range
-		print "sonar", x
+		#print "sonar", x
 
 
 	def callback_pose(self, msg):
 
-		self.pose = msg
+		self.pose = np.array([msg.x, msg.y, msg.theta])
 		print "received pose", self.pose
 
 	def loop(self):
@@ -82,18 +81,18 @@ class client_Qlearning:
 				# Discretize state
 				state_adj = self.Q.discretize_state(state)
 
-				while not (done==True):
+				while done!=True:
 					if (np.random.random() < self.Q.epsilon):
 						action = self.action_space_sample()
 					else:
 						action = self.Q.choose_action(state_adj)
 
 					# Get next state and reward
-					state2, reward, done = self.step(action)
+					state2_adj, reward, done = self.step(action)
 
-					state2_adj = self.Q.discretize_state(state2)
+					# state2_adj = self.Q.discretize_state(state2)
 					# Allow for terminal states
-					if done and state2[0] >= 0.5:
+					if done:
 						self.Q.Q_table[state_adj[0], state_adj[1],state_adj[2], action] = reward
 					# Adjust Q value for current state
 					else:
@@ -107,10 +106,11 @@ class client_Qlearning:
 	def __init__(self):
 
 		# config
-		self.pose = []
+		self.pose = np.array([0, 0, 0])
+
 		self.velocity = TwistStamped()
 		self.action_space = ['UP', 'DOWN', 'LEFT', 'RIGHT']
-		self.goal = []
+		self.goal = np.array([5,5,3])
 		self.episode = 100
 		self.Q = QLearningTable()
 
@@ -148,15 +148,16 @@ class client_Qlearning:
 		else:
 			self.action_right()
 
+		new_state = self.Q.discretize_state(self.pose)
 		# reach the goal have 1, else -1 reward
-		if self.pose == self.goal:
+		if (new_state == self.goal).all:
 			reward = 1
 			done = True
 		else:
 			reward = -1
 			done = False
 
-		return self.pose, reward, done
+		return new_state, reward, done
 
 	def reset(self):
 		return 0
