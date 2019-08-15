@@ -62,7 +62,13 @@ class client_Qlearning:
 	def callback_package(self, msg):
 
 		self.sonar = msg.sonar.range
-		print "sonar", self.sonar
+		# print "sonar", self.sonar
+		if self.sonar < 0.2:
+			self.velocity.twist.linear.x = 0.0
+			self.velocity.twist.angular.z = 0.0
+			self.pub_cmd_vel.publish(self.velocity)
+		# 	print(self.sonar)
+		# 	self.action_down()
 
 
 	def callback_pose(self, msg):
@@ -78,6 +84,8 @@ class client_Qlearning:
 			f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
 
 			for i in range(self.episode):
+				print "i", i
+
 				done = False
 				state = self.pose
 				# Discretize state
@@ -91,10 +99,19 @@ class client_Qlearning:
 					else:
 						action = self.Q.choose_action(state_adj)
 
+					if self.sonar < 0.13:
+						action = 1
+
 					# Get next state and reward
 					state2_adj, reward, done = self.step(action)
 
-					# state2_adj = self.Q.discretize_state(state2)
+					if self.sonar < 0.13:
+						reward = -5
+						done = True
+
+					if step > 100:
+						done = True
+
 					# Allow for terminal states
 					if done:
 						self.Q.Q_table[state_adj[0], state_adj[1],state_adj[2], action] = reward
@@ -104,9 +121,10 @@ class client_Qlearning:
 
 					state_adj = state2_adj
 					step +=1
+					print "steps", step
 
 				self.Q.epsilon = f(i,0.1)
-				print "steps", step
+				#print "steps", step
 
 			# sleep
 			time.sleep(0.01)
@@ -141,8 +159,10 @@ class client_Qlearning:
 
 	def step(self, action_i):
 		action = self.action_space[action_i]
-		if self.sonar < 0.13:
-			action = 'DOWN'
+		print "action", action
+		# if self.sonar < 0.2:
+		# 	print(self.sonar)
+		# 	action = 'DOWN'
 		# give the speed to go 0.5m and stop
 		if action == 'UP':
 			self.action_up()
@@ -161,7 +181,7 @@ class client_Qlearning:
 
 		new_state = self.Q.discretize_state(self.pose)
 		# reach the goal have 1, else -1 reward
-		if (new_state == self.goal).all:
+		if new_state[0] == self.goal[0] and new_state[1] == self.goal[1] and new_state[2] == self.goal[2]:
 			reward = 1
 			done = True
 		else:
@@ -202,7 +222,7 @@ class client_Qlearning:
 				break
 			else:
 				self.velocity.twist.linear.x = 0.0
-				self.velocity.twist.angular.z = 1.6
+				self.velocity.twist.angular.z = 1.57
 				self.pub_cmd_vel.publish(self.velocity)
 
 		start = datetime.datetime.now()
@@ -233,7 +253,7 @@ class client_Qlearning:
 				break
 			else:
 				self.velocity.twist.linear.x = 0.0
-				self.velocity.twist.angular.z = 1.6
+				self.velocity.twist.angular.z = 1.57
 				self.pub_cmd_vel.publish(self.velocity)
 
 		start = datetime.datetime.now()
@@ -264,7 +284,7 @@ class client_Qlearning:
 				break
 			else:
 				self.velocity.twist.linear.x = 0.0
-				self.velocity.twist.angular.z = -1.6
+				self.velocity.twist.angular.z = -1.57
 				self.pub_cmd_vel.publish(self.velocity)
 
 		start = datetime.datetime.now()
