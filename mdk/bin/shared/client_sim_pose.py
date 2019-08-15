@@ -3,7 +3,8 @@
 import rospy
 import time
 import sys
-import os
+import os#
+import datetime
 import numpy as np
 
 import std_msgs
@@ -28,21 +29,29 @@ class client_mics:
 
 	def loop(self):
 
-		start = time.clock()
+		start = datetime.datetime.now()
+		restart = False
 
 		# loop
 		while not rospy.core.is_shutdown():
 			print "received", self.pose
-			end = time.clock()
-			self.velocity.twist.linear.x=0.1
-			self.pub_cmd_vel.publish(self.velocity)
+			end = datetime.datetime.now()
 
-			if (end-start)%5==0:
+			if (end-start).seconds > 5:
 				self.velocity.twist.linear.x=0.0
 				self.pub_cmd_vel.publish(self.velocity)
-			# sleep
-			time.sleep(1)
-			start+=1
+				restart = True
+				time.sleep(1)
+			else:
+				self.velocity.twist.linear.x = 0.1
+				self.pub_cmd_vel.publish(self.velocity)
+				restart = False
+
+			if (end-start).seconds>6 and restart == True:
+				start = datetime.datetime.now()
+
+		# sleep
+			#time.sleep(1)
 			# self.velocity.twist.linear.x=0.0
 			# self.pub_cmd_vel.publish(self.velocity)
 
