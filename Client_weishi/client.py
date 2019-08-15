@@ -13,7 +13,7 @@ import os
 
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
-from sensor_msgs.msg import CompressedImage
+from sensor_msgs.msg import CompressedImage, JointState
 from detect_primary_user import *
 
 # The miro2 Python module provides constants and tools for working with MiRo from Python.
@@ -30,11 +30,71 @@ def error(msg):
 ################################################################
 
 class controller:
-    def callback_caml(self, ros_image):
-        print('callback here')
 
-        print(self.i, 'th callback_caml: ', time.time()-self.t)
-        self.i += 1
+    def callback_package(self, msg):
+
+        # ignore until active
+        if not self.active:
+            return
+
+        # store
+        self.sensors = msg
+
+    def track( self, x_face, y_face, width, height ):
+
+        epsilon = 10.0
+        tilt, lift, yaw, pitch = range(4)
+        hf = y_face - height/2
+        df = x_face - width/2
+
+        #=====================test===============================
+        print('face_x: ', x_face, 'face_y: ' , y_face, 'image_width: ' , width, 'image_height: ' , height)
+        print('df: ', df, 'hf: ', hf)
+        #========================================================
+
+        # Horizon
+        if df > epsilon and self.kin_joints.position[yaw] > miro.constants.YAW_RAD_MIN:
+            # Move head to the right
+            self.kin_joints.position[yaw] = self.kin_joints.position[yaw] - (df*miro.constants.YAW_RAD_MIN/width)
+            
+        elif df < -epsilon  and self.kin_joints.position[yaw] <  miro.constants.YAW_RAD_MAX:
+            # Move head to the left
+            self.kin_joints.position[yaw] = self.kin_joints.position[yaw] + (df*miro.constants.YAW_RAD_MAX/width)
+
+        # Vertical
+        # if hf > epsilon and self.kin_joints.position[lift] > miro.constants.LIFT_RAD_MIN:
+        #     # Move head up
+        #     self.kin_joints.position[lift] = self.kin_joints.position[lift] - math.radians(10.0)
+        #
+        # elif hf < -epsilon and self.kin_joints.position[lift] > miro.constants.LIFT_RAD_MIN:
+        #     # Move head down
+        #     self.kin_joints.position[lift] = self.kin_joints.position[lift] + math.radians(10.0)
+
+        self.pub_kin.publish(self.kin_joints)
+        self.primary_detected = False
+        time.sleep(3)
+
+    def do_recognition(self):
+        # detect face and return the "face"
+        self.detected_faces, self.roi_color = self.det_pri_user.face_detection(self.image)
+
+        if self.roi_color != None:
+            # save ROI
+            self.det_pri_user.save_face(self.detected_faces)
+
+            # PRIMARY USER RECOGNITION, GET X,Y OF THE PRIMARY USER
+            st = time.time()
+            self.primary_detected, self.x_primary, self.y_primary, width, height = self.det_pri_user.face_recognition(
+                self.roi_color)
+            et = time.time()
+            print('time of fr: ', et - st)
+
+        self.image = None
+
+    def callback_caml(self, ros_image):
+        #print('callback here')
+        #print(self.i, 'th callback_caml: ', time.time()-self.t)
+        #self.i += 1
 
         # ignore until active
         if not self.active:
@@ -42,44 +102,39 @@ class controller:
 
         self.image_converter = CvBridge()
         # convert compressed ROS image to raw CV image
-        image = self.image_converter.compressed_imgmsg_to_cv2(ros_image, "bgr8")
+        self.image = self.image_converter.compressed_imgmsg_to_cv2(ros_image, "bgr8")
 
-        # detect face and return the "face"
-        self.detected_faces, self.roi_color = self.det_pri_user.face_detection(image)
-        
 
+    def reset(self):
+        self.kin_joints.position = [0.0, math.radians(34.0), 0.0, 0.0]
+        self.pub_kin.publish(self.kin_joints)
+        time.sleep(1)
 
     def loop(self):
-        print('loop here')
+        self.reset()
         # loop
         while self.active and not rospy.core.is_shutdown():
             if self.detected_faces != None:
-                cv2.imshow('image', self.detected_faces)
-                cv2.waitKey(1)
-                #face recognition
-                #self.is_primary = face_recognition(self.detected_faces)
+               cv2.imshow('detected_face', self.detected_faces)
+               cv2.waitKey(1)
 
-            # have detected the face
             if self.roi_color != None:
-                self.det_pri_user.save_face(self.roi_color)
                 cv2.imshow('face', self.roi_color)
-
-                st = time.time()
-                self.det_pri_user.face_recognition(self.roi_color)
-                et = time.time()
-                print('time of fr: ', et - st )
-               
-                # delay
-                #time.sleep(3)
-
                 cv2.waitKey(1)
-		
+                
+            if self.image != None:
+                self.do_recognition()
+
+            if self.primary_detected == True:
+                self.track( self.x_primary, self.y_primary, 640, 360 )
+
+
             # yield
             time.sleep(0.01)
             self.t_now = self.t_now + 0.01
             
             # face recognition  run once/sec
-            #time.sleep(1000)
+            #time.sleep(1)
 
         cv2.destroyAllWindows()
 
@@ -101,20 +156,11 @@ class controller:
         self.detected_faces = None
         self.roi_color = None
 
-	'''
-        # init aws rekognition
-	self.rekognition = boto3.client('rekognition', region_name='us-east-2')
-        self.collectionId = 'primary_user'
-        # create a collection
-        # rekognition.create_collection(CollectionId=collectionId)
-        # path of the training pics library of the primary user
-        self.path = '/home/miro/jodie/MiRo/lib/fr_lib/train'
-        self.path_fr = './user_pic.png'
-        self.username = 'MOM'
-        '''
 
         # the object of detect_primary_user
         self.det_pri_user = detect_primary_user()
+        # create the diff images of user collection
+        self.det_pri_user.face_collection()
         
 
         # handle args
@@ -145,7 +191,18 @@ class controller:
         print("subscribe", topicCamLeft)
         self.sub_caml = rospy.Subscriber(topicCamLeft, CompressedImage, self.callback_caml, queue_size=1,
                                          tcp_nodelay=True)
+        # subscribe
+        topic = topic_base_name + "/sensors/package"
+        print ("subscribe", topic)
+        self.sub_package = rospy.Subscriber(topic, miro.msg.sensors_package, self.callback_package)
 
+        # publish
+        topic = topic_base_name + "/control/kinematic_joints"
+        print ("publish", topic)
+        self.pub_kin = rospy.Publisher(topic, JointState, queue_size=0)
+
+        self.kin_joints = JointState()
+        self.kin_joints.name = ["tilt", "lift", "yaw", "pitch"]
 
         # wait for connect
         print "wait for connect..."
@@ -153,6 +210,8 @@ class controller:
 
         # set to active
         self.active = True
+        self.primary_detected = False
+        self.image = None
 
 if __name__ == "__main__":
     main = controller(sys.argv[1:])
