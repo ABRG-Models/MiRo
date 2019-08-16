@@ -101,6 +101,8 @@ class client_mics:
 
 
         self.cam_model = miro.utils.CameraModel()
+        self.frame_w = 0
+        self.frame_h = 0
 
     # def pause(self):
     #     # Time at start of pause
