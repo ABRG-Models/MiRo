@@ -49,34 +49,39 @@ class controller:
 
         #=====================test===============================
         print('============coordinate of face center=================')
-        print('face_x: ', x_face, 'face_y: ' , y_face)
         print('df: ', df, 'hf: ', hf)
-        print()
         #========================================================
 
         # Horizon
-        if df > epsilon and self.kin_joints.position[yaw] > miro.constants.YAW_RAD_MIN:
-            # Move head to the right
-            print('df > epsilon. move head to the right')
-            print('before rad: ', self.kin_joints.position[yaw])
-            self.kin_joints.position[yaw] = self.kin_joints.position[yaw] + (df*miro.constants.YAW_RAD_MIN/width)
-            print('after rad: ', self.kin_joints.position[yaw])
-
-        elif df < -epsilon  and self.kin_joints.position[yaw] <  miro.constants.YAW_RAD_MAX:
-            # Move head to the left
-            print('df < epsilon. move head to the left')
-            print('before rad: ', self.kin_joints.position[yaw])
-            self.kin_joints.position[yaw] = self.kin_joints.position[yaw] - (df*miro.constants.YAW_RAD_MAX/width)
-            print('after rad: ', self.kin_joints.position[yaw])
-
-        # Vertical
-        # if hf > epsilon and self.kin_joints.position[lift] > miro.constants.LIFT_RAD_MIN:
-        #     # Move head up
-        #     self.kin_joints.position[lift] = self.kin_joints.position[lift] + math.radians(10.0)
+        # if df > epsilon and self.kin_joints.position[yaw] > miro.constants.YAW_RAD_MIN:
+        #     # Move head to the right
+        #     print('df > epsilon. move head to the right')
+        #     print('before rad: ', self.kin_joints.position[yaw])
+        #     self.kin_joints.position[yaw] = self.kin_joints.position[yaw] + (df*miro.constants.YAW_RAD_MIN/width)
+        #     print('after rad: ', self.kin_joints.position[yaw])
         #
-        # elif hf < -epsilon and self.kin_joints.position[lift] > miro.constants.LIFT_RAD_MIN:
-        #     # Move head down
-        #     self.kin_joints.position[lift] = self.kin_joints.position[lift] - math.radians(10.0)
+        # elif df < -epsilon  and self.kin_joints.position[yaw] <  miro.constants.YAW_RAD_MAX:
+        #     # Move head to the left
+        #     print('df < epsilon. move head to the left')
+        #     print('before rad: ', self.kin_joints.position[yaw])
+        #     self.kin_joints.position[yaw] = self.kin_joints.position[yaw] - (df*miro.constants.YAW_RAD_MAX/width)
+        #     print('after rad: ', self.kin_joints.position[yaw])
+
+        #Vertical
+        print('==========================tracking============================')
+        if hf < -epsilon and self.kin_joints.position[lift] > miro.constants.LIFT_RAD_MIN:
+            # Move head up
+            print('hf > epsilon. move head up')
+            a = self.kin_joints.position[lift]
+            self.kin_joints.position[lift] = self.kin_joints.position[lift] + 3*hf*miro.constants.LIFT_RAD_MIN/height
+            print('after moving, degree: ', (self.kin_joints.position[lift]-a)/0.0174532)
+
+        elif hf > epsilon and self.kin_joints.position[lift] < miro.constants.LIFT_RAD_MAX:
+            # Move head down
+            print('hf < epsilon. move head down')
+            a = self.kin_joints.position[lift]
+            self.kin_joints.position[lift] = self.kin_joints.position[lift] + 3*hf*miro.constants.LIFT_RAD_MAX/height
+            print('after moving, degree: ', self.kin_joints.position[lift]-a)
 
         self.pub_kin.publish(self.kin_joints)
         self.primary_detected = False
@@ -85,10 +90,16 @@ class controller:
     def do_recognition(self):
         # detect face and return the "face"
         st = time.time()
+        print('============do recognition===========')
         print('The current time: ', st)
         self.detected_faces, self.roi_color, self.x_primary, self.y_primary = self.det_pri_user.face_detection(self.image)
         et = time.time()
         print('time of detection: ', et - st)
+
+        #----test-----
+        if self.roi_color != None :
+            print('Detected the face!!!!')
+        #-------------
 
        # if self.roi_color != None:
             # save ROI
@@ -115,6 +126,7 @@ class controller:
         self.image_converter = CvBridge()
         # convert compressed ROS image to raw CV image
         self.image = self.image_converter.compressed_imgmsg_to_cv2(ros_image, "bgr8")
+        print('Receive a new image: ')
             
         if self.image != None:
             self.do_recognition()
@@ -136,9 +148,9 @@ class controller:
         self.reset()
         # loop
         while self.active and not rospy.core.is_shutdown():
-            if self.detected_faces != None:
-               cv2.imshow('detected_face', self.detected_faces)
-               cv2.waitKey(1)
+            #if self.detected_faces != None:
+            cv2.imshow('detected_face', self.detected_faces)
+            cv2.waitKey(1)
 
             if self.roi_color != None:
                 cv2.imshow('face', self.roi_color)
