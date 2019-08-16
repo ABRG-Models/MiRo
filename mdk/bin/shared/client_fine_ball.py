@@ -66,8 +66,8 @@ class client_mics:
             leftCamera = self.find_ball("#0000FF",0)
             rightCamera = self.find_ball("#0000FF",1)
 
-            print "???", leftCamera
-            print "???", rightCamera
+            print "left", leftCamera
+            print "right", rightCamera
 
             time.sleep(1)
 
@@ -193,10 +193,10 @@ class client_mics:
 
         debug_image = self.image_converter.cv2_to_imgmsg(output, "bgr8")
         self.debug_image_pub.publish(debug_image)
-        cv2.imshow("???",output)
+        # cv2.imshow("???",output)
         return max_circle_norm
 
-    
+
 if __name__ == "__main__":
 
     rospy.init_node("client_mics", anonymous=True)
