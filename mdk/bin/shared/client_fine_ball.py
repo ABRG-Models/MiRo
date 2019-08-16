@@ -42,8 +42,8 @@ class client_mics:
                 self.frame_w, self.frame_h = im_w, im_h
                 self.cam_model.set_frame_size(self.frame_w, self.frame_h)
         except CvBridgeError as e:
-            print("Conversion of left image failed \n")
-            print(e)
+             print("Conversion of left image failed \n")
+             print(e)
 
     def cam_right_callback(self, ros_image):
         try:
@@ -63,11 +63,13 @@ class client_mics:
         # loop
         while not rospy.core.is_shutdown():
 
-            something = self.find_ball("#0000FF",0,0)
+            leftCamera = self.find_ball("#0000FF",0)
+            rightCamera = self.find_ball("#0000FF",1)
 
-            print "???", something
+            print "???", leftCamera
+            print "???", rightCamera
 
-            time.sleep(0.01)
+            time.sleep(1)
 
 
 
@@ -104,42 +106,16 @@ class client_mics:
         self.frame_w = 0
         self.frame_h = 0
 
-    # def pause(self):
-    #     # Time at start of pause
-    #     pause_start = time.time()
-    #
-    #     # Check for Pause Flag
-    #     while (self.m_ready or self.wagging):
-    #         # Check for presence of pause command
-    #         if os.path.exists(FILE_WEB_CMD):
-    #             with open(FILE_WEB_CMD, "r", os.O_NONBLOCK) as file:
-    #                 self.web_cmd = file.read()
-    #                 file.close()
-    #         else:
-    #             self.web_cmd = ""
-    #
-    #         if self.web_cmd == "pause":
-    #             self.pause_flag = True
-    #         else:
-    #             break
-    #
-    #         time.sleep(0.1)
-    #
-    #     # Calculate pause time
-    #     if self.pause_flag:
-    #         pause_time = time.time() - pause_start
-    #         self.timer_end_time = self.timer_end_time + pause_time
-    #         self.pause_flag = False
 
-    def find_ball(self, colour_str, cam_id, prop):
+    def find_ball(self, colour_str, cam_id):
         # self.pause()
         if colour_str[0] != "#" and len(colour_str) != 7:
             print("colour choice should be a string in the form \"#RRGGBB\"")
             return
         if cam_id < 0 or cam_id > 1:
             return
-        if prop < 0 or prop > 2:
-            return
+        # if prop < 0 or prop > 2:
+        #     return
 
         # create colour code from user selected colour
         red = int(colour_str[1:3], 16)
@@ -217,69 +193,10 @@ class client_mics:
 
         debug_image = self.image_converter.cv2_to_imgmsg(output, "bgr8")
         self.debug_image_pub.publish(debug_image)
-        return max_circle_norm[prop]
+        cv2.imshow("???",output)
+        return max_circle_norm
 
-    def get_ball_loc(self, colour_str):
-        # self.pause()
-        if colour_str[0] != "#" and len(colour_str) != 7:
-            print("colour choice should be a string in the form \"#RRGGBB\"")
-            return
-
-        if np.shape(self.cam_left_image) == () or np.shape(self.cam_right_image) == ():
-            return
-
-        # create colour code from user selected colour
-        red = int(colour_str[1:3], 16)
-        green = int(colour_str[3:5], 16)
-        blue = int(colour_str[5:7], 16)
-        bgr_colour = np.uint8([[[blue, green, red]]])
-        hsv_colour = cv2.cvtColor(bgr_colour, cv2.COLOR_BGR2HSV)
-
-        # extract boundaries for masking image
-        target_hue = hsv_colour[0, 0][0]
-        lower_bound = np.array([target_hue - 20, 70, 70])
-        upper_bound = np.array([target_hue + 20, 255, 255])
-
-        # Search for largest circle in either frame
-        largest_circle = None
-        circle_loc = None
-        circle_cam = None
-        largest_radius = 0
-        for camera in range(0, 2):
-
-            if camera == miro.constants.CAM_L:
-                hsv_image = cv2.cvtColor(self.cam_left_image, cv2.COLOR_BGR2HSV)
-            else:
-                hsv_image = cv2.cvtColor(self.cam_right_image, cv2.COLOR_BGR2HSV)
-
-            # mask image
-            mask = cv2.inRange(hsv_image, lower_bound, upper_bound)
-            seg = mask
-
-            # Do some processing
-            seg = cv2.GaussianBlur(seg, (11, 11), 0)
-            seg = cv2.erode(seg, None, iterations=2)
-            seg = cv2.dilate(seg, None, iterations=2)
-
-            # get circles
-            circles = cv2.HoughCircles(seg, cv2.HOUGH_GRADIENT, 1, 40, param1=10, param2=33, minRadius=0, maxRadius=0)
-
-            # Search through circles for largest
-            if circles is not None:
-                circles = np.uint16(np.around(circles))
-                for circle in circles[0, :]:
-                    if circle[2] > largest_radius:
-                        largest_radius = circle[2]
-                        largest_circle = circle
-                        circle_cam = camera
-            else:
-                pass
-        circle_loc = [largest_circle[0], largest_circle[1]]
-        view_line = self.cam_model.p2v(circle_loc)
-        circle_point = self.cam_model.v2oh(circle_cam, view_line, 1.0)
-        return circle_point
-
-
+    
 if __name__ == "__main__":
 
     rospy.init_node("client_mics", anonymous=True)
