@@ -10,7 +10,6 @@ import numpy as np
 import time
 import sys
 import os
-
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import CompressedImage, JointState
@@ -41,6 +40,8 @@ class controller:
         self.sensors = msg
 
     def track( self, x_face, y_face, width, height ):
+
+        st_track = time.time()
 
         epsilon = 10.0
         tilt, lift, yaw, pitch = range(4)
@@ -86,66 +87,57 @@ class controller:
             # print('after moving, degree: ', self.kin_joints.position[lift]-a)
 
         self.pub_kin.publish(self.kin_joints)
-        self.primary_detected = False
-        time.sleep(3)
 
-    def do_recognition(self):
+        end_track = time.time()
+        print('time of tracking: ', end_track - st_track)
+
+        self.primary_detected = False
+        time.sleep(0.1)
+
+    def do_detection(self):
+
+        self.image_converter = CvBridge()
+        # convert compressed ROS image to raw CV image
+        self.image = self.image_converter.compressed_imgmsg_to_cv2(self.image, "bgr8")
+
         # detect face and return the "face"
         self.i += 1
         st = time.time()
         print()
         print('============do recognition===========')
-        print(self.i ,'th detection. The current time: ', st)
+        print(self.i, 'th detection. The current time: ', st)
         self.detected_faces, self.roi_color, self.x_primary, self.y_primary = self.det_pri_user.face_detection(self.image)
         et = time.time()
         print('time of detection: ', et - st)
 
-        #----test-----
-        if self.roi_color != None :
-            print(self.i ,'th detected the face!!!!')
-        #-------------
-
-       # if self.roi_color != None:
-            # save ROI
-           # self.det_pri_user.save_face(self.roi_color)
-
-            # PRIMARY USER RECOGNITION, GET X,Y OF THE PRIMARY USER
-           # st = time.time()
-           # self.primary_detected, self.x_primary, self.y_primary, width, height = self.det_pri_user.face_recognition(
-           #     self.roi_color)
-           # et = time.time()
-           # print('time of fr: ', et - st)
+        # ----test-----
+        if self.roi_color != None:
+            print(self.i, 'th detected the face!!!!')
+        # -------------
 
         self.image = None
 
-    def callback_caml(self, ros_image):
-        #print('callback here')
-        #print(self.i, 'th callback_caml: ', time.time()-self.t)
-        #self.i += 1
+    def do_recognition(self):
+        pass
 
+        # if self.roi_color != None:
+        # save ROI
+        # self.det_pri_user.save_face(self.roi_color)
+
+        # PRIMARY USER RECOGNITION, GET X,Y OF THE PRIMARY USER
+        # st = time.time()
+        # self.primary_detected, self.x_primary, self.y_primary = self.det_pri_user.face_recognition(
+        #     self.roi_color)
+        # et = time.time()
+        # print('time of fr: ', et - st)
+
+
+    def callback_caml(self, ros_image):
         # ignore until active
         if not self.active:
             return
 
-        self.image_converter = CvBridge()
-        # convert compressed ROS image to raw CV image
-        self.image = self.image_converter.compressed_imgmsg_to_cv2(ros_image, "bgr8")
-        self.j += 1
-        
-        print()
-        print('**********************')
-        print(self.j , 'th receive a new image ')
-        print('**********************')
-            
-        if self.image != None:
-            self.do_recognition()
-
-        #if self.primary_detected == True:
-            #self.track( self.x_primary, self.y_primary, 640, 360 )
-
-        if self.x_primary != None:
-            self.track( self.x_primary, self.y_primary, 640, 360 )
-
+        self.image = ros_image
 
 
     def reset(self):
@@ -153,10 +145,24 @@ class controller:
         self.pub_kin.publish(self.kin_joints)
         time.sleep(1)
 
+
     def loop(self):
         self.reset()
         # loop
         while self.active and not rospy.core.is_shutdown():
+            # face detection
+            # 'Add new condition, do the recognition once of 100 frames'
+            if self.image != None:
+                self.do_detection()
+
+            # face recognition
+            # if self.primary_detected == True:
+            # self.track( self.x_primary, self.y_primary, 640, 360 )
+
+            if self.x_primary != None:
+                self.track(self.x_primary, self.y_primary, 640, 360)
+
+            # Show the frames and ROI
             #if self.detected_faces != None:
             cv2.imshow('detected_face', self.detected_faces)
             cv2.waitKey(1)
@@ -164,6 +170,10 @@ class controller:
             if self.roi_color != None:
                 cv2.imshow('face', self.roi_color)
                 cv2.waitKey(1)
+
+
+            # detect face 延迟很大之后tracking，所以不用每帧都做人脸检测并tracking。
+
                 
             # yield
             time.sleep(0.01)

@@ -2,6 +2,7 @@ import cv2
 import boto3
 import io
 import os
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import matplotlib.pyplot as plt
 
@@ -57,10 +58,15 @@ class detect_primary_user:
 
     def face_recognition(self, face):
         # face search
-        imageSource=open(self.path_test,'rb')
-        resp = self.rekognition.detect_faces(Image={'Bytes': imageSource.read()})
-        image = Image.open(self.path_test)
+        success, encoded_image = cv2.imencode('.png', face)
+        face_bytes = encoded_image.tobytes()
+        resp = self.rekognition.detect_faces(Image={'Bytes': face_bytes})
+
+        array = cv2.cvtColor(np.array(face), cv2.COLOR_RGB2BGR)
+        image = Image.fromarray(array)
         image_width, image_height = image.size
+
+
         all_faces = resp['FaceDetails']
         
         x_face = None
@@ -109,7 +115,7 @@ class detect_primary_user:
 
         #image.show()
 
-        return primary, x_face, y_face, image_width, image_height
+        return primary, x_face, y_face
 
     def __init__ (self):
         self.rekognition = boto3.client('rekognition', region_name='us-east-2')
