@@ -44,10 +44,6 @@ class QLearningTable:
         print('Q',self.Q_table)
         # print('E',self.E_table)
 
-    # def discretize_state(self, pose):
-    #     state_adj = (pose - self.states_low) / self.scale
-    #     return state_adj.astype(int)
-
     def choose_action(self, state):
         return np.argmax(self.Q_table[state[0]][state[1]][state[2]])
         # return np.argmax((1 - self.beta) * self.Q_table[state[0]][state[1]] + self.beta * self.E_table[state][0][state[1]])
@@ -295,15 +291,19 @@ class client_findball:
 
         if not leftCamera is None:
             state.append(1)
+            lr = leftCamera[2]
         else:
             state.append(0)
+            lr=0
 
         if not rightCamera is None:
             state.append(1)
+            rr = rightCamera[2]
         else:
             state.append(0)
+            rr=0
 
-        if leftCamera[2] > 50 and rightCamera[2] > 50:
+        if lr > 50 and rr > 50:
             state.append(1)
         else:
             state.append(0)
