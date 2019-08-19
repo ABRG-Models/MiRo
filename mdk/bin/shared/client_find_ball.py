@@ -61,13 +61,10 @@ class client_findball:
 
         self.sonar = msg.sonar.range
         # print "sonar", self.sonar
-        if self.sonar < 0.1:
-            self.velocity.twist.linear.x = 0.0
-            self.velocity.twist.angular.z = 0.0
-            self.pub_cmd_vel.publish(self.velocity)
-
-    # 	print(self.sonar)
-    # 	self.action_down()
+        # if self.sonar < 0.1:
+        #     self.velocity.twist.linear.x = 0.0
+        #     self.velocity.twist.angular.z = 0.0
+        #     self.pub_cmd_vel.publish(self.velocity)
 
     def callback_pose(self, msg):
 
@@ -160,8 +157,8 @@ class client_findball:
         self.sonar = 0.58
 
         self.velocity = TwistStamped()
-        self.action_space = ['PUSH', 'STOP','TURN_L_45', 'TURN_L_90', 'TURN_R_45', 'TURN_R_90', 'TURN_180']
-        # 'TURN_L_135', 'TURN_R_135',
+        self.action_space = ['PUSH', 'TURN_L_45', 'TURN_L_90', 'TURN_R_45', 'TURN_R_90', 'TURN_180']
+        # 'TURN_L_135', 'TURN_R_135','STOP',
         self.goal = np.array([4, 2])
         self.episode = 100
         self.Q = QLearningTable()
@@ -326,8 +323,8 @@ class client_findball:
             self.action_push()
 
         # turn 180 degree
-        elif action == 'STOP':
-            self.action_stop()
+        # elif action == 'STOP':
+        #     self.action_stop()
 
         # turn 45 degree
         elif action == 'TURN_L_45':
@@ -373,7 +370,7 @@ class client_findball:
     def action_push(self):
         start = datetime.datetime.now()
 
-        while (True):
+        while (self.sonar > 0.05):
             end = datetime.datetime.now()
 
             if (end - start).seconds > 1:
