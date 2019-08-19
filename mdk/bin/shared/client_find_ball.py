@@ -38,7 +38,7 @@ class QLearningTable:
         # self.states_low = np.array([-1.5,-1.5,-3.14])
         # self.states_high = np.array([1.5,1.5,3.14])
         # self.scale = np.array([0.5, 0.5, 1.57])
-        self.num_actions = 6
+        self.num_actions = 7
         self.Q_table = np.zeros((self.num_states[0], self.num_states[1], self.num_actions))
 
     def print_Tabel(self):
@@ -119,6 +119,9 @@ class client_findball:
                     else:
                         action = self.Q.choose_action(state)
 
+                    print "sonar", self.sonar
+                    if self.sonar < 0.05:
+                        action = 1
                     # Get next state and reward
                     state2, reward, done = self.step(action)
 
@@ -165,7 +168,7 @@ class client_findball:
         self.sonar = 0.58
 
         self.velocity = TwistStamped()
-        self.action_space = ['PUSH', 'TURN_L_45', 'TURN_L_90', 'TURN_R_45', 'TURN_R_90', 'TURN_180']
+        self.action_space = ['PUSH', 'STEP_BACK','TURN_L_45', 'TURN_L_90', 'TURN_R_45', 'TURN_R_90', 'TURN_180']
         # 'TURN_L_135', 'TURN_R_135','STOP',
         self.goal = np.array([4, 2])
         self.episode = 500
@@ -331,8 +334,8 @@ class client_findball:
             self.action_push()
 
         # turn 180 degree
-        # elif action == 'STOP':
-        #     self.action_stop()
+        elif action == 'STEP_BACK':
+            self.action_stepback()
 
         # turn 45 degree
         elif action == 'TURN_L_45':
@@ -389,6 +392,21 @@ class client_findball:
             # time.sleep(1)
             else:
                 self.velocity.twist.linear.x = 0.1
+                self.velocity.twist.angular.z = 0.0
+                self.pub_cmd_vel.publish(self.velocity)
+
+    def action_stepback(self):
+        start = datetime.datetime.now()
+
+        while (self.sonar < 0.05):
+            end = datetime.datetime.now()
+            if (end - start).seconds > 1:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = 0.0
+                self.pub_cmd_vel.publish(self.velocity)
+                break
+            else:
+                self.velocity.twist.linear.x = -0.05
                 self.velocity.twist.angular.z = 0.0
                 self.pub_cmd_vel.publish(self.velocity)
 
@@ -500,7 +518,7 @@ class client_findball:
     def action_turn_180(self):
         start = datetime.datetime.now()
 
-        while (True):
+        while (self.sonar > 0.05):
             end = datetime.datetime.now()
             if (end - start).seconds > 3:
                 self.velocity.twist.linear.x = 0.0
