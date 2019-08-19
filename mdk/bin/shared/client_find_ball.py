@@ -6,6 +6,7 @@ import sys
 import os#
 import datetime
 import numpy as np
+import matplotlib.pyplot as plt
 
 import miro2 as miro
 
@@ -101,14 +102,18 @@ class client_findball:
 
             f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
 
+            reward_list = []
+
             for i in range(self.episode):
                 print "i", i
                 done = False
                 state = self.get_state()
-
+                tot_reward = 0
                 step = 0
 
                 while done != True:
+                    step += 1
+
                     if (np.random.random() < self.Q.epsilon):
                         action = self.action_space_sample()
                     else:
@@ -117,11 +122,7 @@ class client_findball:
                     # Get next state and reward
                     state2, reward, done = self.step(action)
 
-                    # if self.sonar < 0.13:
-                    #     reward = -5
-                    #     done = True
-
-                    if step > 100:
+                    if step == 100:
                         done = True
 
                     # Allow for terminal states
@@ -132,14 +133,19 @@ class client_findball:
                         self.Q.learn(state, action, reward, state2)
 
                     state = state2
-                    step += 1
+                    tot_reward += reward
                     print "steps", step
                     print "reward", reward
+                    print "new state", state
                     time.sleep(0.01)
 
+                reward_list.append(tot_reward)
                 self.Q.epsilon = f(i, 0.1)
 
             print self.Q.print_Tabel()
+            plt.figure(1)
+            plt.plot(reward_list)
+            plt.show()
 
 
     def __init__(self):
@@ -160,7 +166,7 @@ class client_findball:
         self.action_space = ['PUSH', 'TURN_L_45', 'TURN_L_90', 'TURN_R_45', 'TURN_R_90', 'TURN_180']
         # 'TURN_L_135', 'TURN_R_135','STOP',
         self.goal = np.array([4, 2])
-        self.episode = 100
+        self.episode = 500
         self.Q = QLearningTable()
 
         # robot name
