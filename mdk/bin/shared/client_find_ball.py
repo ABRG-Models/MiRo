@@ -37,7 +37,7 @@ class QLearningTable:
         # self.states_low = np.array([-1.5,-1.5,-3.14])
         # self.states_high = np.array([1.5,1.5,3.14])
         # self.scale = np.array([0.5, 0.5, 1.57])
-        self.num_actions = 9
+        self.num_actions = 7
         self.Q_table = np.zeros((self.num_states[0], self.num_states[1], self.num_actions))
 
     def print_Tabel(self):
@@ -102,14 +102,6 @@ class client_findball:
         # loop
         while not rospy.core.is_shutdown():
 
-            # leftCamera = self.find_ball("#0000FF",0)
-            # rightCamera = self.find_ball("#0000FF",1)
-            #
-            # print "left", leftCamera
-            # print "right", rightCamera
-            #
-            # time.sleep(1)
-
             f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
 
             for i in range(self.episode):
@@ -145,6 +137,8 @@ class client_findball:
                     state = state2
                     step += 1
                     print "steps", step
+                    print "reward", reward
+                    time.sleep(0.01)
 
                 self.Q.epsilon = f(i, 0.1)
 
@@ -166,7 +160,7 @@ class client_findball:
         self.sonar = 0.58
 
         self.velocity = TwistStamped()
-        self.action_space = ['PUSH', 'STOP', 'TURN_L_90', 'TURN_R_45', 'TURN_R_90', 'TURN_180']
+        self.action_space = ['PUSH', 'STOP','TURN_L_45', 'TURN_L_90', 'TURN_R_45', 'TURN_R_90', 'TURN_180']
         # 'TURN_L_135', 'TURN_R_135',
         self.goal = np.array([4, 2])
         self.episode = 100
@@ -291,6 +285,9 @@ class client_findball:
         leftCamera = self.find_ball("#0000FF", 0)
         rightCamera = self.find_ball("#0000FF", 1)
 
+        print "left", leftCamera
+        print "right", rightCamera
+
         if not leftCamera is None:
             if leftCamera[0] < 0:
                 if leftCamera[2] < 50:
@@ -361,7 +358,7 @@ class client_findball:
 
         new_state = self.get_state()
         # reach the goal have 1, else -1 reward
-        if new_state[0] == 1 and new_state[1] == 1 and new_state[2] == 1:
+        if new_state[0] == self.goal[0] and new_state[1] == self.goal[1]:
             reward = 1
             done = True
         else:
@@ -379,7 +376,7 @@ class client_findball:
         while (True):
             end = datetime.datetime.now()
 
-            if (end - start).seconds > 2:
+            if (end - start).seconds > 1:
                 self.velocity.twist.linear.x = 0.0
                 self.velocity.twist.angular.z = 0.0
                 self.pub_cmd_vel.publish(self.velocity)
