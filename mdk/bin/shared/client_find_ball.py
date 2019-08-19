@@ -402,7 +402,7 @@ class client_findball:
     def action_turn_l45(self):
         start = datetime.datetime.now()
 
-        while (True):
+        while (self.sonar > 0.05):
             end = datetime.datetime.now()
             if (end - start).seconds > 0:
                 self.velocity.twist.linear.x = 0.0
@@ -417,7 +417,7 @@ class client_findball:
     def action_turn_l90(self):
         start = datetime.datetime.now()
 
-        while (True):
+        while (self.sonar > 0.05):
             end = datetime.datetime.now()
             if (end - start).seconds > 1:
                 self.velocity.twist.linear.x = 0.0
@@ -432,7 +432,7 @@ class client_findball:
     def action_turn_l135(self):
         start = datetime.datetime.now()
 
-        while (True):
+        while (self.sonar > 0.05):
             end = datetime.datetime.now()
             if (end - start).seconds > 2:
                 self.velocity.twist.linear.x = 0.0
@@ -447,7 +447,7 @@ class client_findball:
     def action_turn_r45(self):
         start = datetime.datetime.now()
 
-        while (True):
+        while (self.sonar > 0.05):
             end = datetime.datetime.now()
             if (end - start).seconds > 0:
                 self.velocity.twist.linear.x = 0.0
@@ -462,7 +462,7 @@ class client_findball:
     def action_turn_r90(self):
         start = datetime.datetime.now()
 
-        while (True):
+        while (self.sonar > 0.05):
             end = datetime.datetime.now()
             if (end - start).seconds > 1:
                 self.velocity.twist.linear.x = 0.0
@@ -477,7 +477,7 @@ class client_findball:
     def action_turn_r135(self):
         start = datetime.datetime.now()
 
-        while (True):
+        while (self.sonar > 0.05):
             end = datetime.datetime.now()
             if (end - start).seconds > 2:
                 self.velocity.twist.linear.x = 0.0
