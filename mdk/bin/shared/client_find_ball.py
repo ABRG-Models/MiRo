@@ -33,25 +33,25 @@ class QLearningTable:
         self.gamma = discount
         self.epsilon = e_greedy
 
-        self.num_states = np.array([2, 2, 2])
+        self.num_states = np.array([5, 5])
         # self.states_low = np.array([-1.5,-1.5,-3.14])
         # self.states_high = np.array([1.5,1.5,3.14])
         # self.scale = np.array([0.5, 0.5, 1.57])
         self.num_actions = 9
-        self.Q_table = np.zeros((self.num_states[0], self.num_states[1],self.num_states[2], self.num_actions))
+        self.Q_table = np.zeros((self.num_states[0], self.num_states[1], self.num_actions))
 
     def print_Tabel(self):
         print('Q',self.Q_table)
         # print('E',self.E_table)
 
     def choose_action(self, state):
-        return np.argmax(self.Q_table[state[0]][state[1]][state[2]])
+        return np.argmax(self.Q_table[state[0]][state[1]])
         # return np.argmax((1 - self.beta) * self.Q_table[state[0]][state[1]] + self.beta * self.E_table[state][0][state[1]])
 
     def learn(self, state, action, reward, new_state):
-        self.Q_table[state[0]][state[1]][state[2]][action] += self.lr * (
-                reward + self.gamma * np.max(self.Q_table[new_state[0]][new_state[1]][new_state[2]]) -
-                self.Q_table[state[0]][state[1]][state[2]][action])
+        self.Q_table[state[0]][state[1]][action] += self.lr * (
+                reward + self.gamma * np.max(self.Q_table[new_state[0]][new_state[1]]) -
+                self.Q_table[state[0]][state[1]][action])
 
 
 ################################################################
@@ -61,7 +61,7 @@ class client_findball:
 
         self.sonar = msg.sonar.range
         # print "sonar", self.sonar
-        if self.sonar < 0.2:
+        if self.sonar < 0.1:
             self.velocity.twist.linear.x = 0.0
             self.velocity.twist.angular.z = 0.0
             self.pub_cmd_vel.publish(self.velocity)
@@ -137,7 +137,7 @@ class client_findball:
 
                     # Allow for terminal states
                     if done:
-                        self.Q.Q_table[state[0], state[1], state[2], action] = reward
+                        self.Q.Q_table[state[0], state[1], action] = reward
                     # Adjust Q value for current state
                     else:
                         self.Q.learn(state, action, reward, state2)
@@ -147,6 +147,8 @@ class client_findball:
                     print "steps", step
 
                 self.Q.epsilon = f(i, 0.1)
+
+            print self.Q.print_Tabel()
 
 
     def __init__(self):
@@ -164,9 +166,9 @@ class client_findball:
         self.sonar = 0.58
 
         self.velocity = TwistStamped()
-        self.action_space = ['PUSH', 'STOP', 'TURN_L_45', 'TURN_L_90', 'TURN_L_135', 'TURN_R_45', 'TURN_R_90',
-                             'TURN_R_135', 'TURN_180']
-        self.goal = np.array([1, 1, 1])
+        self.action_space = ['PUSH', 'STOP', 'TURN_L_90', 'TURN_R_45', 'TURN_R_90', 'TURN_180']
+        # 'TURN_L_135', 'TURN_R_135',
+        self.goal = np.array([4, 2])
         self.episode = 100
         self.Q = QLearningTable()
 
@@ -290,21 +292,29 @@ class client_findball:
         rightCamera = self.find_ball("#0000FF", 1)
 
         if not leftCamera is None:
-            state.append(1)
-            lr = leftCamera[2]
+            if leftCamera[0] < 0:
+                if leftCamera[2] < 50:
+                    state.append(1)
+                else: state.append(2)
+            else:
+                if leftCamera[2] < 50:
+                    state.append(3)
+                else:
+                    state.append(4)
         else:
             state.append(0)
-            lr=0
 
         if not rightCamera is None:
-            state.append(1)
-            rr = rightCamera[2]
-        else:
-            state.append(0)
-            rr=0
-
-        if lr > 50 and rr > 50:
-            state.append(1)
+            if rightCamera[0] < 0:
+                if rightCamera[2] < 50:
+                    state.append(1)
+                else:
+                    state.append(2)
+            else:
+                if rightCamera[2] < 50:
+                    state.append(3)
+                else:
+                    state.append(4)
         else:
             state.append(0)
 
@@ -330,9 +340,9 @@ class client_findball:
         elif action == 'TURN_L_90':
             self.action_turn_l90()
 
-        # turn 135 degree
-        elif action == 'TURN_L_135':
-            self.action_turn_l135()
+        # # turn 135 degree
+        # elif action == 'TURN_L_135':
+        #     self.action_turn_l135()
 
         # turn -45 degree
         elif action == 'TURN_R_45':
@@ -342,9 +352,9 @@ class client_findball:
         elif action == 'TURN_R_90':
             self.action_turn_r90()
 
-        # turn -135 degree
-        elif action == 'TURN_R_135':
-            self.action_turn_r135()
+        # # turn -135 degree
+        # elif action == 'TURN_R_135':
+        #     self.action_turn_r135()
 
         else:
             self.action_turn_180()
