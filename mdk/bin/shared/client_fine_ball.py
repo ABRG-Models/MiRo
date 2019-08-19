@@ -27,7 +27,51 @@ def error(msg):
 
 ################################################################
 
-class client_mics:
+class QLearningTable:
+    def __init__(self, learning_rate=0.2, discount=0.9, e_greedy=0.9):
+        self.lr = learning_rate
+        self.gamma = discount
+        self.epsilon = e_greedy
+
+        self.num_states = np.array([2, 2, 2])
+        # self.states_low = np.array([-1.5,-1.5,-3.14])
+        # self.states_high = np.array([1.5,1.5,3.14])
+        # self.scale = np.array([0.5, 0.5, 1.57])
+        self.num_actions = 9
+        self.Q_table = np.zeros((self.num_states[0], self.num_states[1],self.num_states[2], self.num_actions))
+
+    def print_Tabel(self):
+        print('Q',self.Q_table)
+        # print('E',self.E_table)
+
+    # def discretize_state(self, pose):
+    #     state_adj = (pose - self.states_low) / self.scale
+    #     return state_adj.astype(int)
+
+    def choose_action(self, state):
+        return np.argmax(self.Q_table[state[0]][state[1]][state[2]])
+        # return np.argmax((1 - self.beta) * self.Q_table[state[0]][state[1]] + self.beta * self.E_table[state][0][state[1]])
+
+    def learn(self, state, action, reward, new_state):
+        self.Q_table[state[0]][state[1]][state[2]][action] += self.lr * (
+                reward + self.gamma * np.max(self.Q_table[new_state[0]][new_state[1]][new_state[2]]) -
+                self.Q_table[state[0]][state[1]][state[2]][action])
+
+
+################################################################
+
+class client_findball:
+    def callback_package(self, msg):
+
+        self.sonar = msg.sonar.range
+        # print "sonar", self.sonar
+        if self.sonar < 0.2:
+            self.velocity.twist.linear.x = 0.0
+            self.velocity.twist.angular.z = 0.0
+            self.pub_cmd_vel.publish(self.velocity)
+
+    # 	print(self.sonar)
+    # 	self.action_down()
 
     def callback_pose(self, msg):
 
@@ -57,20 +101,56 @@ class client_mics:
             print(e)
 
 
-
     def loop(self):
 
         # loop
         while not rospy.core.is_shutdown():
 
-            leftCamera = self.find_ball("#0000FF",0)
-            rightCamera = self.find_ball("#0000FF",1)
+            # leftCamera = self.find_ball("#0000FF",0)
+            # rightCamera = self.find_ball("#0000FF",1)
+            #
+            # print "left", leftCamera
+            # print "right", rightCamera
+            #
+            # time.sleep(1)
 
-            print "left", leftCamera
-            print "right", rightCamera
+            f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
 
-            time.sleep(1)
+            for i in range(self.episode):
+                print "i", i
+                done = False
+                state = self.get_state()
 
+                step = 0
+
+                while done != True:
+                    if (np.random.random() < self.Q.epsilon):
+                        action = self.action_space_sample()
+                    else:
+                        action = self.Q.choose_action(state)
+
+                    # Get next state and reward
+                    state2, reward, done = self.step(action)
+
+                    # if self.sonar < 0.13:
+                    #     reward = -5
+                    #     done = True
+
+                    if step > 100:
+                        done = True
+
+                    # Allow for terminal states
+                    if done:
+                        self.Q.Q_table[state[0], state[1], state[2], action] = reward
+                    # Adjust Q value for current state
+                    else:
+                        self.Q.learn(state, action, reward, state2)
+
+                    state = state2
+                    step += 1
+                    print "steps", step
+
+                self.Q.epsilon = f(i, 0.1)
 
 
     def __init__(self):
@@ -85,6 +165,15 @@ class client_mics:
         # Create object to convert ROS images to OpenCV format
         self.image_converter = CvBridge()
 
+        self.sonar = 0.58
+
+        self.velocity = TwistStamped()
+        self.action_space = ['PUSH', 'STOP', 'TURN_L_45', 'TURN_L_90', 'TURN_L_135', 'TURN_R_45', 'TURN_R_90',
+                             'TURN_R_135', 'TURN_180']
+        self.goal = np.array([1, 1, 1])
+        self.episode = 100
+        self.Q = QLearningTable()
+
         # robot name
         topic_base = "/" + os.getenv("MIRO_ROBOT_NAME") + "/"
 
@@ -92,11 +181,14 @@ class client_mics:
 
         self.pub_cmd_vel = rospy.Publisher(topic_base + "control/cmd_vel", TwistStamped, queue_size=0)
 
-        self.debug_image_pub = rospy.Publisher("/miro/blockly_circles", Image, queue_size=0)
 
         # subscribe
-        print ("subscribe", topic_base + "sensors/body_pose")
         self.sub_mics = rospy.Subscriber(topic_base + "sensors/body_pose", Pose2D, self.callback_pose)
+        print ("subscribe", topic_base + "sensors/body_pose")
+
+        self.sub_package = rospy.Subscriber(topic_base + "sensors/package", miro.msg.sensors_package,self.callback_package)
+        print ("subscribe", topic_base + "sensors/package")
+
         # Subscribe to Camera topics
         self.cam_left_sub = rospy.Subscriber(topic_base + "sensors/caml/compressed", CompressedImage,self.cam_left_callback)
         self.cam_right_sub = rospy.Subscriber(topic_base + "sensors/camr/compressed", CompressedImage,self.cam_right_callback)
@@ -105,7 +197,6 @@ class client_mics:
         self.cam_model = miro.utils.CameraModel()
         self.frame_w = 0
         self.frame_h = 0
-
 
     def find_ball(self, colour_str, cam_id):
         # self.pause()
@@ -191,16 +282,229 @@ class client_mics:
         else:
             return None
 
-        debug_image = self.image_converter.cv2_to_imgmsg(output, "bgr8")
-        self.debug_image_pub.publish(debug_image)
-        # cv2.imshow("???",output)
         return max_circle_norm
+
+    def action_space_sample(self):
+        action = np.random.choice(self.action_space)
+        return self.action_space.index(action)
+
+    def get_state(self):
+        state = []
+        leftCamera = self.find_ball("#0000FF", 0)
+        rightCamera = self.find_ball("#0000FF", 1)
+
+        if not leftCamera is None:
+            state.append(1)
+        else:
+            state.append(0)
+
+        if not rightCamera is None:
+            state.append(1)
+        else:
+            state.append(0)
+
+        if self.sonar < 0.2:
+            state.append(1)
+        else:
+            state.append(0)
+
+        return state
+
+    def step(self, action_i):
+        action = self.action_space[action_i]
+        print "action", action
+
+        # give the speed to go 0.5m and stop
+        if action == 'PUSH':
+            self.action_push()
+
+        # turn 180 degree
+        elif action == 'STOP':
+            self.action_stop()
+
+        # turn 45 degree
+        elif action == 'TURN_L_45':
+            self.action_turn_l45()
+
+        # turn 90 degree
+        elif action == 'TURN_L_90':
+            self.action_turn_l90()
+
+        # turn 135 degree
+        elif action == 'TURN_L_135':
+            self.action_turn_l135()
+
+        # turn -45 degree
+        elif action == 'TURN_R_45':
+            self.action_turn_r45()
+
+        # turn -90 degree
+        elif action == 'TURN_R_90':
+            self.action_turn_r90()
+
+        # turn -135 degree
+        elif action == 'TURN_R_135':
+            self.action_turn_r135()
+
+        else:
+            self.action_turn_180()
+
+        new_state = self.get_state()
+        # reach the goal have 1, else -1 reward
+        if new_state[0] == 1 and new_state[1] == 1 and new_state[2] == 1:
+            reward = 1
+            done = True
+        else:
+            reward = -1
+            done = False
+
+        return new_state, reward, done
+
+    def reset(self):
+        return 0
+
+    def action_push(self):
+        start = datetime.datetime.now()
+
+        while (True):
+            end = datetime.datetime.now()
+
+            if (end - start).seconds > 2:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = 0.0
+                self.pub_cmd_vel.publish(self.velocity)
+                break
+            # time.sleep(1)
+            else:
+                self.velocity.twist.linear.x = 0.1
+                self.velocity.twist.angular.z = 0.0
+                self.pub_cmd_vel.publish(self.velocity)
+
+    def action_stop(self):
+        start = datetime.datetime.now()
+
+        while (True):
+            end = datetime.datetime.now()
+            if (end - start).seconds > 0:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = 0.0
+                self.pub_cmd_vel.publish(self.velocity)
+                break
+            else:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = 0.0
+                self.pub_cmd_vel.publish(self.velocity)
+
+    def action_turn_l45(self):
+        start = datetime.datetime.now()
+
+        while (True):
+            end = datetime.datetime.now()
+            if (end - start).seconds > 0:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = 0.0
+                self.pub_cmd_vel.publish(self.velocity)
+                break
+            else:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = 0.79
+                self.pub_cmd_vel.publish(self.velocity)
+
+    def action_turn_l90(self):
+        start = datetime.datetime.now()
+
+        while (True):
+            end = datetime.datetime.now()
+            if (end - start).seconds > 1:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = 0.0
+                self.pub_cmd_vel.publish(self.velocity)
+                break
+            else:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = 0.79
+                self.pub_cmd_vel.publish(self.velocity)
+
+    def action_turn_l135(self):
+        start = datetime.datetime.now()
+
+        while (True):
+            end = datetime.datetime.now()
+            if (end - start).seconds > 2:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = 0.0
+                self.pub_cmd_vel.publish(self.velocity)
+                break
+            else:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = 0.79
+                self.pub_cmd_vel.publish(self.velocity)
+
+    def action_turn_r45(self):
+        start = datetime.datetime.now()
+
+        while (True):
+            end = datetime.datetime.now()
+            if (end - start).seconds > 0:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = 0.0
+                self.pub_cmd_vel.publish(self.velocity)
+                break
+            else:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = -0.79
+                self.pub_cmd_vel.publish(self.velocity)
+
+    def action_turn_r90(self):
+        start = datetime.datetime.now()
+
+        while (True):
+            end = datetime.datetime.now()
+            if (end - start).seconds > 1:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = 0.0
+                self.pub_cmd_vel.publish(self.velocity)
+                break
+            else:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = -0.79
+                self.pub_cmd_vel.publish(self.velocity)
+
+    def action_turn_r135(self):
+        start = datetime.datetime.now()
+
+        while (True):
+            end = datetime.datetime.now()
+            if (end - start).seconds > 2:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = 0.0
+                self.pub_cmd_vel.publish(self.velocity)
+                break
+            else:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = -0.79
+                self.pub_cmd_vel.publish(self.velocity)
+
+    def action_turn_180(self):
+        start = datetime.datetime.now()
+
+        while (True):
+            end = datetime.datetime.now()
+            if (end - start).seconds > 3:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = 0.0
+                self.pub_cmd_vel.publish(self.velocity)
+                break
+            else:
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = 0.79
+                self.pub_cmd_vel.publish(self.velocity)
 
 
 if __name__ == "__main__":
 
-    rospy.init_node("client_mics", anonymous=True)
-    main = client_mics()
+    rospy.init_node("client_findball", anonymous=True)
+    main = client_findball()
     main.loop()
 
 
