@@ -303,7 +303,7 @@ class client_findball:
         else:
             state.append(0)
 
-        if self.sonar < 0.2:
+        if leftCamera[2] > 50 and rightCamera[2] > 50:
             state.append(1)
         else:
             state.append(0)
