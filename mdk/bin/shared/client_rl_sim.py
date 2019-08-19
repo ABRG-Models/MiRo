@@ -63,10 +63,10 @@ class client_Qlearning:
 
 		self.sonar = msg.sonar.range
 		# print "sonar", self.sonar
-		if self.sonar < 0.2:
-			self.velocity.twist.linear.x = 0.0
-			self.velocity.twist.angular.z = 0.0
-			self.pub_cmd_vel.publish(self.velocity)
+		# if self.sonar < 0.2:
+		# 	self.velocity.twist.linear.x = 0.0
+		# 	self.velocity.twist.angular.z = 0.0
+		# 	self.pub_cmd_vel.publish(self.velocity)
 		# 	print(self.sonar)
 		# 	self.action_down()
 
@@ -196,7 +196,7 @@ class client_Qlearning:
 	def action_up(self):
 		start = datetime.datetime.now()
 
-		while (True):
+		while (self.sonar > 0.1):
 			end = datetime.datetime.now()
 
 			if (end - start).seconds > 4:
@@ -244,7 +244,7 @@ class client_Qlearning:
 	def action_left(self):
 		start = datetime.datetime.now()
 
-		while (True):
+		while (self.sonar > 0.1):
 			end = datetime.datetime.now()
 			if (end - start).seconds > 0:
 				self.velocity.twist.linear.x = 0.0
@@ -258,7 +258,7 @@ class client_Qlearning:
 
 		start = datetime.datetime.now()
 
-		while (True):
+		while (self.sonar > 0.1):
 			end = datetime.datetime.now()
 
 			if (end - start).seconds > 4:
@@ -275,7 +275,7 @@ class client_Qlearning:
 	def action_right(self):
 		start = datetime.datetime.now()
 
-		while (True):
+		while (self.sonar > 0.1):
 			end = datetime.datetime.now()
 			if (end - start).seconds > 0:
 				self.velocity.twist.linear.x = 0.0
@@ -289,7 +289,7 @@ class client_Qlearning:
 
 		start = datetime.datetime.now()
 
-		while (True):
+		while (self.sonar > 0.1):
 			end = datetime.datetime.now()
 
 			if (end - start).seconds > 4:
