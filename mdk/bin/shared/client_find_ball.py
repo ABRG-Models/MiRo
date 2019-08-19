@@ -37,7 +37,7 @@ class QLearningTable:
         # self.states_low = np.array([-1.5,-1.5,-3.14])
         # self.states_high = np.array([1.5,1.5,3.14])
         # self.scale = np.array([0.5, 0.5, 1.57])
-        self.num_actions = 7
+        self.num_actions = 6
         self.Q_table = np.zeros((self.num_states[0], self.num_states[1], self.num_actions))
 
     def print_Tabel(self):
