@@ -147,6 +147,8 @@ class client_findball:
             plt.plot(reward_list)
             plt.show()
 
+            break
+
 
     def __init__(self):
 
