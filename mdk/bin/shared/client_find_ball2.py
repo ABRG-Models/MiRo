@@ -171,7 +171,7 @@ class client_findball2:
             # plt.show()
             self.save_QTable(self.Q.q_table)
             readcsv = self.import_QTable()
-            print "import csv", readcsv
+            print "import csv\n", readcsv
 
             break
 
@@ -555,11 +555,11 @@ class client_findball2:
                 self.pub_cmd_vel.publish(self.velocity)
 
     def import_QTable(self):
-        Q_table = pd.read_csv("~/mdk/bin/shared/qtable.csv")
+        Q_table = pd.read_csv("/home/miro/mdk/bin/shared/qtable.csv")
         return Q_table
 
     def save_QTable(self,Q_table):
-        Q_table.to_csv("~/mdk/bin/shared/qtable.csv")
+        Q_table.to_csv("/home/miro/mdk/bin/shared/qtable.csv")
 
 if __name__ == "__main__":
 
