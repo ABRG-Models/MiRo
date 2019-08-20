@@ -27,6 +27,41 @@ def error(msg):
     sys.exit(0)
 
 ################################################################
+# ('Q',               PUSH  STEP_BACK  TURN_L_45  TURN_L_90  TURN_R_45  TURN_R_90  \
+# [0, 0]   -7.055611  -6.745531  -6.713631  -6.700458  -5.156918  -6.734850
+# [0, 3]   -7.120609  -7.345926  -7.147377  -6.936086  -5.694743  -7.232289
+# [1, 1]   -6.779686  -6.619654  -5.223138  -6.758324  -6.481607  -6.822119
+# [1, 0]   -7.329227  -7.296088  -4.666155  -7.369954  -7.023667  -7.332277
+# [3, 1]   -2.594630  -5.460205  -6.173057  -6.908904  -6.633693  -6.862095
+# terminal  0.000000   0.000000   0.000000   0.000000   0.000000   0.000000
+# [2, 0]   -2.350944  -1.453746  -0.237228  -2.297898  -2.877282  -3.459173
+# [0, 2]   -1.251354  -0.393395  -1.282779  -1.322154  -0.843670  -0.920890
+# [4, 2]   -0.533994   0.947920  -0.664858  -4.014511  -0.973501  -3.960952
+# [4, 0]   -1.715688  -1.251372  -1.684748  -2.217266  -1.336502  -1.706729
+# [3, 3]   -4.999126  -6.121602  -6.948856  -6.823530  -6.652291  -6.201923
+# [0, 4]   -4.132198  -4.338827  -4.351680  -4.318476  -4.333292  -2.835368
+# [4, 1]   -0.265011  -0.200000  -1.300372  -0.705496  -1.098327  -1.411354
+# [3, 2]   -1.256401  -1.165636  -1.130963  -2.331399  -1.155877  -1.538087
+# [3, 0]    0.000000  -0.200000   0.000000   0.000000   0.000000   0.000000
+#
+#           TURN_180
+# [0, 0]   -6.763824
+# [0, 3]   -7.176436
+# [1, 1]   -6.800609
+# [1, 0]   -7.387298
+# [3, 1]   -7.143430
+# terminal  0.000000
+# [2, 0]   -3.290308
+# [0, 2]   -1.354840
+# [4, 2]   -4.717436
+# [4, 0]   -1.810798
+# [3, 3]   -6.740474
+# [0, 4]   -4.510811
+# [4, 1]   -1.360927
+# [3, 2]   -1.153629
+# [3, 0]   -1.246692  )
+
+################################################################
 
 class QLearningTable:
     def __init__(self, action_space,learning_rate=0.2, discount=0.9, e_greedy=0.9):
@@ -57,20 +92,18 @@ class QLearningTable:
         # print('E',self.E_table)
 
     def choose_action(self, state):
-        # return np.argmax(self.Q_table[state[0]][state[1]])
-        # return np.argmax((1 - self.beta) * self.Q_table[state[0]][state[1]] + self.beta * self.E_table[state][0][state[1]])
 
         self.check_state_exist(state)
 
         # action selection
         if np.random.rand() < self.epsilon:
+            # choose random action
+            action = np.random.choice(self.actions)
+        else:
             # choose best action
             state_action = self.q_table.loc[state, :]
             # some actions may have the same value, randomly choose on in these actions
             action = np.random.choice(state_action[state_action == np.max(state_action)].index)
-        else:
-            # choose random action
-            action = np.random.choice(self.actions)
         return action
 
     def learn(self, state, action, reward, new_state):
@@ -160,6 +193,8 @@ class client_findball2:
             plt.plot(reward_list)
             plt.show()
             self.save_QTable(self.Q.q_table)
+            print("save success")
+
             readcsv = self.import_QTable()
             print "import csv\n", readcsv
 
@@ -184,7 +219,7 @@ class client_findball2:
         self.action_space = ['PUSH','STEP_BACK', 'TURN_L_45', 'TURN_L_90', 'TURN_R_45', 'TURN_R_90', 'TURN_180']
         # 'TURN_L_135', 'TURN_R_135','STOP',
         self.goal = np.array([4, 2])
-        self.episode = 500
+        self.episode = 200
         self.Q = QLearningTable(self.action_space)
 
         # robot name
