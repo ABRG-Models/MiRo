@@ -7,7 +7,7 @@ import os
 import numpy as np
 import math
 
-import std_msgs.msg as Float32MultiArray
+from std_msgs.msg import Float32MultiArray
 import miro2 as miro
 from sensor_msgs.msg import JointState
 
@@ -36,7 +36,7 @@ class client_lift:
 
         # loop
         while not rospy.core.is_shutdown():
-
+            self.kin_cos_init()
             # sleep
             time.sleep(0.01)
 
@@ -64,15 +64,19 @@ class client_lift:
         # self.pub_kin.publish(self.kin_joints)
 
     def on_ResetCosButton_clicked(self, *args):
-
-        # self.WagRateControl.set_value(31.0)
-
         self.cos_joints.data[droop] = miro.constants.DROOP_CALIB
         self.cos_joints.data[wag] = miro.constants.WAG_CALIB
-        self.cos_joints.data[left_eye] = miro.constants.EYE_CALIB
-        self.cos_joints.data[right_eye] = miro.constants.EYE_CALIB
+        self.cos_joints.data[left_eye] = miro.constants.EYE_DEFAULT
+        self.cos_joints.data[right_eye] = miro.constants.EYE_DEFAULT
         self.cos_joints.data[left_ear] = miro.constants.EAR_CALIB
         self.cos_joints.data[right_ear] = miro.constants.EAR_CALIB
+
+    def kin_cos_init(self):
+        time.sleep(0.01)
+        self.pub_kin.publish(self.kin_joints)
+        time.sleep(0.01)
+        self.pub_cos.publish(self.cos_joints)
+
 if __name__ == "__main__":
 
     rospy.init_node("client_lift", anonymous=True)
