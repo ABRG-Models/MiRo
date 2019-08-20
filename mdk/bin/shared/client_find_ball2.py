@@ -36,9 +36,6 @@ class QLearningTable:
         self.actions = action_space
 
         # self.num_states = np.array([5, 5])
-        # self.states_low = np.array([-1.5,-1.5,-3.14])
-        # self.states_high = np.array([1.5,1.5,3.14])
-        # self.scale = np.array([0.5, 0.5, 1.57])
         # self.num_actions = 7
         # self.Q_table = np.zeros((self.num_states[0], self.num_states[1], self.num_actions))
 
@@ -77,10 +74,6 @@ class QLearningTable:
         return action
 
     def learn(self, state, action, reward, new_state):
-        # self.Q_table[state[0]][state[1]][action] += self.lr * (
-        #         reward + self.gamma * np.max(self.Q_table[new_state[0]][new_state[1]]) -
-        #         self.Q_table[state[0]][state[1]][action])
-
         self.check_state_exist(new_state)
         q_predict = self.q_table.loc[state, action]
         if new_state != 'terminal':
@@ -140,15 +133,12 @@ class client_findball2:
                 while not done:
                     step += 1
 
-                    # if (np.random.random() < self.Q.epsilon):
-                    #     action = self.action_space_sample()
-                    # else:
                     action = self.Q.choose_action(str(state))
 
                     # Get next state and reward
                     state2, reward, done = self.step(action)
 
-                    if step == 30:
+                    if step == 100:
                         done = True
                         state2 = 'terminal'
 
@@ -166,9 +156,9 @@ class client_findball2:
                 self.Q.epsilon = f(i, 0.1)
 
             print self.Q.print_Tabel()
-            # plt.figure(1)
-            # plt.plot(reward_list)
-            # plt.show()
+            plt.figure(1)
+            plt.plot(reward_list)
+            plt.show()
             self.save_QTable(self.Q.q_table)
             readcsv = self.import_QTable()
             print "import csv\n", readcsv
@@ -194,7 +184,7 @@ class client_findball2:
         self.action_space = ['PUSH','STEP_BACK', 'TURN_L_45', 'TURN_L_90', 'TURN_R_45', 'TURN_R_90', 'TURN_180']
         # 'TURN_L_135', 'TURN_R_135','STOP',
         self.goal = np.array([4, 2])
-        self.episode = 1
+        self.episode = 500
         self.Q = QLearningTable(self.action_space)
 
         # robot name
