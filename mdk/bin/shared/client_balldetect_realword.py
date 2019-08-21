@@ -302,11 +302,11 @@ class client_realworld_findball:
 
         if not leftCamera is None:
             if leftCamera[0] > 0:
-                if leftCamera[2] < 50:
+                if leftCamera[2] < 135:
                     state.append(1)
                 else: state.append(2)
             else:
-                if leftCamera[2] < 50:
+                if leftCamera[2] < 135:
                     state.append(3)
                 else:
                     state.append(4)
@@ -315,12 +315,12 @@ class client_realworld_findball:
 
         if not rightCamera is None:
             if rightCamera[0] > 0:
-                if rightCamera[2] < 50:
+                if rightCamera[2] < 135:
                     state.append(1)
                 else:
                     state.append(2)
             else:
-                if rightCamera[2] < 50:
+                if rightCamera[2] < 135:
                     state.append(3)
                 else:
                     state.append(4)
