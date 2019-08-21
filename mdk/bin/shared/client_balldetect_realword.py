@@ -154,7 +154,7 @@ class client_realworld_findball:
             # plt.plot(reward_list)
             # plt.show()
 
-            break
+
 
 
     def __init__(self):
@@ -187,8 +187,8 @@ class client_realworld_findball:
 
 
         # subscribe
-        self.sub_mics = rospy.Subscriber(topic_base + "sensors/body_pose", Pose2D, self.callback_pose)
-        print ("subscribe", topic_base + "sensors/body_pose")
+        # self.sub_mics = rospy.Subscriber(topic_base + "sensors/body_pose", Pose2D, self.callback_pose)
+        # print ("subscribe", topic_base + "sensors/body_pose")
 
         self.sub_package = rospy.Subscriber(topic_base + "sensors/package", miro.msg.sensors_package,self.callback_package)
         print ("subscribe", topic_base + "sensors/package")
@@ -294,14 +294,14 @@ class client_realworld_findball:
 
     def get_state(self):
         state = []
-        leftCamera = self.find_ball("#0000FF", 0)
-        rightCamera = self.find_ball("#0000FF", 1)
+        leftCamera = self.find_ball("#DE3163", 0) # C71585
+        rightCamera = self.find_ball("#DE3163", 1)
 
         print "left", leftCamera
         print "right", rightCamera
 
         if not leftCamera is None:
-            if leftCamera[0] < 0:
+            if leftCamera[0] > 0:
                 if leftCamera[2] < 50:
                     state.append(1)
                 else: state.append(2)
@@ -314,7 +314,7 @@ class client_realworld_findball:
             state.append(0)
 
         if not rightCamera is None:
-            if rightCamera[0] < 0:
+            if rightCamera[0] > 0:
                 if rightCamera[2] < 50:
                     state.append(1)
                 else:
