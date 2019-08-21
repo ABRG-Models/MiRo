@@ -8,10 +8,11 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import math
+
 import miro2 as miro
 
-import std_msgs
-from geometry_msgs.msg import Pose2D
+from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import JointState, BatteryState, Imu, Range, CompressedImage, Image
 
@@ -19,6 +20,8 @@ from sensor_msgs.msg import JointState, BatteryState, Imu, Range, CompressedImag
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
+droop, wag, left_eye, right_eye, left_ear, right_ear = range(6)
+tilt, lift, yaw, pitch = range(4)
 ################################################################
 
 def error(msg):
@@ -120,6 +123,8 @@ class client_findball3:
     def loop(self):
         # loop
         while not rospy.core.is_shutdown():
+            self.kin_cos_init()
+
             f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
 
             reward_list = []
@@ -155,7 +160,6 @@ class client_findball3:
 
                 reward_list.append(tot_reward)
                 # self.Q.epsilon = f(i, 0.1)
-
             # print self.Q.print_Tabel()
             # self.save_QTable(self.Q.q_table)
             # print("save success")
@@ -186,17 +190,28 @@ class client_findball3:
         self.episode = 10
         self.Q = QLearningTable(self.action_space)
 
+        self.kin_joints = JointState()
+        self.kin_joints.name = ["tilt", "lift", "yaw", "pitch"]
+        self.kin_joints.position = [0.0, math.radians(57.0), 0.0, 0.0]
+        self.cos_joints = Float32MultiArray()
+        self.cos_joints.data = [0.0, 0.5, 0.0, 0.0, 0.0, 0.0]
+        self.cos_joints.data[droop] = miro.constants.DROOP_CALIB
+        self.cos_joints.data[wag] = miro.constants.WAG_CALIB
+        self.cos_joints.data[left_eye] = miro.constants.EYE_DEFAULT
+        self.cos_joints.data[right_eye] = miro.constants.EYE_DEFAULT
+        self.cos_joints.data[left_ear] = miro.constants.EAR_CALIB
+        self.cos_joints.data[right_ear] = miro.constants.EAR_CALIB
+
         # robot name
         topic_base = "/" + os.getenv("MIRO_ROBOT_NAME") + "/"
 
         self.velocity = TwistStamped()
 
         self.pub_cmd_vel = rospy.Publisher(topic_base + "control/cmd_vel", TwistStamped, queue_size=0)
-
+        self.pub_kin = rospy.Publisher(topic_base + "control/kinematic_joints", JointState, queue_size=0)
+        self.pub_cos = rospy.Publisher(topic_base + "control/cosmetic_joints", Float32MultiArray, queue_size=0)
 
         # subscribe
-        self.sub_mics = rospy.Subscriber(topic_base + "sensors/body_pose", Pose2D, self.callback_pose)
-        print ("subscribe", topic_base + "sensors/body_pose")
 
         self.sub_package = rospy.Subscriber(topic_base + "sensors/package", miro.msg.sensors_package,self.callback_package)
         print ("subscribe", topic_base + "sensors/package")
@@ -296,25 +311,27 @@ class client_findball3:
 
         return max_circle_norm
 
-    def action_space_sample(self):
-        action = np.random.choice(self.action_space)
-        return self.action_space.index(action)
+    def kin_cos_init(self):
+        time.sleep(0.01)
+        self.pub_kin.publish(self.kin_joints)
+        time.sleep(0.01)
+        self.pub_cos.publish(self.cos_joints)
 
     def get_state(self):
         state = []
-        leftCamera = self.find_ball("#0000FF", 0)
-        rightCamera = self.find_ball("#0000FF", 1)
+        leftCamera = self.find_ball("#DE3163", 0)
+        rightCamera = self.find_ball("#DE3163", 1)
 
         print "left", leftCamera
         print "right", rightCamera
 
         if not leftCamera is None:
-            if leftCamera[0] < 0:
-                if leftCamera[2] < 50:
+            if leftCamera[0] > 0:
+                if leftCamera[2] < 135:
                     state.append(1)
                 else: state.append(2)
             else:
-                if leftCamera[2] < 50:
+                if leftCamera[2] < 135:
                     state.append(3)
                 else:
                     state.append(4)
@@ -322,13 +339,13 @@ class client_findball3:
             state.append(0)
 
         if not rightCamera is None:
-            if rightCamera[0] < 0:
-                if rightCamera[2] < 50:
+            if rightCamera[0] > 0:
+                if rightCamera[2] < 135:
                     state.append(1)
                 else:
                     state.append(2)
             else:
-                if rightCamera[2] < 50:
+                if rightCamera[2] < 135:
                     state.append(3)
                 else:
                     state.append(4)
@@ -357,10 +374,6 @@ class client_findball3:
         elif action == 'TURN_L_90':
             self.action_turn_l90()
 
-        # # turn 135 degree
-        # elif action == 'TURN_L_135':
-        #     self.action_turn_l135()
-
         # turn -45 degree
         elif action == 'TURN_R_45':
             self.action_turn_r45()
@@ -368,10 +381,6 @@ class client_findball3:
         # turn -90 degree
         elif action == 'TURN_R_90':
             self.action_turn_r90()
-
-        # # turn -135 degree
-        # elif action == 'TURN_R_135':
-        #     self.action_turn_r135()
 
         else:
             self.action_turn_180()
@@ -468,21 +477,6 @@ class client_findball3:
                 self.velocity.twist.angular.z = 0.79
                 self.pub_cmd_vel.publish(self.velocity)
 
-    def action_turn_l135(self):
-        start = datetime.datetime.now()
-
-        while (self.sonar > 0.05):
-            end = datetime.datetime.now()
-            if (end - start).seconds > 2:
-                self.velocity.twist.linear.x = 0.0
-                self.velocity.twist.angular.z = 0.0
-                self.pub_cmd_vel.publish(self.velocity)
-                break
-            else:
-                self.velocity.twist.linear.x = 0.0
-                self.velocity.twist.angular.z = 0.79
-                self.pub_cmd_vel.publish(self.velocity)
-
     def action_turn_r45(self):
         start = datetime.datetime.now()
 
@@ -504,21 +498,6 @@ class client_findball3:
         while (self.sonar > 0.05):
             end = datetime.datetime.now()
             if (end - start).seconds > 1:
-                self.velocity.twist.linear.x = 0.0
-                self.velocity.twist.angular.z = 0.0
-                self.pub_cmd_vel.publish(self.velocity)
-                break
-            else:
-                self.velocity.twist.linear.x = 0.0
-                self.velocity.twist.angular.z = -0.79
-                self.pub_cmd_vel.publish(self.velocity)
-
-    def action_turn_r135(self):
-        start = datetime.datetime.now()
-
-        while (self.sonar > 0.05):
-            end = datetime.datetime.now()
-            if (end - start).seconds > 2:
                 self.velocity.twist.linear.x = 0.0
                 self.velocity.twist.angular.z = 0.0
                 self.pub_cmd_vel.publish(self.velocity)
