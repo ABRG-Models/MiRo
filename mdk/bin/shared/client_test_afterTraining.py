@@ -35,11 +35,9 @@ class QLearningTable:
         self.epsilon = e_greedy
         self.actions = action_space
 
-        # self.num_states = np.array([5, 5])
-        # self.num_actions = 7
-        # self.Q_table = np.zeros((self.num_states[0], self.num_states[1], self.num_actions))
-
-        self.q_table = pd.DataFrame(columns=self.actions, dtype=np.float64)
+        self.q_table = self.import_QTable()
+        # pd.DataFrame(columns=self.actions, dtype=np.float64)
+        self.print_Tabel()
 
     def check_state_exist(self, state):
         if state not in self.q_table.index:
@@ -80,6 +78,12 @@ class QLearningTable:
             q_target = reward  # next state is terminal
         self.q_table.loc[state, action] += self.lr * (q_target - q_predict)  # update
 
+    def import_QTable(self):
+        Q_table = pd.read_csv("/home/miro/mdk/bin/shared/qtable.csv")
+        return Q_table
+
+    def save_QTable(self, Q_table):
+        Q_table.to_csv("/home/miro/mdk/bin/shared/qtable.csv")
 
 ################################################################
 
@@ -116,8 +120,6 @@ class client_findball3:
     def loop(self):
         # loop
         while not rospy.core.is_shutdown():
-            self.Q.q_table = self.import_QTable()
-            print self.Q.q_table
             f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
 
             reward_list = []
@@ -541,12 +543,6 @@ class client_findball3:
                 self.velocity.twist.angular.z = 0.79
                 self.pub_cmd_vel.publish(self.velocity)
 
-    def import_QTable(self):
-        Q_table = pd.read_csv("/home/miro/mdk/bin/shared/qtable.csv")
-        return Q_table
-
-    def save_QTable(self,Q_table):
-        Q_table.to_csv("/home/miro/mdk/bin/shared/qtable.csv")
 
 if __name__ == "__main__":
 
