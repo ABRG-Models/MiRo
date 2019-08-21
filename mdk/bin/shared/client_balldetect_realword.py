@@ -7,11 +7,12 @@ import os#
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
+import math
 
 import miro2 as miro
 
-import std_msgs
-from geometry_msgs.msg import Pose2D
+from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import JointState, BatteryState, Imu, Range, CompressedImage, Image
 
@@ -19,6 +20,8 @@ from sensor_msgs.msg import JointState, BatteryState, Imu, Range, CompressedImag
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
+droop, wag, left_eye, right_eye, left_ear, right_ear = range(6)
+tilt, lift, yaw, pitch = range(4)
 ################################################################
 
 def error(msg):
@@ -29,48 +32,70 @@ def error(msg):
 ################################################################
 
 class QLearningTable:
-    def __init__(self, learning_rate=0.2, discount=0.9, e_greedy=0.9):
+    def __init__(self, action_space,learning_rate=0.2, discount=0.9, e_greedy=0.00):
         self.lr = learning_rate
         self.gamma = discount
         self.epsilon = e_greedy
+        self.actions = action_space
 
-        self.num_states = np.array([5, 5])
-        # self.states_low = np.array([-1.5,-1.5,-3.14])
-        # self.states_high = np.array([1.5,1.5,3.14])
-        # self.scale = np.array([0.5, 0.5, 1.57])
-        self.num_actions = 7
-        self.Q_table = np.zeros((self.num_states[0], self.num_states[1], self.num_actions))
+        self.q_table = self.import_QTable()
+        # pd.DataFrame(columns=self.actions, dtype=np.float64)
+        self.print_Tabel()
+
+    def check_state_exist(self, state):
+        if state not in self.q_table.index:
+            # append new state to q table
+            self.q_table = self.q_table.append(
+                pd.Series(
+                    [0]*len(self.actions),
+                    index=self.q_table.columns,
+                    name=state,
+                )
+            )
 
     def print_Tabel(self):
-        print('Q',self.Q_table)
+        print('Q',self.q_table)
         # print('E',self.E_table)
 
     def choose_action(self, state):
-        return np.argmax(self.Q_table[state[0]][state[1]])
-        # return np.argmax((1 - self.beta) * self.Q_table[state[0]][state[1]] + self.beta * self.E_table[state][0][state[1]])
+
+        self.check_state_exist(state)
+
+        # action selection
+        if np.random.rand() < self.epsilon:
+            # choose random action
+            action = np.random.choice(self.actions)
+        else:
+            # choose best action
+            state_action = self.q_table.loc[state, :]
+            # some actions may have the same value, randomly choose on in these actions
+            action = np.random.choice(state_action[state_action == np.max(state_action)].index)
+        return action
 
     def learn(self, state, action, reward, new_state):
-        self.Q_table[state[0]][state[1]][action] += self.lr * (
-                reward + self.gamma * np.max(self.Q_table[new_state[0]][new_state[1]]) -
-                self.Q_table[state[0]][state[1]][action])
+        self.check_state_exist(new_state)
+        q_predict = self.q_table.loc[state, action]
+        if new_state != 'terminal':
+            q_target = reward + self.gamma * self.q_table.loc[new_state, :].max()  # next state is not terminal
+        else:
+            q_target = reward  # next state is terminal
+        self.q_table.loc[state, action] += self.lr * (q_target - q_predict)  # update
 
+    def import_QTable(self):
+        Q_table = pd.read_csv("/home/miro/mdk/bin/shared/qtable2.csv",index_col=0)
+        return Q_table
+
+    def save_QTable(self, Q_table):
+        Q_table.to_csv("/home/miro/mdk/bin/shared/qtable.csv")
 
 ################################################################
 
-class client_realworld_findball:
+class client_findball3:
     def callback_package(self, msg):
-
         self.sonar = msg.sonar.range
-        # print "sonar", self.sonar
-        # if self.sonar < 0.1:
-        #     self.velocity.twist.linear.x = 0.0
-        #     self.velocity.twist.angular.z = 0.0
-        #     self.pub_cmd_vel.publish(self.velocity)
 
     def callback_pose(self, msg):
-
         self.pose = msg
-        # print "received", mag
 
     def cam_left_callback(self, ros_image):
         try:
@@ -94,67 +119,53 @@ class client_realworld_findball:
             print("Conversion of right image failed \n")
             print(e)
 
-
     def loop(self):
-
         # loop
         while not rospy.core.is_shutdown():
+            self.kin_cos_init()
 
-            state = self.get_state()
-            print "state", state
-            time.sleep(0.1)
+            f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
 
-            # f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
-            #
-            # reward_list = []
-            #
-            # for i in range(self.episode):
-            #     print "i", i
-            #     done = False
-            #     state = self.get_state()
-            #     tot_reward = 0
-            #     step = 0
-            #
-            #     while done != True:
-            #         step += 1
-            #
-            #         if (np.random.random() < self.Q.epsilon):
-            #             action = self.action_space_sample()
-            #         else:
-            #             action = self.Q.choose_action(state)
-            #
-            #         print "sonar", self.sonar
-            #         if self.sonar < 0.05:
-            #             action = 1
-            #         # Get next state and reward
-            #         state2, reward, done = self.step(action)
-            #
-            #         if step == 100:
-            #             done = True
-            #
-            #         # Allow for terminal states
-            #         if done:
-            #             self.Q.Q_table[state[0], state[1], action] = reward
-            #         # Adjust Q value for current state
-            #         else:
-            #             self.Q.learn(state, action, reward, state2)
-            #
-            #         state = state2
-            #         tot_reward += reward
-            #         print "steps", step
-            #         print "reward", reward
-            #         print "new state", state
-            #         time.sleep(0.01)
-            #
-            #     reward_list.append(tot_reward)
-            #     self.Q.epsilon = f(i, 0.1)
-            #
+            reward_list = []
+
+            for i in range(self.episode):
+                print "i", i
+                done = False
+                state = self.get_state()
+                tot_reward = 0
+                step = 0
+
+                while not done:
+                    step += 1
+
+                    action = self.Q.choose_action(str(state))
+
+                    # Get next state and reward
+                    state2, reward, done = self.step(action)
+
+                    if step == 100:
+                        done = True
+                        state2 = 'terminal'
+
+                    # Allow for terminal states
+                    # self.Q.learn(str(state), action, reward, str(state2))
+
+                    state = state2
+                    tot_reward += reward
+                    print "steps", step
+                    print "reward", reward
+                    print "new state", state
+                    time.sleep(0.01)
+
+                reward_list.append(tot_reward)
+                # self.Q.epsilon = f(i, 0.1)
             # print self.Q.print_Tabel()
-            # plt.figure(1)
-            # plt.plot(reward_list)
-            # plt.show()
-
-
+            # self.save_QTable(self.Q.q_table)
+            # print("save success")
+            plt.figure(1)
+            plt.plot(reward_list)
+            plt.show()
+            break
 
 
     def __init__(self):
@@ -172,11 +183,23 @@ class client_realworld_findball:
         self.sonar = 0.58
 
         self.velocity = TwistStamped()
-        self.action_space = ['PUSH', 'STEP_BACK','TURN_L_45', 'TURN_L_90', 'TURN_R_45', 'TURN_R_90', 'TURN_180']
+        self.action_space = ['PUSH','STEP_BACK', 'TURN_L_45', 'TURN_L_90', 'TURN_R_45', 'TURN_R_90', 'TURN_180']
         # 'TURN_L_135', 'TURN_R_135','STOP',
         self.goal = np.array([4, 2])
-        self.episode = 500
-        self.Q = QLearningTable()
+        self.episode = 10
+        self.Q = QLearningTable(self.action_space)
+
+        self.kin_joints = JointState()
+        self.kin_joints.name = ["tilt", "lift", "yaw", "pitch"]
+        self.kin_joints.position = [0.0, math.radians(57.0), 0.0, 0.0]
+        self.cos_joints = Float32MultiArray()
+        self.cos_joints.data = [0.0, 0.5, 0.0, 0.0, 0.0, 0.0]
+        self.cos_joints.data[droop] = miro.constants.DROOP_CALIB
+        self.cos_joints.data[wag] = miro.constants.WAG_CALIB
+        self.cos_joints.data[left_eye] = miro.constants.EYE_DEFAULT
+        self.cos_joints.data[right_eye] = miro.constants.EYE_DEFAULT
+        self.cos_joints.data[left_ear] = miro.constants.EAR_CALIB
+        self.cos_joints.data[right_ear] = miro.constants.EAR_CALIB
 
         # robot name
         topic_base = "/" + os.getenv("MIRO_ROBOT_NAME") + "/"
@@ -184,11 +207,10 @@ class client_realworld_findball:
         self.velocity = TwistStamped()
 
         self.pub_cmd_vel = rospy.Publisher(topic_base + "control/cmd_vel", TwistStamped, queue_size=0)
-
+        self.pub_kin = rospy.Publisher(topic_base + "control/kinematic_joints", JointState, queue_size=0)
+        self.pub_cos = rospy.Publisher(topic_base + "control/cosmetic_joints", Float32MultiArray, queue_size=0)
 
         # subscribe
-        # self.sub_mics = rospy.Subscriber(topic_base + "sensors/body_pose", Pose2D, self.callback_pose)
-        # print ("subscribe", topic_base + "sensors/body_pose")
 
         self.sub_package = rospy.Subscriber(topic_base + "sensors/package", miro.msg.sensors_package,self.callback_package)
         print ("subscribe", topic_base + "sensors/package")
@@ -288,13 +310,15 @@ class client_realworld_findball:
 
         return max_circle_norm
 
-    def action_space_sample(self):
-        action = np.random.choice(self.action_space)
-        return self.action_space.index(action)
+    def kin_cos_init(self):
+        time.sleep(0.01)
+        self.pub_kin.publish(self.kin_joints)
+        time.sleep(0.01)
+        self.pub_cos.publish(self.cos_joints)
 
     def get_state(self):
         state = []
-        leftCamera = self.find_ball("#DE3163", 0) # C71585
+        leftCamera = self.find_ball("#DE3163", 0)  # C71585
         rightCamera = self.find_ball("#DE3163", 1)
 
         print "left", leftCamera
@@ -304,7 +328,8 @@ class client_realworld_findball:
             if leftCamera[0] > 0:
                 if leftCamera[2] < 135:
                     state.append(1)
-                else: state.append(2)
+                else:
+                    state.append(2)
             else:
                 if leftCamera[2] < 135:
                     state.append(3)
@@ -329,8 +354,8 @@ class client_realworld_findball:
 
         return state
 
-    def step(self, action_i):
-        action = self.action_space[action_i]
+    def step(self, action):
+        # action = self.action_space[action_i]
         print "action", action
 
         # give the speed to go 0.5m and stop
@@ -349,10 +374,6 @@ class client_realworld_findball:
         elif action == 'TURN_L_90':
             self.action_turn_l90()
 
-        # # turn 135 degree
-        # elif action == 'TURN_L_135':
-        #     self.action_turn_l135()
-
         # turn -45 degree
         elif action == 'TURN_R_45':
             self.action_turn_r45()
@@ -360,10 +381,6 @@ class client_realworld_findball:
         # turn -90 degree
         elif action == 'TURN_R_90':
             self.action_turn_r90()
-
-        # # turn -135 degree
-        # elif action == 'TURN_R_135':
-        #     self.action_turn_r135()
 
         else:
             self.action_turn_180()
@@ -373,6 +390,7 @@ class client_realworld_findball:
         if new_state[0] == self.goal[0] and new_state[1] == self.goal[1]:
             reward = 1
             done = True
+            new_state = 'terminal'
         else:
             reward = -1
             done = False
@@ -459,21 +477,6 @@ class client_realworld_findball:
                 self.velocity.twist.angular.z = 0.79
                 self.pub_cmd_vel.publish(self.velocity)
 
-    def action_turn_l135(self):
-        start = datetime.datetime.now()
-
-        while (self.sonar > 0.05):
-            end = datetime.datetime.now()
-            if (end - start).seconds > 2:
-                self.velocity.twist.linear.x = 0.0
-                self.velocity.twist.angular.z = 0.0
-                self.pub_cmd_vel.publish(self.velocity)
-                break
-            else:
-                self.velocity.twist.linear.x = 0.0
-                self.velocity.twist.angular.z = 0.79
-                self.pub_cmd_vel.publish(self.velocity)
-
     def action_turn_r45(self):
         start = datetime.datetime.now()
 
@@ -504,25 +507,10 @@ class client_realworld_findball:
                 self.velocity.twist.angular.z = -0.79
                 self.pub_cmd_vel.publish(self.velocity)
 
-    def action_turn_r135(self):
-        start = datetime.datetime.now()
-
-        while (self.sonar > 0.05):
-            end = datetime.datetime.now()
-            if (end - start).seconds > 2:
-                self.velocity.twist.linear.x = 0.0
-                self.velocity.twist.angular.z = 0.0
-                self.pub_cmd_vel.publish(self.velocity)
-                break
-            else:
-                self.velocity.twist.linear.x = 0.0
-                self.velocity.twist.angular.z = -0.79
-                self.pub_cmd_vel.publish(self.velocity)
-
     def action_turn_180(self):
         start = datetime.datetime.now()
 
-        while (self.sonar > 0.05):
+        while (True):
             end = datetime.datetime.now()
             if (end - start).seconds > 3:
                 self.velocity.twist.linear.x = 0.0
@@ -537,8 +525,8 @@ class client_realworld_findball:
 
 if __name__ == "__main__":
 
-    rospy.init_node("client_realworld_findball", anonymous=True)
-    main = client_realworld_findball()
+    rospy.init_node("client_findball3", anonymous=True)
+    main = client_findball3()
     main.loop()
 
 
