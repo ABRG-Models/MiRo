@@ -8,9 +8,11 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import math
+
 import miro2 as miro
 
-import std_msgs
+from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import JointState, BatteryState, Imu, Range, CompressedImage, Image
 from std_msgs.msg import UInt16MultiArray, Int16MultiArray
@@ -50,7 +52,8 @@ MIC_SAMPLE_RATE = 20000
 SAMPLE_COUNT = RECORD_TIME * MIC_SAMPLE_RATE
 OUR_FILE_NAME = '/home/miro/mdk/bin/shared/output.wav'
 
-
+droop, wag, left_eye, right_eye, left_ear, right_ear = range(6)
+tilt, lift, yaw, pitch = range(4)
 ################################################################
 
 def error(msg):
@@ -182,7 +185,7 @@ class client_findball_shaping:
     def loop(self):
         # loop
         while not rospy.core.is_shutdown():
-
+            self.kin_cos_init()
             f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
 
             reward_list = []
@@ -262,13 +265,26 @@ class client_findball_shaping:
         self.episode = 500
         self.Q = QLearningTable(self.action_space)
 
+        self.kin_joints = JointState()
+        self.kin_joints.name = ["tilt", "lift", "yaw", "pitch"]
+        self.kin_joints.position = [0.0, math.radians(57.0), 0.0, 0.0]
+        self.cos_joints = Float32MultiArray()
+        self.cos_joints.data = [0.0, 0.5, 0.0, 0.0, 0.0, 0.0]
+        self.cos_joints.data[droop] = miro.constants.DROOP_CALIB
+        self.cos_joints.data[wag] = miro.constants.WAG_CALIB
+        self.cos_joints.data[left_eye] = miro.constants.EYE_DEFAULT
+        self.cos_joints.data[right_eye] = miro.constants.EYE_DEFAULT
+        self.cos_joints.data[left_ear] = miro.constants.EAR_CALIB
+        self.cos_joints.data[right_ear] = miro.constants.EAR_CALIB
+
         # robot name
         topic_base = "/" + os.getenv("MIRO_ROBOT_NAME") + "/"
         self.velocity = TwistStamped()
 
         # publish
         self.pub_cmd_vel = rospy.Publisher(topic_base + "control/cmd_vel", TwistStamped, queue_size=0)
-
+        self.pub_kin = rospy.Publisher(topic_base + "control/kinematic_joints", JointState, queue_size=0)
+        self.pub_cos = rospy.Publisher(topic_base + "control/cosmetic_joints", Float32MultiArray, queue_size=0)
         # subscribe
         self.sub_package = rospy.Subscriber(topic_base + "sensors/package", miro.msg.sensors_package,self.callback_package)
         print ("subscribe", topic_base + "sensors/package")
@@ -282,6 +298,12 @@ class client_findball_shaping:
         self.cam_model = miro.utils.CameraModel()
         self.frame_w = 0
         self.frame_h = 0
+
+    def kin_cos_init(self):
+        time.sleep(0.01)
+        self.pub_kin.publish(self.kin_joints)
+        time.sleep(0.01)
+        self.pub_cos.publish(self.cos_joints)
 
     def find_ball(self, colour_str, cam_id):
         if colour_str[0] != "#" and len(colour_str) != 7:
