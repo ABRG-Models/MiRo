@@ -32,7 +32,7 @@ def error(msg):
 ################################################################
 
 class QLearningTable:
-    def __init__(self, action_space,learning_rate=0.2, discount=0.9, e_greedy=0.00):
+    def __init__(self, action_space,learning_rate=0.2, discount=0.9, e_greedy=0.001):
         self.lr = learning_rate
         self.gamma = discount
         self.epsilon = e_greedy
@@ -122,8 +122,9 @@ class client_findball3:
     def loop(self):
         # loop
         while not rospy.core.is_shutdown():
-            self.kin_cos_init()
-
+            # self.kin_cos_init()
+            time.sleep(1)
+            # print self.get_state()
             f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
 
             reward_list = []
@@ -139,9 +140,14 @@ class client_findball3:
                     step += 1
 
                     action = self.Q.choose_action(str(state))
+                    if self.sonar < 0.05:
+                        action = 1
+                    time.sleep(0.1)
 
                     # Get next state and reward
                     state2, reward, done = self.step(action)
+
+                    time.sleep(0.05)
 
                     if step == 100:
                         done = True
@@ -157,14 +163,14 @@ class client_findball3:
                     print "new state", state
                     time.sleep(0.01)
 
-                reward_list.append(tot_reward)
+                # reward_list.append(tot_reward)
                 # self.Q.epsilon = f(i, 0.1)
             # print self.Q.print_Tabel()
             # self.save_QTable(self.Q.q_table)
             # print("save success")
-            plt.figure(1)
-            plt.plot(reward_list)
-            plt.show()
+            # plt.figure(1)
+            # plt.plot(reward_list)
+            # plt.show()
             break
 
 
@@ -186,12 +192,12 @@ class client_findball3:
         self.action_space = ['PUSH','STEP_BACK', 'TURN_L_45', 'TURN_L_90', 'TURN_R_45', 'TURN_R_90', 'TURN_180']
         # 'TURN_L_135', 'TURN_R_135','STOP',
         self.goal = np.array([4, 2])
-        self.episode = 10
+        self.episode = 1
         self.Q = QLearningTable(self.action_space)
 
         self.kin_joints = JointState()
         self.kin_joints.name = ["tilt", "lift", "yaw", "pitch"]
-        self.kin_joints.position = [0.0, math.radians(57.0), 0.0, 0.0]
+        self.kin_joints.position = [0.0, math.radians(55.0), 0.0, 0.0]
         self.cos_joints = Float32MultiArray()
         self.cos_joints.data = [0.0, 0.5, 0.0, 0.0, 0.0, 0.0]
         self.cos_joints.data[droop] = miro.constants.DROOP_CALIB
@@ -243,7 +249,7 @@ class client_findball3:
 
         # extract boundaries for masking image
         target_hue = hsv_colour[0, 0][0]
-        lower_bound = np.array([target_hue - 20, 70, 70])
+        lower_bound = np.array([target_hue - 20, 90, 90])
         upper_bound = np.array([target_hue + 20, 255, 255])
 
         if np.shape(self.cam_left_image) != () and np.shape(self.cam_right_image) != ():
@@ -274,7 +280,7 @@ class client_findball3:
         seg = cv2.dilate(seg, None, iterations=2)
 
         # get circles
-        circles = cv2.HoughCircles(seg, cv2.HOUGH_GRADIENT, 1, 40, param1=10, param2=20, minRadius=0, maxRadius=0)
+        circles = cv2.HoughCircles(seg, cv2.HOUGH_GRADIENT, 1, 40, param1=10, param2=20, minRadius=0, maxRadius=50)
 
         # Get largest circle
         max_circle = None
@@ -317,21 +323,22 @@ class client_findball3:
         self.pub_cos.publish(self.cos_joints)
 
     def get_state(self):
+        time.sleep(0.05)
         state = []
-        leftCamera = self.find_ball("#DE3163", 0)  # C71585
+        leftCamera = self.find_ball("#DE3163", 0)  # C71585 DE3163
         rightCamera = self.find_ball("#DE3163", 1)
 
         print "left", leftCamera
         print "right", rightCamera
 
         if not leftCamera is None:
-            if leftCamera[0] > 0:
-                if leftCamera[2] < 135:
+            if leftCamera[0] < 0:
+                if leftCamera[2] < 13:
                     state.append(1)
                 else:
                     state.append(2)
             else:
-                if leftCamera[2] < 135:
+                if leftCamera[2] < 13:
                     state.append(3)
                 else:
                     state.append(4)
@@ -339,13 +346,13 @@ class client_findball3:
             state.append(0)
 
         if not rightCamera is None:
-            if rightCamera[0] > 0:
-                if rightCamera[2] < 135:
+            if rightCamera[0] < 0:
+                if rightCamera[2] < 13:
                     state.append(1)
                 else:
                     state.append(2)
             else:
-                if rightCamera[2] < 135:
+                if rightCamera[2] < 13:
                     state.append(3)
                 else:
                     state.append(4)
@@ -355,6 +362,7 @@ class client_findball3:
         return state
 
     def step(self, action):
+        time.sleep(0.05)
         # action = self.action_space[action_i]
         print "action", action
 
