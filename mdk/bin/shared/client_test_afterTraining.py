@@ -32,7 +32,7 @@ def error(msg):
 ################################################################
 
 class QLearningTable:
-    def __init__(self, action_space,learning_rate=0.2, discount=0.9, e_greedy=0):
+    def __init__(self, action_space,learning_rate=0.2, discount=0.9, e_greedy=0.00):
         self.lr = learning_rate
         self.gamma = discount
         self.epsilon = e_greedy
@@ -59,7 +59,7 @@ class QLearningTable:
 
     def choose_action(self, state):
 
-        # self.check_state_exist(state)
+        self.check_state_exist(state)
 
         # action selection
         if np.random.rand() < self.epsilon:
@@ -82,7 +82,7 @@ class QLearningTable:
         self.q_table.loc[state, action] += self.lr * (q_target - q_predict)  # update
 
     def import_QTable(self):
-        Q_table = pd.read_csv("/home/miro/mdk/bin/shared/qtable.csv")
+        Q_table = pd.read_csv("/home/miro/mdk/bin/shared/qtable2.csv",index_col=0)
         return Q_table
 
     def save_QTable(self, Q_table):
@@ -118,7 +118,6 @@ class client_findball3:
         except CvBridgeError as e:
             print("Conversion of right image failed \n")
             print(e)
-
 
     def loop(self):
         # loop
@@ -319,19 +318,19 @@ class client_findball3:
 
     def get_state(self):
         state = []
-        leftCamera = self.find_ball("#DE3163", 0)
-        rightCamera = self.find_ball("#DE3163", 1)
+        leftCamera = self.find_ball("#0000FF", 0)
+        rightCamera = self.find_ball("#0000FF", 1)
 
         print "left", leftCamera
         print "right", rightCamera
 
         if not leftCamera is None:
-            if leftCamera[0] > 0:
-                if leftCamera[2] < 135:
+            if leftCamera[0] < 0:
+                if leftCamera[2] < 50:
                     state.append(1)
                 else: state.append(2)
             else:
-                if leftCamera[2] < 135:
+                if leftCamera[2] < 50:
                     state.append(3)
                 else:
                     state.append(4)
@@ -339,13 +338,13 @@ class client_findball3:
             state.append(0)
 
         if not rightCamera is None:
-            if rightCamera[0] > 0:
-                if rightCamera[2] < 135:
+            if rightCamera[0] < 0:
+                if rightCamera[2] < 50:
                     state.append(1)
                 else:
                     state.append(2)
             else:
-                if rightCamera[2] < 135:
+                if rightCamera[2] < 50:
                     state.append(3)
                 else:
                     state.append(4)
