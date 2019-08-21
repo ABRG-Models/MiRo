@@ -248,7 +248,7 @@ class DemoSystem(object):
 		self.sub = []
 
 		# select client type
-		if self.client_type == "main":
+		if self.client_type tick== "main":
 
 			# publish priority
 			self.pub_pri = [
