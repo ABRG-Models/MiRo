@@ -139,7 +139,8 @@ class client_findball3:
                     step += 1
 
                     action = self.Q.choose_action(str(state))
-
+                    if self.sonar < 0.05:
+                        action = 'STEP_BACK'
                     # Get next state and reward
                     state2, reward, done = self.step(action)
 
