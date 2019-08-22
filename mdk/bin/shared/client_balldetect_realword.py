@@ -122,8 +122,8 @@ class client_findball3:
     def loop(self):
         # loop
         while not rospy.core.is_shutdown():
+            # time.sleep(0.1)
             # self.kin_cos_init()
-            time.sleep(1)
             # print self.get_state()
             f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
 
@@ -215,6 +215,8 @@ class client_findball3:
         self.pub_cmd_vel = rospy.Publisher(topic_base + "control/cmd_vel", TwistStamped, queue_size=0)
         self.pub_kin = rospy.Publisher(topic_base + "control/kinematic_joints", JointState, queue_size=0)
         self.pub_cos = rospy.Publisher(topic_base + "control/cosmetic_joints", Float32MultiArray, queue_size=0)
+        print ("Publisher", topic_base + "control/kinematic_joints")
+        print ("Publisher", topic_base + "control/cosmetic_joints")
 
         # subscribe
 
@@ -317,10 +319,11 @@ class client_findball3:
         return max_circle_norm
 
     def kin_cos_init(self):
-        time.sleep(0.01)
+        time.sleep(0.1)
         self.pub_kin.publish(self.kin_joints)
-        time.sleep(0.01)
+        time.sleep(0.1)
         self.pub_cos.publish(self.cos_joints)
+        print "initial kin"
 
     def get_state(self):
         time.sleep(0.05)
