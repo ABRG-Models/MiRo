@@ -122,6 +122,16 @@ class client_findball3:
     def loop(self):
         # loop
         while not rospy.core.is_shutdown():
+            # left = self.find_ball("#DE3163", 0)
+            # if left is not None:
+            #     print "show",left[0]
+            #     output = left[1]
+            #     cv2.imshow("left", output)
+            #     cv2.waitKey()
+            #     cv2.destroyAllWindows()
+            #     print("show image")
+            #     time.sleep(1)
+
             # time.sleep(0.1)
             # self.kin_cos_init()
             # print self.get_state()
@@ -163,8 +173,8 @@ class client_findball3:
                     print "new state", state
                     time.sleep(0.01)
 
-                # reward_list.append(tot_reward)
-                # self.Q.epsilon = f(i, 0.1)
+            #     reward_list.append(tot_reward)
+            #     self.Q.epsilon = f(i, 0.1)
             # print self.Q.print_Tabel()
             # self.save_QTable(self.Q.q_table)
             # print("save success")
@@ -251,8 +261,8 @@ class client_findball3:
 
         # extract boundaries for masking image
         target_hue = hsv_colour[0, 0][0]
-        lower_bound = np.array([target_hue - 20, 90, 90])
-        upper_bound = np.array([target_hue + 20, 255, 255])
+        lower_bound = np.array([0, 90, 70])
+        upper_bound = np.array([10, 255, 255])
 
         if np.shape(self.cam_left_image) != () and np.shape(self.cam_right_image) != ():
             # convert camera image to HSV colour space
@@ -264,6 +274,10 @@ class client_findball3:
                 output = self.cam_right_image.copy()
         else:
             return None
+
+        # cv2.imshow("hsv", output)
+        # cv2.waitKey()
+        # cv2.destroyAllWindows()
 
         im_h = np.size(hsv_image, 0)
         im_w = np.size(hsv_image, 1)
@@ -282,7 +296,7 @@ class client_findball3:
         seg = cv2.dilate(seg, None, iterations=2)
 
         # get circles
-        circles = cv2.HoughCircles(seg, cv2.HOUGH_GRADIENT, 1, 40, param1=10, param2=20, minRadius=0, maxRadius=50)
+        circles = cv2.HoughCircles(seg, cv2.HOUGH_GRADIENT, 1, 40, param1=10, param2=20, minRadius=0, maxRadius=100)
 
         # Get largest circle
         max_circle = None
@@ -300,10 +314,10 @@ class client_findball3:
                     max_circle_norm[0] = int(round(((max_circle[0] - im_centre_w) / im_centre_w) * 100.0))
                     max_circle_norm[1] = int(round(-((max_circle[1] - im_centre_h) / im_centre_h) * 100.0))
                     max_circle_norm[2] = int(round((max_circle[2] / im_centre_w) * 100.0))
-
+                    print("rrrrrrrrrr",target_hue)
                 # Debug Only
                 cv2.circle(output, (max_circle[0], max_circle[1]), max_circle[2], (0, 255, 0), 2)
-                cv2.circle(output, (max_circle[0], max_circle[1]), 1, (0, 255, 0), 2)
+                # cv2.circle(output, (max_circle[0], max_circle[1]), 1, (0, 255, 0), 2)
                 location_str = "x: " + str(max_circle_norm[0]) + "," + "y: " + str(
                     max_circle_norm[1]) + "," + "r: " + str(max_circle[2])
                 text_y_offset = 18
@@ -316,6 +330,9 @@ class client_findball3:
         else:
             return None
 
+        # cv2.imshow("hsv", output)
+        # cv2.waitKey()
+        # cv2.destroyAllWindows()
         return max_circle_norm
 
     def kin_cos_init(self):
