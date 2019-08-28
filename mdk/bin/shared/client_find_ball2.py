@@ -177,7 +177,7 @@ class client_findball2:
         self.action_space = ['PUSH','STEP_BACK', 'TURN_L_45', 'TURN_L_90', 'TURN_R_45', 'TURN_R_90', 'TURN_180']
         # 'TURN_L_135', 'TURN_R_135','STOP',
         self.goal = np.array([4, 2])
-        self.episode = 500
+        self.episode = 800
         self.Q = QLearningTable(self.action_space)
 
         # robot name
@@ -402,7 +402,7 @@ class client_findball2:
     def action_stepback(self):
         start = datetime.datetime.now()
 
-        while (self.sonar < 0.05):
+        while (True):
             end = datetime.datetime.now()
             if (end - start).seconds > 1:
                 self.velocity.twist.linear.x = 0.0
@@ -535,11 +535,11 @@ class client_findball2:
                 self.pub_cmd_vel.publish(self.velocity)
 
     def import_QTable(self):
-        Q_table = pd.read_csv("/home/miro/mdk/bin/shared/qtable3.csv")
+        Q_table = pd.read_csv("/home/miro/mdk/bin/shared/qtable4.csv")
         return Q_table
 
     def save_QTable(self,Q_table):
-        Q_table.to_csv("/home/miro/mdk/bin/shared/qtable3.csv")
+        Q_table.to_csv("/home/miro/mdk/bin/shared/qtable4.csv")
 
 if __name__ == "__main__":
 
