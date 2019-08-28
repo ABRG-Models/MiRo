@@ -151,7 +151,7 @@ class client_findball3:
 
                     action = self.Q.choose_action(str(state))
                     if self.sonar < 0.05:
-                        action = 1
+                        action = 'STEP_BACK'
                     time.sleep(0.1)
 
                     # Get next state and reward
