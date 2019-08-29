@@ -82,7 +82,7 @@ class QLearningTable:
         self.q_table.loc[state, action] += self.lr * (q_target - q_predict)  # update
 
     def import_QTable(self):
-        Q_table = pd.read_csv("/home/miro/mdk/bin/shared/qtable3.csv",index_col=0)
+        Q_table = pd.read_csv("/home/miro/mdk/bin/shared/qtable4.csv",index_col=0)
         return Q_table
 
     def save_QTable(self, Q_table):
