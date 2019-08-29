@@ -402,9 +402,9 @@ class client_findball2:
     def action_stepback(self):
         start = datetime.datetime.now()
 
-        while (True):
+        while (self.sonar < 0.1):
             end = datetime.datetime.now()
-            if (end - start).seconds > 1:
+            if (end - start).seconds > 0:
                 self.velocity.twist.linear.x = 0.0
                 self.velocity.twist.angular.z = 0.0
                 self.pub_cmd_vel.publish(self.velocity)
