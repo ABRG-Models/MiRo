@@ -506,7 +506,7 @@ class client_findball_shaping:
     def action_stepback(self):
         start = datetime.datetime.now()
 
-        while (self.sonar < 0.05):
+        while (self.sonar < 0.1):
             end = datetime.datetime.now()
             if (end - start).seconds > 1:
                 self.velocity.twist.linear.x = 0.0
