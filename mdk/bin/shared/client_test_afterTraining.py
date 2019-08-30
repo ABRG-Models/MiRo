@@ -124,8 +124,6 @@ class client_findball3:
         while not rospy.core.is_shutdown():
             self.kin_cos_init()
 
-            f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
-
             reward_list = []
 
             for i in range(self.episode):
@@ -148,9 +146,6 @@ class client_findball3:
                         done = True
                         state2 = 'terminal'
 
-                    # Allow for terminal states
-                    # self.Q.learn(str(state), action, reward, str(state2))
-
                     state = state2
                     tot_reward += reward
                     print "steps", step
@@ -159,10 +154,7 @@ class client_findball3:
                     time.sleep(0.01)
 
                 reward_list.append(tot_reward)
-                # self.Q.epsilon = f(i, 0.1)
-            # print self.Q.print_Tabel()
-            # self.save_QTable(self.Q.q_table)
-            # print("save success")
+
             plt.figure(1)
             plt.plot(reward_list)
             plt.show()
