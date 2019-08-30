@@ -12,13 +12,42 @@ import math
 
 import miro2 as miro
 
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32MultiArray, UInt16MultiArray, Int16MultiArray
 from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import JointState, BatteryState, Imu, Range, CompressedImage, Image
 
 #Open CV
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
+import wave, struct
+import Speech2Text as Speech2Text
+# amount to keep the buffer stuffed - larger numbers mean
+# less prone to dropout, but higher latency when we stop
+# streaming. with a read-out rate of 8k, 4000 samples will
+# buffer for half of a second, for instance.
+BUFFER_STUFF_SAMPLES = 4000
+
+# messages larger than this will be dropped by the receiver,
+# however, so - whilst we can stuff the buffer more than this -
+# we can only send this many samples in any single message.
+MAX_STREAM_MSG_SIZE = (4096 - 48)
+
+# using a margin avoids sending many small messages - instead
+# we will send a smaller number of larger messages, at the cost
+# of being less precise in respecting our buffer stuffing target.
+BUFFER_MARGIN = 1000
+BUFFER_MAX = BUFFER_STUFF_SAMPLES + BUFFER_MARGIN
+BUFFER_MIN = BUFFER_STUFF_SAMPLES - BUFFER_MARGIN
+
+# how long to record before playing back in seconds?
+RECORD_TIME = 2
+
+# microphone sample rate (also available at miro2.constants)
+MIC_SAMPLE_RATE = 20000
+
+# sample count
+SAMPLE_COUNT = RECORD_TIME * MIC_SAMPLE_RATE
+OUR_FILE_NAME = '/home/miro/mdk/bin/shared/output.wav'
 
 droop, wag, left_eye, right_eye, left_ear, right_ear = range(6)
 tilt, lift, yaw, pitch = range(4)
@@ -94,8 +123,26 @@ class client_findball3:
     def callback_package(self, msg):
         self.sonar = msg.sonar.range
 
-    def callback_pose(self, msg):
-        self.pose = msg
+    def callback_mics(self, msg):
+
+        # if recording
+        if not self.micbuf is None:
+
+            # append mic data to store
+            data = np.array(msg.data, 'int16')
+            x = np.reshape(data, (-1, 500))
+            self.micbuf = np.concatenate((self.micbuf, x.T))
+
+            # report
+            sys.stdout.write(".")
+            sys.stdout.flush()
+
+            # finished recording?
+            if self.micbuf.shape[0] >= SAMPLE_COUNT:
+                # end recording
+                self.outbuf = self.micbuf
+                self.micbuf = None
+                print " OK!"
 
     def cam_left_callback(self, ros_image):
         try:
@@ -128,51 +175,52 @@ class client_findball3:
             #
             # print("show image")
             # time.sleep(1)
-
-
             # print "show",right
-
-            # time.sleep(0.1)
-            # self.kin_cos_init()
-            # print self.get_state()
             f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
 
+            time.sleep(0.1)
+            self.kin_cos_init()
+            if not self.outbuf is None:
+                time.sleep(0.02)
+                self.record_audio()
+                self.analyse_speech()
+
             reward_list = []
+            if self.command:
+                for i in range(self.episode):
+                    print "i", i
+                    done = False
+                    state = self.get_state()
+                    tot_reward = 0
+                    step = 0
 
-            for i in range(self.episode):
-                print "i", i
-                done = False
-                state = self.get_state()
-                tot_reward = 0
-                step = 0
+                    while not done:
+                        step += 1
 
-                while not done:
-                    step += 1
+                        action = self.Q.choose_action(str(state))
+                        if self.sonar < 0.05:
+                            action = 'STEP_BACK'
+                        time.sleep(0.1)
 
-                    action = self.Q.choose_action(str(state))
-                    if self.sonar < 0.05:
-                        action = 'STEP_BACK'
-                    time.sleep(0.1)
+                        # Get next state and reward
+                        state2, reward, done = self.step(action)
 
-                    # Get next state and reward
-                    state2, reward, done = self.step(action)
+                        time.sleep(0.05)
 
-                    time.sleep(0.05)
+                        if step == 100:
+                            done = True
+                            state2 = 'terminal'
 
-                    if step == 100:
-                        done = True
-                        state2 = 'terminal'
+                        # Allow for terminal states
+                        # self.Q.learn(str(state), action, reward, str(state2))
 
-                    # Allow for terminal states
-                    # self.Q.learn(str(state), action, reward, str(state2))
-
-                    state = state2
-                    tot_reward += reward
-                    print "steps", step
-                    print "reward", reward
-                    print "new state", state
-                    time.sleep(0.01)
-
+                        state = state2
+                        tot_reward += reward
+                        print "steps", step
+                        print "reward", reward
+                        print "new state", state
+                        time.sleep(0.01)
+                self.command = False
                 # reward_list.append(tot_reward)
                 # self.Q.epsilon = f(i, 0.1)
             # print self.Q.print_Tabel()
@@ -186,8 +234,9 @@ class client_findball3:
     def __init__(self):
 
         # config
-        self.pose = []
-
+        self.command = False
+        self.micbuf = np.zeros((0, 4), 'uint16')
+        self.outbuf = None
         # Arrays to hold image topics
         self.cam_left_image = None
         self.cam_right_image = None
@@ -235,7 +284,8 @@ class client_findball3:
         # Subscribe to Camera topics
         self.cam_left_sub = rospy.Subscriber(topic_base + "sensors/caml/compressed", CompressedImage,self.cam_left_callback)
         self.cam_right_sub = rospy.Subscriber(topic_base + "sensors/camr/compressed", CompressedImage,self.cam_right_callback)
-
+        self.sub_mics = rospy.Subscriber(topic_base + "/sensors/mics", Int16MultiArray, self.callback_mics, queue_size=5, tcp_nodelay=True)
+        print ("subscribe", topic_base + "/sensors/mics")
 
         self.cam_model = miro.utils.CameraModel()
         self.frame_w = 0
@@ -647,6 +697,31 @@ class client_findball3:
                 self.velocity.twist.linear.x = 0.0
                 self.velocity.twist.angular.z = 0.79
                 self.pub_cmd_vel.publish(self.velocity)
+
+    def record_audio(self):
+        # write output file
+        file = wave.open(OUR_FILE_NAME, 'wb')
+        file.setsampwidth(2)
+        file.setframerate(MIC_SAMPLE_RATE)
+        print "writing two channels to file (LEFT and RIGHT)..."
+        file.setnchannels(2)
+        x = np.reshape(self.outbuf[:, [0, 1]], (-1))
+        for s in x:
+            file.writeframes(struct.pack('<h', s))
+        # close file
+        file.close()
+        print "wrote output file at", OUR_FILE_NAME
+
+    def analyse_speech(self):
+        # recognize the speech
+        S2T = Speech2Text.SpeechToText(-1)  # use -1 for the microphone index on Miro as we have no direct stream access that Google would recognise for Miro's microphones
+        print("Sentiment from audio files")
+        print("**************************")
+        print("Sentiment for client_audio.wav): ")
+        text = S2T.getTextfromFile(OUR_FILE_NAME)
+        if (text is not None):
+            self.command = 'ball' in text
+            print self.command
 
 
 if __name__ == "__main__":
