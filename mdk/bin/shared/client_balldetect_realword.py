@@ -111,7 +111,7 @@ class QLearningTable:
         self.q_table.loc[state, action] += self.lr * (q_target - q_predict)  # update
 
     def import_QTable(self):
-        Q_table = pd.read_csv("/home/miro/mdk/bin/shared/qtable3.csv",index_col=0)
+        Q_table = pd.read_csv("/home/miro/mdk/bin/shared/qtable4.csv",index_col=0)
         return Q_table
 
     def save_QTable(self, Q_table):
@@ -141,7 +141,7 @@ class client_findball3:
             if self.micbuf.shape[0] >= SAMPLE_COUNT:
                 # end recording
                 self.outbuf = self.micbuf
-                self.micbuf = None
+                self.micbuf = np.zeros((0, 4), 'uint16')
                 print " OK!"
 
     def cam_left_callback(self, ros_image):
@@ -168,6 +168,8 @@ class client_findball3:
 
     def loop(self):
         # loop
+        time.sleep(0.1)
+        self.kin_cos_init()
         while not rospy.core.is_shutdown():
             # left = self.find_ball("#DE3163", 0)
             # # right = self.find_ball("#DE3163", 1)
@@ -178,10 +180,10 @@ class client_findball3:
             # print "show",right
             f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
 
-            time.sleep(0.1)
-            self.kin_cos_init()
+            # time.sleep(0.1)
+            # self.kin_cos_init()
             if not self.outbuf is None:
-                time.sleep(0.02)
+                print('start recording')
                 self.record_audio()
                 self.analyse_speech()
 
@@ -219,8 +221,10 @@ class client_findball3:
                         print "steps", step
                         print "reward", reward
                         print "new state", state
-                        time.sleep(0.01)
+
                 self.command = False
+                print 'stop!!!'
+                break
                 # reward_list.append(tot_reward)
                 # self.Q.epsilon = f(i, 0.1)
             # print self.Q.print_Tabel()
@@ -229,7 +233,7 @@ class client_findball3:
             # plt.figure(1)
             # plt.plot(reward_list)
             # plt.show()
-            break
+            # break
 
     def __init__(self):
 
@@ -613,7 +617,7 @@ class client_findball3:
 
         while (True):
             end = datetime.datetime.now()
-            if (end - start).seconds > 0:
+            if (end - start).seconds > 3:
                 self.velocity.twist.linear.x = 0.0
                 self.velocity.twist.angular.z = 0.0
                 self.pub_cmd_vel.publish(self.velocity)
@@ -703,7 +707,7 @@ class client_findball3:
         file = wave.open(OUR_FILE_NAME, 'wb')
         file.setsampwidth(2)
         file.setframerate(MIC_SAMPLE_RATE)
-        print "writing two channels to file (LEFT and RIGHT)..."
+        # print "writing two channels to file (LEFT and RIGHT)..."
         file.setnchannels(2)
         x = np.reshape(self.outbuf[:, [0, 1]], (-1))
         for s in x:
@@ -720,6 +724,7 @@ class client_findball3:
         print("Sentiment for client_audio.wav): ")
         text = S2T.getTextfromFile(OUR_FILE_NAME)
         if (text is not None):
+            print text
             self.command = 'ball' in text
             print self.command
 
