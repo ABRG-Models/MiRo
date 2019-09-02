@@ -3,7 +3,7 @@ import boto3
 import io
 import os
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 import matplotlib.pyplot as plt
 
 # face detection

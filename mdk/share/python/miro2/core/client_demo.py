@@ -57,6 +57,7 @@ from node_detect_ball import *
 from node_detect_face import *
 from node_detect_audio import *
 from node_spatial import *
+from node_face_recognition import *
 
 
 
@@ -140,7 +141,9 @@ class DemoState:
 
 		# detected objects
 		self.detect_ball = [None, None]
-		self.detect_face = [None, None]
+		# detect_face [faces_coordinate, image]
+		self.detect_face = [[], []]
+		self.primary_user = False
 
 		# internal
 		self.reconfigure_cameras = False
@@ -183,11 +186,20 @@ class DemoNodes:
 			self.decode = NodeDecode(sys)
 			self.detect_motion = NodeDetectMotion(sys)
 			self.detect_face = NodeDetectFace(sys)
+			self.face_recognition = NodeFaceRecognition(sys)
 			self.detect_ball = NodeDetectBall(sys)
 
 		# instantiate
 		if self.client_type == "mics":
 			self.detect_audio = NodeDetectAudio(sys)
+
+
+		# # instantiate
+		# if self.client_type == "recognition":
+		# 	self.decode = NodeDecode(sys)
+		# 	self.detect_face = NodeDetectFace(sys)
+
+
 
 	def tick(self):
 
@@ -248,7 +260,7 @@ class DemoSystem(object):
 		self.sub = []
 
 		# select client type
-		if self.client_type tick== "main":
+		if self.client_type == "main":
 
 			# publish priority
 			self.pub_pri = [
@@ -448,7 +460,7 @@ class DemoSystem(object):
 
 		# publish motor output
 		if self.use_external_kc:
-			for push in self.output.pushes:
+
 				msg = self.pub_push.msg
 				msg.pushpos = geometry_msgs.msg.Vector3(push.pos[0], push.pos[1], push.pos[2])
 				msg.pushvec = geometry_msgs.msg.Vector3(push.vec[0], push.vec[1], push.vec[2])
