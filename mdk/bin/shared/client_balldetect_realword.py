@@ -61,7 +61,7 @@ def error(msg):
 ################################################################
 
 class QLearningTable:
-    def __init__(self, action_space,learning_rate=0.2, discount=0.9, e_greedy=0.00):
+    def __init__(self, action_space,learning_rate=0.2, discount=0.9, e_greedy=0.2):
         self.lr = learning_rate
         self.gamma = discount
         self.epsilon = e_greedy
@@ -171,17 +171,17 @@ class client_findball3:
         time.sleep(0.1)
         self.kin_cos_init()
         while not rospy.core.is_shutdown():
-            # left = self.find_ball("#DE3163", 0)
+            # left = self.find_ball_l("#DE3163", 0)
             # # right = self.find_ball("#DE3163", 1)
             # print "show",left
+            # time.sleep(1)
             #
             # print("show image")
             # time.sleep(1)
             # print "show",right
-            f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
+            # f = lambda x, min_x: max(min_x, min(1.0, 1.0 - np.log10((x + 1) / 25.0)))
+            #
 
-            # time.sleep(0.1)
-            # self.kin_cos_init()
             if not self.outbuf is None:
                 print('start recording')
                 self.record_audio()
@@ -424,10 +424,6 @@ class client_findball3:
         else:
             return None
 
-        # cv2.imshow("hsv", output)
-        # cv2.waitKey()
-        # cv2.destroyAllWindows()
-
         im_h = np.size(hsv_image, 0)
         im_w = np.size(hsv_image, 1)
         im_centre_h = im_h / 2.0
@@ -449,7 +445,7 @@ class client_findball3:
         # cv2.destroyAllWindows()
 
         # get circles
-        circles = cv2.HoughCircles(seg, cv2.HOUGH_GRADIENT, 1, 40, param1=10, param2=20, minRadius=0, maxRadius=100)
+        circles = cv2.HoughCircles(seg, cv2.HOUGH_GRADIENT, 1, 40, param1=10, param2=20, minRadius=0, maxRadius=120)
 
         # Get largest circle
         max_circle = None
@@ -498,19 +494,19 @@ class client_findball3:
         time.sleep(0.05)
         state = []
         leftCamera = self.find_ball_l("#DE3163", 0)  # C71585 DE3163
-        rightCamera = self.find_ball_r("#DE3163", 1)
+        rightCamera = self.find_ball_l("#DE3163", 1)
 
         print "left", leftCamera
         print "right", rightCamera
 
         if not leftCamera is None:
             if leftCamera[0] < 0:
-                if leftCamera[2] < 20:
+                if leftCamera[2] < 30:
                     state.append(1)
                 else:
                     state.append(2)
             else:
-                if leftCamera[2] < 20:
+                if leftCamera[2] < 30:
                     state.append(3)
                 else:
                     state.append(4)
@@ -519,12 +515,12 @@ class client_findball3:
 
         if not rightCamera is None:
             if rightCamera[0] < 0:
-                if rightCamera[2] < 50:
+                if rightCamera[2] < 30:
                     state.append(1)
                 else:
                     state.append(2)
             else:
-                if rightCamera[2] < 50:
+                if rightCamera[2] < 30:
                     state.append(3)
                 else:
                     state.append(4)
