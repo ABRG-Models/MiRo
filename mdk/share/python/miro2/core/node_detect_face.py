@@ -77,10 +77,15 @@ class NodeDetectFace(node.Node):
 
 		# get image (grayscale)
 		img = self.state.frame_gry[stream_index]
+<<<<<<< HEAD
 		# img_roi = self.state.frame_raw[stream_index]
 		# #-----------------------------
 		# cv2.imshow('face', img_roi)
 		# cv2.waitKey(1)
+=======
+		img_raw = self.state.frame_raw[stream_index] =
+
+>>>>>>> 2c543a608d85b06d527d5aeb4916d332e50aad21
 
 		# load test image
 		if self.pars.flags.DEV_DETECT_FACE and stream_index == 0 and (self.ticks[stream_index] & 30) < 1:
@@ -90,7 +95,11 @@ class NodeDetectFace(node.Node):
 
 		# search image with each classifier
 		faces = []
+<<<<<<< HEAD
 		# roi_color = []
+=======
+		roi_color = None
+>>>>>>> 2c543a608d85b06d527d5aeb4916d332e50aad21
 		for cascade in self.cascades:
 			f = cascade.detectMultiScale3(img, 1.05, 3, 0, (20, 20), outputRejectLevels=True)
 			rects = f[0]
@@ -110,12 +119,17 @@ class NodeDetectFace(node.Node):
 					# roi_color.append(roi)
 
 
+					for face in faces:
+						x, y, w, h, conf = face
+						roi_color = img_raw[x:x+w, y:y+h]
+
+
 		# merge duplicates
 		# let's not do this for now, I'm not sure why it's needed yet
 		#faces = self.merge_duplicates(faces)
 
 		# store
-		self.state.detect_face[stream_index] = faces
+		self.state.detect_face[stream_index] = [faces, roi_color]
 
 		# tick
 		self.ticks[stream_index] += 1

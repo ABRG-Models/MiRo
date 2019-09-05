@@ -38,7 +38,7 @@ import time
 import miro2 as miro
 
 
-
+# node template
 class Node(object):
 
 	def __init__(self, sys, node_name):

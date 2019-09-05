@@ -452,6 +452,7 @@ class Flags( object ):
 		self.DEV_DEBUG_ACTION_PARAMS	= 1
 		self.DEV_DEBUG_ORIENT_START		= 0
 		self.DEV_SEND_DEBUG_TOPICS		= 0
+		self.DEV_PRIMARY_USER           = 0
 
 		# developer flags accessible from MIROapp (for now)
 		self.DEV_DEBUG_SONAR			= 0
