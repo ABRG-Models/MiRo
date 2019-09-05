@@ -80,7 +80,7 @@ class detect_primary_user:
                     face_user = value[1]
                         # x_face = (x1 + x2) / 2.0
                         # y_face = (y1 + y2) / 2.0
-                    print('=====FACE MATCH=====')
+                    # print('=====FACE MATCH=====')
                         # plt.imshow(image)
                         # plt.text(x_ff, y_ff, 'PRIMARY USER')
                         # plt.axis('off')

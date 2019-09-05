@@ -248,7 +248,7 @@ class DemoSystem(object):
 		self.sub = []
 
 		# select client type
-		if self.client_type tick== "main":
+		if self.client_type == "main":
 
 			# publish priority
 			self.pub_pri = [
@@ -303,12 +303,12 @@ class DemoSystem(object):
 
 			# publish detection summary (debug)
 			self.pub_sum = self.publish('core/sum' + self.camera_sub, sensor_msgs.msg.Image)
-
-			# publish ball detector state (debug)
+                                                                                 
+			# publish ball detector state (debug)                    
 			self.pub_bal = self.publish('core/bal' + self.camera_sub, sensor_msgs.msg.Image)
-
-		# select client type
-		if self.client_type == "mics":
+                                                                                 
+		# select client type                                             
+		if self.client_type == "mics":                                   
 
 			# publish
 			self.pub_mics = self.publish('core/audio_event', std_msgs.msg.Float32MultiArray)
@@ -552,6 +552,7 @@ class DemoSystem(object):
 		self.callback_mov(1, msg)
 
 	def callback_cam(self, msg):
+		#print('callback camera')
 
 		stream_index = self.stream_index
 
@@ -561,15 +562,19 @@ class DemoSystem(object):
 		if self.active_counter == 0:
 			return
 
-		self.active_counter -= 1
+		#self.active_counter -= 1
+
 		if self.active_counter == 0:
 			print "going inactive..."
 			return
 
+
 		if not self.timing0 is None:
 			self.timing[1].append(time.time() - self.timing0)
 
+
 		# tick camera
+		# get img and store
 		if self.nodes.decode.tick_camera(stream_index, msg):
 
 			# tick_camera returns true to indicate the frame
@@ -587,6 +592,7 @@ class DemoSystem(object):
 		# tick
 		self.nodes.detect_motion.tick_camera(stream_index)
 		self.nodes.detect_face.tick_camera(stream_index)
+
 		self.nodes.detect_ball.tick_camera(stream_index)
 
 		# publish result

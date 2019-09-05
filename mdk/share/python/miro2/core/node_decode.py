@@ -77,6 +77,7 @@ class NodeDecode(node.Node):
 			sc = float(des_image_height) / img.shape[0]
 			img = cv2.resize(img, dsize=(0, 0), fx=sc, fy=sc)
 
+
 		# store raw
 		self.state.frame_raw[stream_index] = img
 

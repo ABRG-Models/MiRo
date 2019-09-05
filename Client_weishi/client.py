@@ -77,20 +77,23 @@ class controller:
             # Move head up
             # print('hf > epsilon. move head up')
             # a = self.kin_joints.position[lift]
-            self.kin_joints.position[lift] = self.kin_joints.position[lift] + hf*miro.constants.LIFT_RAD_MIN/self.image_height
+            self.kin_joints.position[lift] = self.kin_joints.position[lift] + 1.5*hf*miro.constants.LIFT_RAD_MIN/self.image_height
             # print('after moving, degree: ', (self.kin_joints.position[lift]-a)/0.0174532)
+            print(self.kin_joints.position[lift])
+            # if self.kin_joints.position[lift] < miro.constants.LIFT_RAD_MIN:
+            #     self.kin_joints.position[pitch] = self.kin_joints.position[pitch] - 2*hf*miro.constants.PITCH_RAD_MIN/self.image_height
 
         elif hf > epsilon and self.kin_joints.position[lift] < miro.constants.LIFT_RAD_MAX:
             # Move head down
-            print('hf < epsilon. move head down')
-            a = self.kin_joints.position[lift]
-            self.kin_joints.position[lift] = self.kin_joints.position[lift] + hf*miro.constants.LIFT_RAD_MAX/self.image_height
-            print('after moving, degree: ', self.kin_joints.position[lift]-a)
+            # print('hf < epsilon. move head down')
+            # a = self.kin_joints.position[lift]
+            self.kin_joints.position[lift] = self.kin_joints.position[lift] + 1.5*hf*miro.constants.LIFT_RAD_MAX/self.image_height
+            # print('after moving, degree: ', self.kin_joints.position[lift]-a)
 
         self.pub_kin.publish(self.kin_joints)
 
-        end_track = time.time()
-        print('******************time of tracking: ', end_track - st_track)
+        # end_track = time.time()
+        # print('******************time of tracking: ', end_track - st_track)
 
         time.sleep(0.3)
 
@@ -111,11 +114,11 @@ class controller:
     def do_recognition(self):
 
         # PRIMARY USER RECOGNITION, GET X,Y OF THE PRIMARY USER
-        st = time.time()
+        # st = time.time()
         # self.faces is the dictionary of faces include roi & coordinate of face center
         self.primary_detected, self.face_user = self.det_pri_user.face_recognition(self.faces)
-        et = time.time()
-        print('******************time of recognition: ', et - st)
+        # et = time.time()
+        # print('******************time of recognition: ', et - st)
 
         # x = self.face_user[0]
         # y = self.face_user[1]
@@ -141,8 +144,6 @@ class controller:
         d = 0.0
         area_face = wf * hf
         area_image = 640 * 360
-        # print ('&&&&&  face width  &&&&&    ', wf)
-        # print ('&&&&&  face height &&&&&    ', hf)
         d = (area_face * 1.0) / area_image
 
         return d
@@ -159,53 +160,44 @@ class controller:
         self.pub_cmd_vel.publish(self.velocity)
 
     def miro_approach(self):
+        print(self.i, 'th approach')
+        self.i += 1
         tilt, lift, yaw, pitch = range(4)
-        if self.kin_joints.position[yaw] < -(20*0.0174532):
+        if self.kin_joints.position[yaw] < -(5*0.0174532):
             # move right
-            print('@@@@@@', self.kin_joints.position[yaw]/0.0174532)
-            print('@@@@@@move right')
-            self.run_sec('R')
-        elif self.kin_joints.position[yaw] > (20*0.0174532):
+            # print('---', self.kin_joints.position[yaw]/0.0174532)
+            print('---move right')
+            # self.run_sec('R')
+            wheel_speed = [0.3, 0.0]
+            self.move(wheel_speed)
+        elif self.kin_joints.position[yaw] > (5*0.0174532):
             # move left
-            print('@@@@@@', self.kin_joints.position[yaw]/0.0174532)
-            print('@@@@@@move left')
-            self.run_sec('L')
-        else:
-            # move forward
-            print('@@@@@@move forward')
-            self.run_sec('U')
-        time.sleep(2)
+            # print('---', self.kin_joints.position[yaw]/0.0174532)
+            print('---move left')
+            # self.run_sec('L')
+            wheel_speed = [0.0, 0.3]
+            self.move(wheel_speed)
+
+        # move forward
+        # print('---', self.kin_joints.position[yaw] / 0.0174532)
+        print('---move forward')
+        # self.run_sec('U')
+        wheel_speed = [0.4, 0.4]
+        self.move(wheel_speed)
+        time.sleep(0.3)
 
 
-        print('@@@@@@after running for 0.2s')
+        print('---after running for 0.2s')
 
-        # wheel_speed = [1.0, 1.0]
-        #
-        # self.do_detection()
-        # if self.faces != {}:
-        #     self.do_recognition()
-        #     if self.primary_detected == True:
-        #         # get close to user
-        #         d = self.get_face_distance(self.face_user[2], self.face_user[3])
-        #         while d > 0.05:
-        #             print('loop distance: ', d)
-        #             self.move(wheel_speed)
-        #             self.do_detection()
-        #             if self.faces != {}:
-        #                 self.do_recognition()
-        #                 if self.primary_detected == True:
-        #                     # get close to user
-        #                     d = self.get_face_distance(self.face_user[2], self.face_user[3])
-        # time.sleep(1)
 
     # miro go straight for 0.1s
     def run_sec(self, direction):
 
-        if direction == 'R':
-            wheel_speed = [0.2, 0.0]
-        elif direction == 'L':
-            wheel_speed = [0.0, 0.2]
-        elif direction == 'U':
+        # if direction == 'R':
+        #     wheel_speed = [0.2, 0.0]
+        # elif direction == 'L':
+        #     wheel_speed = [0.0, 0.2]
+        if direction == 'U':
             wheel_speed = [0.2, 0.2]
 
         start = datetime.datetime.now()
@@ -235,16 +227,41 @@ class controller:
             if self.faces != {}:
                 self.do_recognition()
                 if self.primary_detected == True:
+                    # print('\n')
+                    # print('\n')
+                    # print('detected the primary user')
                     self.track()
-                    # get close to user
-                    distance = self.get_face_distance(self.face_user[2], self.face_user[3])
-                    print('&&&&&  distance  &&&&&    ', distance)
-                    if distance < 0.02:
-                        self.miro_approach()
+                    # # get close to user
+                    # distance = self.get_face_distance(self.face_user[2], self.face_user[3])
+                    # print('-----  distance  ----- ', distance)
+                    # if distance < 0.05:
+                    #     self.miro_approach()
 
-            # track any face
-            # if self.x_primary != None:
-            #     self.track(self.x_primary, self.y_primary, 640, 360)
+            else:
+                # print('No user, stop!!!!!')
+                # set speed to zero
+                self.velocity.twist.linear.x = 0.0
+                self.velocity.twist.angular.z = 0.0
+                self.pub_cmd_vel.publish(self.velocity)
+
+            # # track any user
+            # if self.faces != {}:
+            #     # self.do_recognition()
+            #     time.sleep(0.8)
+            #     self.face_user = self.faces[0][1]
+            #     self.x_primary = self.face_user[0] + self.face_user[2] / 2
+            #     self.y_primary = self.face_user[1] + self.face_user[3] / 2
+            #     self.track()
+            #     # get close to user
+            #     distance = self.get_face_distance(self.face_user[2], self.face_user[3])
+            #     print('&&&&&  distance  &&&&&    ', distance)
+            #     if distance < 0.05:
+            #         self.miro_approach()
+            #
+            #     else:
+            #         # set speed to zero
+            #         wheel_speed0 = [0.0, 0.0]
+            #         self.move(wheel_speed0)
 
             # Show the frames and ROI
             if self.detected_faces != None:
@@ -291,6 +308,8 @@ class controller:
         self.image_height = 360
 
         self.velocity = TwistStamped()
+
+        self. i = 0
 
         # the object of detect_primary_user
         self.det_pri_user = detect_primary_user()
