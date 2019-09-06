@@ -142,7 +142,7 @@ class DemoState:
 		# detected objects
 		self.detect_ball = [None, None]
 		# detect_face [faces_coordinate, image]
-		self.detect_face = [[], []]
+		self.detect_face = [None, None]
 		self.primary_user = False
 
 		# internal
@@ -186,7 +186,7 @@ class DemoNodes:
 			self.decode = NodeDecode(sys)
 			self.detect_motion = NodeDetectMotion(sys)
 			self.detect_face = NodeDetectFace(sys)
-			self.face_recognition = NodeFaceRecognition(sys)
+		#	self.face_recognition = NodeFaceRecognition(sys)
 			self.detect_ball = NodeDetectBall(sys)
 
 		# instantiate
@@ -254,7 +254,7 @@ class DemoSystem(object):
 
 		# monitor use of time (set timing0 to "None" to disable timing)
 		self.timing = [[], [], []]
-		self.timing0 = None # time.time()
+		self.timing0 = None  # time.time()
 
 		# ROS interfaces
 		self.sub = []
@@ -604,7 +604,7 @@ class DemoSystem(object):
 		# tick
 		self.nodes.detect_motion.tick_camera(stream_index)
 		self.nodes.detect_face.tick_camera(stream_index)
-
+		# self.nodes.face_recognition.tick_camera(stream_index)
 		self.nodes.detect_ball.tick_camera(stream_index)
 
 		# publish result

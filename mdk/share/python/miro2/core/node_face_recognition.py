@@ -1,18 +1,10 @@
 import node
-
 import boto3
-
 import io
-
 import os
-
 import cv2
-
 import numpy as np
-
 from PIL import Image
-
-
 
 class NodeFaceRecognition(node.Node):
 
@@ -43,10 +35,12 @@ class NodeFaceRecognition(node.Node):
 
     def tick_camera(self, stream_index):
         # faces is the array of detected faces from node_detect_face
-        detect_faces = self.state.detect_face[stream_index]
+        faces = self.state.detect_face[stream_index]
+        img = self.state.frame_raw[stream_index]
 
-        for d_face in detect_faces:
-            face = d_face[1]
+        for face in faces:
+            (x, y, w, h, conf) = face
+            face = img[x:x+w, y:y+h]
 
             array = cv2.cvtColor(np.array(face), cv2.COLOR_RGB2BGR)
             image = Image.fromarray(array)
@@ -64,10 +58,8 @@ class NodeFaceRecognition(node.Node):
                 )
 
                 if len(response['FaceMatches']) > 0:
+                    # store
                     self.state.primary_user = True
-                    # face = d_face[0]
                     print('=====FACE MATCH=====')
             except:
                 pass
-
-        # return  face

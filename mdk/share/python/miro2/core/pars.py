@@ -185,7 +185,7 @@ class Decode(object):
 	def __init__(self):
 
 		# image height at which we process within demo
-		self.image_height = 100 # 90, 100, 120, 150
+		self.image_height = 100  # 90, 100, 120, 150
 
 	def finalize(self, pars):
 

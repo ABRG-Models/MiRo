@@ -67,9 +67,10 @@ class NodeDecode(node.Node):
 
 		# check image size - we are now only accepting the correct
 		# image size, and we'll raise a flag to correct it if not
-		if img.shape != (176, 320, 3):
-			print "image wrong size"
-			return True
+		# if img.shape != (176, 320, 3):
+		# 	print "image wrong size"
+		# 	print(img.shape)
+		# 	return True
 
 		# resize image to the size we process at in the demo
 		des_image_height = self.pars.decode.image_height
