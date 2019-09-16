@@ -194,7 +194,7 @@ class client_prioritytest:
 
         # config
         self.pars = pars.CorePars()
-        self.camera_model = miro.utils.camera_model.CameraModel(pars)
+        self.camera_model = miro.utils.camera_model.CameraModel(self.pars)
 
         # Arrays to hold image topics
         self.cam_left_image = None
