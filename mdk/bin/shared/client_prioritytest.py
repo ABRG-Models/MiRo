@@ -139,7 +139,7 @@ class client_prioritytest:
     def p2v(self, p, stream_index):
 
         # convert pixel location in IMAGE to view line in HEAD
-        v = self.camera_model.p2v(p)
+        v = self.cam_model.p2v(p)
         v.azim += self.pars.camera.azimuth[stream_index]
         v.elev += self.pars.camera.elevation[stream_index]
 
@@ -188,13 +188,13 @@ class client_prioritytest:
 
                 print "p", p
                 print "v", v.azim, v.elev
-            break
+            # break
 
     def __init__(self):
 
         # config
         self.pars = pars.CorePars()
-        self.camera_model = miro.utils.camera_model.CameraModel(self.pars)
+        self.cam_model = miro.utils.camera_model.CameraModel(self.pars)
 
         # Arrays to hold image topics
         self.cam_left_image = None
@@ -229,7 +229,7 @@ class client_prioritytest:
         self.cam_right_sub = rospy.Subscriber(topic_base + "sensors/camr/compressed", CompressedImage,self.cam_right_callback)
 
 
-        self.cam_model = miro.utils.CameraModel()
+        # self.cam_model = miro.utils.CameraModel()
         self.frame_w = 0
         self.frame_h = 0
 
@@ -265,6 +265,11 @@ class client_prioritytest:
                 output = self.cam_right_image.copy()
         else:
             return None
+
+
+        cv2.imshow("output", output)
+        cv2.waitKey()
+        cv2.destroyAllWindows()
 
         im_h = np.size(hsv_image, 0)
         im_w = np.size(hsv_image, 1)
