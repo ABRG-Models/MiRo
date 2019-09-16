@@ -152,12 +152,12 @@ class client_prioritytest:
 
             # extract and clear signal
             ball = self.find_ball("#0000FF", 0)
-            print "x", ball[0]
-            print "y", ball[1]
-            print "r", ball[2]
 
             # if signal is new
             if not ball is None:
+                print "x", ball[0]
+                print "y", ball[1]
+                print "r", ball[2]
 
                 # get ball parameters
                 x = ball[0]
