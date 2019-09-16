@@ -309,7 +309,7 @@ class NodeAction(node.Node):
 		random_action = ['RIGHT','PUSH','LEFT'] # there are three search actions, choose randomly, using left camera ~lucy
 		action = choice(random_action)
 
-		action = 'LEFT'
+		# action = 'RIGHT'
 
 		print "start test action", action_name
 		print "do chosen action", action
@@ -318,7 +318,7 @@ class NodeAction(node.Node):
 		if self.count == start_at:
 
 			if action_name == "search":
-				if action=='RIGHT':
+				if action=='LEFT':
 					self.action_input.priority_peak.height = 1
 					self.action_input.priority_peak.size = 0.005
 					self.action_input.priority_peak.azim = -1.44547299744
@@ -332,7 +332,7 @@ class NodeAction(node.Node):
 					self.action_input.priority_peak.elev = 0.370701502705
 					self.action_input.priority_peak.size_norm = 0.5
 					self.action_input.priority_peak.range = 1.0
-				elif action=='LEFT':
+				elif action=='RIGHT':
 					self.action_input.priority_peak.height = 1
 					self.action_input.priority_peak.size = 0.005
 					self.action_input.priority_peak.azim = 1.31007518607
