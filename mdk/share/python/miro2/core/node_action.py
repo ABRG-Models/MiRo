@@ -321,22 +321,22 @@ class NodeAction(node.Node):
 				if action=='RIGHT':
 					self.action_input.priority_peak.height = 1
 					self.action_input.priority_peak.size = 0.005
-					self.action_input.priority_peak.azim = -1.37611842787
-					self.action_input.priority_peak.elev = 0.22428584479
+					self.action_input.priority_peak.azim = -1.44547299744
+					self.action_input.priority_peak.elev = 0.39029874673
 					self.action_input.priority_peak.size_norm = 0.5
 					self.action_input.priority_peak.range = 1.0
 				elif action=='PUSH':
 					self.action_input.priority_peak.height = 1
 					self.action_input.priority_peak.size = 0.005
-					self.action_input.priority_peak.azim = -0.105382544279
-					self.action_input.priority_peak.elev = 0.508092899383
+					self.action_input.priority_peak.azim = 0.056516230312
+					self.action_input.priority_peak.elev = 0.370701502705
 					self.action_input.priority_peak.size_norm = 0.5
 					self.action_input.priority_peak.range = 1.0
 				elif action=='LEFT':
 					self.action_input.priority_peak.height = 1
 					self.action_input.priority_peak.size = 0.005
-					self.action_input.priority_peak.azim = 0.962490328192
-					self.action_input.priority_peak.elev = 0.5524675532
+					self.action_input.priority_peak.azim = 1.31007518607
+					self.action_input.priority_peak.elev = 0.471882843261
 					self.action_input.priority_peak.size_norm = 0.5
 					self.action_input.priority_peak.range = 1.0
 

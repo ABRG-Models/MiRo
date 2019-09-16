@@ -134,6 +134,8 @@ class ActionSearch(ActionTemplate):
 
     def service(self):
 
+        print "doing Action Search"
+
         # read clock
         x = self.clock.cosine_profile()
         self.clock.advance(True)
