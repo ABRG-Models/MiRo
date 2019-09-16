@@ -229,7 +229,7 @@ class client_prioritytest:
         self.cam_right_sub = rospy.Subscriber(topic_base + "sensors/camr/compressed", CompressedImage,self.cam_right_callback)
 
 
-        self.cam_model = miro.utils.CameraModel()
+        # self.cam_model = miro.utils.CameraModel()
         self.frame_w = 0
         self.frame_h = 0
 
@@ -287,37 +287,37 @@ class client_prioritytest:
 
         # Get largest circle
         max_circle = None
-        max_circle_norm = [None, None, None]
+        # max_circle_norm = [None, None, None]
         if circles is not None:
             self.max_rad = 0
             circles = np.uint16(np.around(circles))
 
             for c in circles[0, :]:
-                cv2.circle(seg, (c[0], c[1]), c[2], (0, 255, 0), 2)
+                # cv2.circle(seg, (c[0], c[1]), c[2], (0, 255, 0), 2)
 
                 if c[2] > self.max_rad:
                     self.max_rad = c[2]
                     max_circle = c
-                    max_circle_norm[0] = int(round(((max_circle[0] - im_centre_w) / im_centre_w) * 100.0))
-                    max_circle_norm[1] = int(round(-((max_circle[1] - im_centre_h) / im_centre_h) * 100.0))
-                    max_circle_norm[2] = int(round((max_circle[2] / im_centre_w) * 100.0))
+                    # max_circle_norm[0] = int(round(((max_circle[0] - im_centre_w) / im_centre_w) * 100.0))
+                    # max_circle_norm[1] = int(round(-((max_circle[1] - im_centre_h) / im_centre_h) * 100.0))
+                    # max_circle_norm[2] = int(round((max_circle[2] / im_centre_w) * 100.0))
 
                 # Debug Only
-                cv2.circle(output, (max_circle[0], max_circle[1]), max_circle[2], (0, 255, 0), 2)
-                cv2.circle(output, (max_circle[0], max_circle[1]), 1, (0, 255, 0), 2)
-                location_str = "x: " + str(max_circle_norm[0]) + "," + "y: " + str(
-                    max_circle_norm[1]) + "," + "r: " + str(max_circle[2])
-                text_y_offset = 18
-                for i, line in enumerate(location_str.split(",")):
-                    text_y = max_circle[1] - text_y_offset + i * text_y_offset
-                    cv2.putText(output, line, (max_circle[0] + 5, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 3)
-                    cv2.putText(output, line, (max_circle[0] + 5, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0),
-                                1)
+                # cv2.circle(output, (max_circle[0], max_circle[1]), max_circle[2], (0, 255, 0), 2)
+                # cv2.circle(output, (max_circle[0], max_circle[1]), 1, (0, 255, 0), 2)
+                # location_str = "x: " + str(max_circle_norm[0]) + "," + "y: " + str(
+                #     max_circle_norm[1]) + "," + "r: " + str(max_circle[2])
+                # text_y_offset = 18
+                # for i, line in enumerate(location_str.split(",")):
+                #     text_y = max_circle[1] - text_y_offset + i * text_y_offset
+                #     cv2.putText(output, line, (max_circle[0] + 5, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 3)
+                #     cv2.putText(output, line, (max_circle[0] + 5, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0),
+                #                 1)
 
         else:
             return None
 
-        return max_circle_norm
+        return max_circle
 
     def action_space_sample(self):
         action = np.random.choice(self.action_space)
