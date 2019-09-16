@@ -20,6 +20,17 @@ from sensor_msgs.msg import JointState, BatteryState, Imu, Range, CompressedImag
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
+##push
+## v azim -0.105382544279
+## v elev 0.508092899383
+
+##left
+## v azim 0.962490328192
+## v elev 0.5524675532
+
+##right
+## v azim -0.267970103903
+## v elev 0.493885703773
 ################################################################
 
 def error(msg):
@@ -152,7 +163,7 @@ class client_prioritytest:
 
             # extract and clear signal
             ball = self.find_ball("#0000FF", 0)
-
+            time.sleep(1)
             # if signal is new
             if not ball is None:
                 print "x", ball[0]
