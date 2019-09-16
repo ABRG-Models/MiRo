@@ -135,6 +135,9 @@ class DetectAudioEngine():
 		i_peak += L - L_max
 
 		# store
+
+		np.savetxt('tmp/wav',wav)
+		print("voice saved")
 		"""
 		np.savetxt('/tmp/wav', wav)
 		x = self.buf_abs_slow[:, hn-L:hn+L+1]

@@ -57,6 +57,7 @@ from node_detect_ball import *
 from node_detect_face import *
 from node_detect_audio import *
 from node_spatial import *
+from node_face_recognition import *
 
 
 
@@ -140,7 +141,9 @@ class DemoState:
 
 		# detected objects
 		self.detect_ball = [None, None]
+		# detect_face [faces_coordinate, image]
 		self.detect_face = [None, None]
+		self.primary_user = False
 
 		# internal
 		self.reconfigure_cameras = False
@@ -183,11 +186,20 @@ class DemoNodes:
 			self.decode = NodeDecode(sys)
 			self.detect_motion = NodeDetectMotion(sys)
 			self.detect_face = NodeDetectFace(sys)
+		#	self.face_recognition = NodeFaceRecognition(sys)
 			self.detect_ball = NodeDetectBall(sys)
 
 		# instantiate
 		if self.client_type == "mics":
 			self.detect_audio = NodeDetectAudio(sys)
+
+
+		# # instantiate
+		# if self.client_type == "recognition":
+		# 	self.decode = NodeDecode(sys)
+		# 	self.detect_face = NodeDetectFace(sys)
+
+
 
 	def tick(self):
 
@@ -242,7 +254,7 @@ class DemoSystem(object):
 
 		# monitor use of time (set timing0 to "None" to disable timing)
 		self.timing = [[], [], []]
-		self.timing0 = None # time.time()
+		self.timing0 = None  # time.time()
 
 		# ROS interfaces
 		self.sub = []
@@ -303,12 +315,12 @@ class DemoSystem(object):
 
 			# publish detection summary (debug)
 			self.pub_sum = self.publish('core/sum' + self.camera_sub, sensor_msgs.msg.Image)
-
-			# publish ball detector state (debug)
+                                                                                 
+			# publish ball detector state (debug)                    
 			self.pub_bal = self.publish('core/bal' + self.camera_sub, sensor_msgs.msg.Image)
-
-		# select client type
-		if self.client_type == "mics":
+                                                                                 
+		# select client type                                             
+		if self.client_type == "mics":                                   
 
 			# publish
 			self.pub_mics = self.publish('core/audio_event', std_msgs.msg.Float32MultiArray)
@@ -448,7 +460,7 @@ class DemoSystem(object):
 
 		# publish motor output
 		if self.use_external_kc:
-			for push in self.output.pushes:
+
 				msg = self.pub_push.msg
 				msg.pushpos = geometry_msgs.msg.Vector3(push.pos[0], push.pos[1], push.pos[2])
 				msg.pushvec = geometry_msgs.msg.Vector3(push.vec[0], push.vec[1], push.vec[2])
@@ -552,6 +564,7 @@ class DemoSystem(object):
 		self.callback_mov(1, msg)
 
 	def callback_cam(self, msg):
+		#print('callback camera')
 
 		stream_index = self.stream_index
 
@@ -561,15 +574,19 @@ class DemoSystem(object):
 		if self.active_counter == 0:
 			return
 
-		self.active_counter -= 1
+		#self.active_counter -= 1
+
 		if self.active_counter == 0:
 			print "going inactive..."
 			return
 
+
 		if not self.timing0 is None:
 			self.timing[1].append(time.time() - self.timing0)
 
+
 		# tick camera
+		# get img and store
 		if self.nodes.decode.tick_camera(stream_index, msg):
 
 			# tick_camera returns true to indicate the frame
@@ -587,6 +604,7 @@ class DemoSystem(object):
 		# tick
 		self.nodes.detect_motion.tick_camera(stream_index)
 		self.nodes.detect_face.tick_camera(stream_index)
+		# self.nodes.face_recognition.tick_camera(stream_index)
 		self.nodes.detect_ball.tick_camera(stream_index)
 
 		# publish result

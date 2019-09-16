@@ -40,6 +40,11 @@ import node
 import cv2
 from cv_bridge import CvBridge
 
+# for testing
+from PIL import Image
+from PIL import ImageDraw
+import matplotlib.pyplot as plt
+
 
 
 class NodeDetectFace(node.Node):
@@ -73,6 +78,11 @@ class NodeDetectFace(node.Node):
 		# get image (grayscale)
 		img = self.state.frame_gry[stream_index]
 
+		# img_roi = self.state.frame_raw[stream_index]
+		#-----------------------------
+		# cv2.imshow('face', img_roi)
+		# cv2.waitKey(1)
+
 		# load test image
 		if self.pars.flags.DEV_DETECT_FACE and stream_index == 0 and (self.ticks[stream_index] & 30) < 1:
 			home = os.getenv("HOME")
@@ -81,6 +91,7 @@ class NodeDetectFace(node.Node):
 
 		# search image with each classifier
 		faces = []
+
 		for cascade in self.cascades:
 			f = cascade.detectMultiScale3(img, 1.05, 3, 0, (20, 20), outputRejectLevels=True)
 			rects = f[0]
@@ -103,8 +114,16 @@ class NodeDetectFace(node.Node):
 		# store
 		self.state.detect_face[stream_index] = faces
 
+		# report face detected
+		if faces != []:
+			print 'detect face', faces
+			cv2.imshow('detected_face', faces)
+			cv2.waitKey(1)
+
 		# tick
 		self.ticks[stream_index] += 1
+		# -------------------------
+		cv2.destroyAllWindows()
 
 	def merge_duplicates(self, faces):
 

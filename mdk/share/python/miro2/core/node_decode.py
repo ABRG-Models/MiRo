@@ -67,15 +67,17 @@ class NodeDecode(node.Node):
 
 		# check image size - we are now only accepting the correct
 		# image size, and we'll raise a flag to correct it if not
-		if img.shape != (176, 320, 3):
-			print "image wrong size"
-			return True
+		# if img.shape != (176, 320, 3):
+		# 	print "image wrong size"
+		# 	print(img.shape)
+		# 	return True
 
 		# resize image to the size we process at in the demo
 		des_image_height = self.pars.decode.image_height
 		if img.shape[0] > des_image_height:
 			sc = float(des_image_height) / img.shape[0]
 			img = cv2.resize(img, dsize=(0, 0), fx=sc, fy=sc)
+
 
 		# store raw
 		self.state.frame_raw[stream_index] = img

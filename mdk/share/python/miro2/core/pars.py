@@ -185,7 +185,7 @@ class Decode(object):
 	def __init__(self):
 
 		# image height at which we process within demo
-		self.image_height = 100 # 90, 100, 120, 150
+		self.image_height = 100  # 90, 100, 120, 150
 
 	def finalize(self, pars):
 
@@ -452,6 +452,7 @@ class Flags( object ):
 		self.DEV_DEBUG_ACTION_PARAMS	= 1
 		self.DEV_DEBUG_ORIENT_START		= 0
 		self.DEV_SEND_DEBUG_TOPICS		= 0
+		self.DEV_PRIMARY_USER           = 0
 
 		# developer flags accessible from MIROapp (for now)
 		self.DEV_DEBUG_SONAR			= 0
