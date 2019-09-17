@@ -86,7 +86,7 @@ class ActionSearch(ActionTemplate):
 
     def event_start(self):
 
-        self.appetitive_response(self.pars.action.approach_appetitive_commitment)
+        # self.appetitive_response(self.pars.action.approach_appetitive_commitment)
         self.debug_event_start()
 
     def start(self):
@@ -135,7 +135,7 @@ class ActionSearch(ActionTemplate):
     def service(self):
 
         print "doing Action Search"
-
+        print  'searchActionLoop',self.input.priority_peak.azim
         # read clock
         x = self.clock.cosine_profile()
         self.clock.advance(True)
@@ -152,6 +152,3 @@ class ActionSearch(ActionTemplate):
         # debug fovea movement through WORLD
         #fovea_WORLD = self.kc.changeFrameAbs(miro.constants.LINK_HEAD, miro.constants.LINK_WORLD, self.fovea_HEAD)
         #print "fovea_WORLD", fovea_WORLD, self.clock.toString()
-
-
-

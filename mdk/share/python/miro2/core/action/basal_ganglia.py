@@ -92,6 +92,8 @@ class BasalGanglia(object):
 		# Select action with maximum priority (winner take all)
 		selected = np.argmax(self.prio)
 
+		print "\n[**** SELECT", actions[selected].name, "??????"
+
 		# update selection
 		if self.selected != selected:
 			print "\n[**** SELECT ACTION", actions[selected].name, "****]"

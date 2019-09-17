@@ -309,47 +309,46 @@ class NodeAction(node.Node):
 		random_action = ['RIGHT','PUSH','LEFT'] # there are three search actions, choose randomly, using left camera ~lucy
 		action = choice(random_action)
 
-		# action = 'RIGHT'
+		# action = 'PUSH'
 
-		print "start test action", action_name
-		print "do chosen action", action
 
-		start_at = 100
-		if self.count == start_at:
+		if action_name == "search":
+			print "start test action", action_name
+			print "do chosen action", action
 
-			if action_name == "search":
-				if action=='LEFT':
-					self.action_input.priority_peak.height = 1
-					self.action_input.priority_peak.size = 0.005
-					self.action_input.priority_peak.azim = -1.44547299744
-					self.action_input.priority_peak.elev = 0.39029874673
-					self.action_input.priority_peak.size_norm = 0.5
-					self.action_input.priority_peak.range = 1.0
-				elif action=='PUSH':
-					self.action_input.priority_peak.height = 1
-					self.action_input.priority_peak.size = 0.005
-					self.action_input.priority_peak.azim = 0.056516230312
-					self.action_input.priority_peak.elev = 0.370701502705
-					self.action_input.priority_peak.size_norm = 0.5
-					self.action_input.priority_peak.range = 1.0
-				elif action=='RIGHT':
-					self.action_input.priority_peak.height = 1
-					self.action_input.priority_peak.size = 0.005
-					self.action_input.priority_peak.azim = 1.31007518607
-					self.action_input.priority_peak.elev = 0.471882843261
-					self.action_input.priority_peak.size_norm = 0.5
-					self.action_input.priority_peak.range = 1.0
+			if action=='RIGHT':
+				self.action_input.priority_peak.height = 1
+				self.action_input.priority_peak.size = 0.005
+				self.action_input.priority_peak.azim = -1.44547299744
+				self.action_input.priority_peak.elev = 0.39029874673
+				self.action_input.priority_peak.size_norm = 0.5
+				self.action_input.priority_peak.range = 1.0
+				print 'update',self.action_input.priority_peak.azim
+			elif action=='PUSH':
+				self.action_input.priority_peak.height = 1
+				self.action_input.priority_peak.size = 0.005
+				self.action_input.priority_peak.azim = 0.056516230312
+				self.action_input.priority_peak.elev = 0.370701502705
+				self.action_input.priority_peak.size_norm = 0.5
+				self.action_input.priority_peak.range = 1.0
+			elif action=='LEFT':
+				self.action_input.priority_peak.height = 1
+				self.action_input.priority_peak.size = 0.005
+				self.action_input.priority_peak.azim = 1.31007518607
+				self.action_input.priority_peak.elev = 0.471882843261
+				self.action_input.priority_peak.size_norm = 0.5
+				self.action_input.priority_peak.range = 1.0
 
-			for action in self.actions:
-				if action.name == action_name:
-					action.interface.priority = 1.0
-					return
-		else:
-
-			self.action_input.priority_peak.height = 0
-
-			if self.count > start_at and self.selector.selected == 0:
-				self.state.keep_running = False
+		for action in self.actions:
+			if action.name == action_name:
+				action.interface.priority = 1.0
+				return
+		# else:
+		#
+		# 	self.action_input.priority_peak.height = 0
+		#
+		# 	if self.count > start_at and self.selector.selected == 0:
+		# 		self.state.keep_running = False
 
 	def tick(self):
 
@@ -379,9 +378,11 @@ class NodeAction(node.Node):
 		if self.pars.flags.DEV_RUN_TEST_ACTION:
 			self.start_test_action()
 
+		print "name!!!!", self.selector.selected
 		# do search action for test ~lucy
+		# if self.actions[self.selector.selected].name=='search':
 		self.testSearch()
-
+		print 'current',self.state.priority_peak.azim
 		# update selection mechanism
 		self.selector.update(self.actions)
 
