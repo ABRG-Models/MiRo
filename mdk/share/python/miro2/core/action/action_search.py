@@ -62,27 +62,34 @@ class ActionSearch(ActionTemplate):
         fixation = self.input.fixation
 
         # extract pars
-        base_priority = self.pars.action.approach_base_prio
-        size_gain = self.pars.action.approach_size_gain
-        arousal_gain = self.pars.action.approach_arousal_gain
-        valence_gain = self.pars.action.approach_valence_gain
-        fixation_gain = self.pars.action.approach_fixation_gain
+        base_prio = self.pars.action.search_base_prio
+        arousal_gain = self.pars.action.search_arousal_gain
+        valence_gain = self.pars.action.search_valence_gain
+        size_gain = self.pars.action.search_size_gain
+        fixation_gain = self.pars.action.search_fixation_gain
 
         # compute priority
-        tend_some = np.tanh(arousal_gain * (arousal - 0.5) + fixation_gain * (fixation - 0.5))
-        tend_appe = np.tanh(valence_gain * (valence - 0.5) - size_gain * (size_norm - 0.5))
-        priority = height * (base_priority + tend_some + tend_appe)
+        priority = height * (base_prio
+                             - valence_gain * (valence - 0.5)
+                             + arousal_gain * (arousal - 0.5)
+                             + fixation_gain * (fixation - 0.5)
+                             + size_gain * size_norm)
 
-        # modulate by cliff and sonar
-        priority *= self.input.conf_surf
-        priority *= self.input.conf_space
+        # # modulate by cliff and sonar
+        # priority *= self.input.conf_surf
+        # priority *= self.input.conf_space
 
         # modulate for dev
         if self.pars.flags.DEV_ORIENT_ONLY:
             priority = 0.0
 
+        # modulate for flag of seeing master ~lucy
+        if self.pars.flags.SEE_MASTER:
+            priority = 0.0
+
         # ok set the max priority, then we can only do search action and test it ~lucy
-        return self.pars.action.priority_uninterruptable  #priority
+        # return self.pars.action.priority_uninterruptable
+        return priority
 
     def event_start(self):
 

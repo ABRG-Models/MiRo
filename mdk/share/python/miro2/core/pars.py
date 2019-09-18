@@ -264,6 +264,13 @@ class Action(object):
 		self.flee_min_steps = 50
 		self.flee_max_steps = 300
 
+		# set parameters of priority in search action ~lucy copy from flee need to be modified
+		self.search_base_prio = -0.1
+		self.search_fixation_gain = 0.0
+		self.search_arousal_gain = 0.25
+		self.search_valence_gain = 0.5
+		self.search_size_gain = 0.0
+
 		self.avert_base_prio = 0.0
 
 		self.retreat_distance_m = 0.6
