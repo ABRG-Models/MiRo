@@ -37,12 +37,22 @@ class NodeFaceRecognition(node.Node):
         # faces is the array of detected faces from node_detect_face
         faces = self.state.detect_face[stream_index]
         img = self.state.frame_raw[stream_index]
-
+        # print('img:', img)
+        # print('faces:', faces)
+        face_salience = []
         for face in faces:
-            (x, y, w, h, conf) = face
-            face = img[x:x+w, y:y+h]
+            self.state.primary_user = False
+            face_ori = face
+            # print('face_ori', face_ori)
 
+            (x, y, w, h, conf) = face
+            face = img[y:y + h, x:x + w]
+
+            # --------------------------
+
+            # print('face: ',face)
             array = cv2.cvtColor(np.array(face), cv2.COLOR_RGB2BGR)
+            # print('array: ', array)
             image = Image.fromarray(array)
 
             # image convert to binary
@@ -60,6 +70,18 @@ class NodeFaceRecognition(node.Node):
                 if len(response['FaceMatches']) > 0:
                     # store
                     self.state.primary_user = True
+                    cv2.rectangle(img, (int(x), int(y)), (int(x) + int(w), int(y) + int(h)), (0, 255, 0), 2)
                     print('=====FACE MATCH=====')
+                else:
+                    cv2.rectangle(img, (int(x), int(y)), (int(x) + int(w), int(y) + int(h)), (255, 0, 0), 2)
+
             except:
                 pass
+            face_salience.append((self.state.primary_user, face_ori))
+        self.state.face_saliences[stream_index] = face_salience
+        # cv2.imshow("detected face", img)
+        # cv2.waitKey()
+        # cv2.destroyAllWindows()
+
+
+

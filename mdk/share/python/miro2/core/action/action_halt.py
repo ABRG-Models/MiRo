@@ -141,6 +141,7 @@ class ActionHalt(ActionTemplate):
 
 		# stall?
 		if self.pars.flags.ACTION_HALT_ON_STALL and stalled:
+			print "halt", self.pars.action.priority_high
 			return self.pars.action.priority_high
 
 		# no stall

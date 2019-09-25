@@ -83,6 +83,10 @@ class ActionSearch(ActionTemplate):
         if self.pars.flags.DEV_ORIENT_ONLY:
             priority = 0.0
 
+<<<<<<< HEAD
+        return self.pars.action.priority_uninterruptable  #priority
+        #return 0
+=======
         # modulate for flag of seeing master ~lucy
         if self.pars.flags.SEE_MASTER:
             priority = 0.0
@@ -90,6 +94,7 @@ class ActionSearch(ActionTemplate):
         # ok set the max priority, then we can only do search action and test it ~lucy
         # return self.pars.action.priority_uninterruptable
         return priority
+>>>>>>> 3cbeb61537174f8f3078b2bd44b067eca9174115
 
     def event_start(self):
 

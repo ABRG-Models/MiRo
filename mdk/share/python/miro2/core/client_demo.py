@@ -144,6 +144,8 @@ class DemoState:
 		# detect_face [faces_coordinate, image]
 		self.detect_face = [None, None]
 		self.primary_user = False
+		# [user_flag , coordinate of face] = [Ture/False, (x,y,w,h)]
+		self.face_saliences = [None, None]
 
 		# internal
 		self.reconfigure_cameras = False
@@ -183,28 +185,31 @@ class DemoNodes:
 
 		# instantiate
 		if self.client_type == "camera":
+			self.lower = NodeLower(sys)
+			self.affect = NodeAffect(sys)
+			self.express = NodeExpress(sys)
+			self.action = NodeAction(sys)
+			self.loop = NodeLoop(sys)
+			self.spatial = NodeSpatial(sys)
+
 			self.decode = NodeDecode(sys)
 			self.detect_motion = NodeDetectMotion(sys)
 			self.detect_face = NodeDetectFace(sys)
-		#	self.face_recognition = NodeFaceRecognition(sys)
+			self.face_recognition = NodeFaceRecognition(sys)
 			self.detect_ball = NodeDetectBall(sys)
+
 
 		# instantiate
 		if self.client_type == "mics":
 			self.detect_audio = NodeDetectAudio(sys)
 
 
-		# # instantiate
-		# if self.client_type == "recognition":
-		# 	self.decode = NodeDecode(sys)
-		# 	self.detect_face = NodeDetectFace(sys)
-
 
 
 	def tick(self):
 
 		# tick
-		if self.client_type == "main":
+		if self.client_type == "camera":
 			self.lower.tick()
 			self.affect.tick()
 			self.express.tick()
@@ -301,6 +306,42 @@ class DemoSystem(object):
 		# select client type
 		if self.client_type == "camera":
 
+			# publish priority
+			self.pub_pri = [
+				self.publish('core/pril', sensor_msgs.msg.Image),
+				self.publish('core/prir', sensor_msgs.msg.Image),
+				self.publish('core/priw', sensor_msgs.msg.Image)
+			]
+
+			# publish control outputs
+			self.pub_cos = self.publish('control/cosmetic_joints', std_msgs.msg.Float32MultiArray)
+			self.pub_illum = self.publish('control/illum', std_msgs.msg.UInt32MultiArray)
+
+			# publish core states
+			self.pub_affect_state = self.publish('core/affect/state', miro.msg.affect_state)
+			self.pub_affect_time = self.publish('core/affect/time', std_msgs.msg.UInt32)
+			self.pub_sel_prio = self.publish('core/selection/priority', std_msgs.msg.Float32MultiArray)
+			self.pub_sel_inhib = self.publish('core/selection/inhibition', std_msgs.msg.Float32MultiArray)
+
+			# reference core states output messages in output array
+			self.output.affect_state = self.pub_affect_state.msg
+			self.output.affect_time = self.pub_affect_time.msg
+			self.output.sel_prio = self.pub_sel_prio.msg
+			self.output.sel_inhib = self.pub_sel_inhib.msg
+
+			# publish
+			self.pub_flags = self.publish('control/flags', std_msgs.msg.UInt32)
+			self.pub_tone = self.publish('control/tone', std_msgs.msg.UInt16MultiArray)
+
+			# publish motor output
+			if self.use_external_kc:
+				self.pub_push = self.publish('core/mpg/push', miro.msg.push)
+				self.pub_reset = self.publish('core/mpg/reset', std_msgs.msg.UInt32)
+			else:
+				self.pub_kin = self.publish('control/kinematic_joints', sensor_msgs.msg.JointState)
+				self.pub_kin.msg.name = ['tilt', 'lift', 'yaw', 'pitch']
+				self.pub_cmd_vel = self.publish('control/cmd_vel', geometry_msgs.msg.TwistStamped)
+
 			# publish motion detector output
 			self.pub_mov = self.publish('core/mov' + self.camera_sub, sensor_msgs.msg.Image)
 
@@ -356,6 +397,17 @@ class DemoSystem(object):
 		if self.client_type == "camera":
 
 			# subscribe
+			self.subscribe('sensors/package', miro.msg.sensors_package, self.callback_sensors_package)
+			self.subscribe('core/voice_state', miro.msg.voice_state, self.callback_voice_state)
+			self.subscribe('core/detect_face_l', std_msgs.msg.Float32MultiArray, self.callback_detect_face)
+			self.subscribe('core/detect_face_r', std_msgs.msg.Float32MultiArray, self.callback_detect_face)
+			self.subscribe('core/detect_ball_l', std_msgs.msg.UInt16MultiArray, self.callback_detect_ball)
+			self.subscribe('core/detect_ball_r', std_msgs.msg.UInt16MultiArray, self.callback_detect_ball)
+			self.subscribe('core/audio_event', std_msgs.msg.Float32MultiArray, self.callback_audio_event)
+			self.subscribe('core/movl', sensor_msgs.msg.Image, self.callback_movl)
+			self.subscribe('core/movr', sensor_msgs.msg.Image, self.callback_movr)
+
+			# subscribe
 			self.subscribe('sensors/cam' + self.camera_sub + '/compressed', sensor_msgs.msg.CompressedImage, self.callback_cam)
 			self.subscribe('core/affect/state', miro.msg.affect_state, self.callback_affect_state)
 
@@ -371,7 +423,7 @@ class DemoSystem(object):
 		time.sleep(1)
 
 		# select client type
-		if self.client_type == "main":
+		if self.client_type == "camera":
 
 			# reset body (dev only)
 			if self.use_external_kc:
@@ -526,7 +578,7 @@ class DemoSystem(object):
 		while i < len(x):
 			faces.append(x[i:i+5])
 			i += 5
-		self.state.detect_face[stream_index] = faces
+		# self.state.detect_face[stream_index] = faces
 
 	def callback_detect_ball(self, msg):
 
@@ -564,7 +616,7 @@ class DemoSystem(object):
 		self.callback_mov(1, msg)
 
 	def callback_cam(self, msg):
-		#print('callback camera')
+		# print('callback camera')
 
 		stream_index = self.stream_index
 
@@ -604,7 +656,7 @@ class DemoSystem(object):
 		# tick
 		self.nodes.detect_motion.tick_camera(stream_index)
 		self.nodes.detect_face.tick_camera(stream_index)
-		# self.nodes.face_recognition.tick_camera(stream_index)
+		self.nodes.face_recognition.tick_camera(stream_index)
 		self.nodes.detect_ball.tick_camera(stream_index)
 
 		# publish result

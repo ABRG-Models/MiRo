@@ -85,6 +85,7 @@ class ActionFlee(ActionTemplate):
 		if self.pars.flags.DEV_ORIENT_ONLY:
 			priority = 0.0
 
+
 		# ok
 		return priority
 

@@ -388,6 +388,63 @@ class NodeSpatial(node.Node):
 			# inject
 			self.pri[stream_index] += (gain * 255.0 * audio_event.level) * response
 
+	def inject_primaryface(self, stream_index):
+
+		# extract and clear signal
+		face_saliences = self.state.face_saliences[stream_index]
+		self.state.face_saliences[stream_index] = None
+		counter = 0
+		# if signal is new
+		if not face_saliences is None:
+
+			for face_salience in face_saliences:
+				counter +=1
+				# extract
+				primary_user = face_salience[0]
+				rect = face_salience[1][0:4]
+				conf = face_salience[1][4]
+
+				print 'face_salience',face_salience
+				print 'primary_user',primary_user
+				print 'rect',rect
+				print 'conf',conf
+
+				# get range
+				range = self.estimate_range(face_salience[1][2], self.pars.action.face_size_m)
+
+				# debug
+				if not self.pars.flags.DEV_DEBUG_HALT: # do not pollute info
+					print "face at range", range, "with conf", conf
+				if self.pars.flags.DEV_DEBUG_DETECTION:
+					self.output.tone = 255
+
+				# paint in face
+				x = int(face_salience[1][0] + face_salience[1][2] * 0.5)
+				y = int(face_salience[1][1] + face_salience[1][3] * 0.5)
+				r = (face_salience[1][2] + face_salience[1][3]) * 0.25
+				if primary_user:
+					m = int(self.pars.spatial.face_gain * conf * 255.0)
+					print('=======================================================')
+					print("the salience value of primary user is : ", m)
+					print('=======================================================')
+				else:
+					m = int(0.6 * self.pars.spatial.face_gain * conf * 255.0)
+					print('=======================================================')
+					print("the salience value of non-primary user is : ", m)
+					print('=======================================================')
+
+				# choose radius that reflects representational size
+				# based on physical size in image
+				r = int(r * 0.5)
+
+				# inject stimulus
+				self.inject_dome(self.pri[stream_index], (x, y), r, m)
+
+				# store source
+				p = [x, y]
+				v = self.p2v(p, stream_index)
+				self.sources.append([0, v, range])
+				print "number of face", counter
 	def publish_peak(self, peak):
 
 		# attempt to lock
@@ -433,6 +490,10 @@ class NodeSpatial(node.Node):
 
 		# get image
 		img = self.pri[stream_index]
+		# print 'img', img
+		# cv2.imshow("salience map", img)
+		# cv2.waitKey()
+		# cv2.destroyAllWindows()
 
 		# find threshold for measuring size of priority region
 		height = float(img.max())
@@ -516,21 +577,24 @@ class NodeSpatial(node.Node):
 		# for camera streams
 		if stream_index < 2:
 
-			# inject motion detector output
-			if self.pars.flags.SALIENCE_FROM_MOTION:
-				self.inject_motion(stream_index)
+			# # inject motion detector output
+			# if self.pars.flags.SALIENCE_FROM_MOTION:
+			# 	self.inject_motion(stream_index)
+			#
+			# # inject detected balls
+			# if self.pars.flags.SALIENCE_FROM_BALL:
+			# 	self.inject_ball(stream_index)
+			#
+			# # inject faces
+			# if self.pars.flags.SALIENCE_FROM_FACES:
+			# 	self.inject_face(stream_index)
 
-			# inject detected balls
-			if self.pars.flags.SALIENCE_FROM_BALL:
-				self.inject_ball(stream_index)
+			self.inject_primaryface(stream_index)
 
-			# inject faces
-			if self.pars.flags.SALIENCE_FROM_FACES:
-				self.inject_face(stream_index)
+		# # inject sound events
+		# if self.pars.flags.SALIENCE_FROM_SOUND:
+		# 	self.inject_audio(stream_index)
 
-		# inject sound events
-		if self.pars.flags.SALIENCE_FROM_SOUND:
-			self.inject_audio(stream_index)
 
 		# clip
 		self.pri[stream_index] = np.clip(self.pri[stream_index], 0, 255)
@@ -561,6 +625,7 @@ class NodeSpatial(node.Node):
 		# publish priority map (mostly for debug)
 		self.state.frame_pri[stream_index] = self.pri[stream_index].astype(np.uint8)
 
+
 	def tick_camera(self, stream_index):
 
 		# return list of streams updated
@@ -589,6 +654,10 @@ class NodeSpatial(node.Node):
 		if stream_index == 0:
 			self.process_stream(2)
 			updated.append(2)
+
+		cv2.imshow("salience map", self.state.frame_pri[stream_index])
+		cv2.waitKey()
+		cv2.destroyAllWindows()
 
 		# ok
 		return updated

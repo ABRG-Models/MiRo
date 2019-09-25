@@ -32,6 +32,7 @@ class detect_primary_user:
                 # face_x_coord = x + w / 2
                 # face_y_coord = y + h / 2
                 roi_color = image[y:y + h, x:x + w]
+                print('======roi_color', roi_color)
                 dic_faces[face] = [roi_color, [x, y, w, h]]
                 face += 1
 
@@ -61,6 +62,7 @@ class detect_primary_user:
 
         for key, value in dic_faces.items():
             face = value[0]
+            print('------', face)
 
             array = cv2.cvtColor(np.array(face), cv2.COLOR_RGB2BGR)
             image = Image.fromarray(array)

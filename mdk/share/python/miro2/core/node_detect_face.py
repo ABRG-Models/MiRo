@@ -74,9 +74,9 @@ class NodeDetectFace(node.Node):
 		self.ticks = [0, 0]
 
 	def tick_camera(self, stream_index):
-
 		# get image (grayscale)
 		img = self.state.frame_gry[stream_index]
+
 
 		# img_roi = self.state.frame_raw[stream_index]
 		#-----------------------------
@@ -106,6 +106,12 @@ class NodeDetectFace(node.Node):
 					#print "detected face", stream_index, conf, rect
 					face = np.concatenate((rect, conf))
 					faces.append(face)
+				# --------------------------
+				# x,y,w,h,conf = face
+				# cv2.rectangle(img, (int(x), int(y)), (int(x) + int(w), int(y) + int(h)), (255, 0, 0), 2)
+				# cv2.imshow("detected face", img)
+				# cv2.waitKey()
+				# cv2.destroyAllWindows()
 
 		# merge duplicates
 		# let's not do this for now, I'm not sure why it's needed yet
@@ -115,15 +121,13 @@ class NodeDetectFace(node.Node):
 		self.state.detect_face[stream_index] = faces
 
 		# report face detected
-		if faces != []:
-			print 'detect face', faces
-			cv2.imshow('detected_face', faces)
-			cv2.waitKey(1)
+		# if faces != []:
+			# print 'detect face!!!!!', faces
 
 		# tick
 		self.ticks[stream_index] += 1
 		# -------------------------
-		cv2.destroyAllWindows()
+		# cv2.destroyAllWindows()
 
 	def merge_duplicates(self, faces):
 

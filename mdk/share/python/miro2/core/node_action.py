@@ -303,10 +303,9 @@ class NodeAction(node.Node):
 			if self.count > start_at and self.selector.selected == 0:
 				self.state.keep_running = False
 
-	# debug search action for test ~lucy
 	def testSearch(self):
 		action_name = "search"
-		random_action = ['RIGHT','PUSH','LEFT'] # there are three search actions, choose randomly, using left camera ~lucy
+		random_action = ['RIGHT','PUSH','LEFT'] # there are three search actions, choose randomly, using left camera
 		action = choice(random_action)
 
 		# action = 'PUSH'
@@ -339,10 +338,10 @@ class NodeAction(node.Node):
 				self.action_input.priority_peak.size_norm = 0.5
 				self.action_input.priority_peak.range = 1.0
 
-		for action in self.actions:
-			if action.name == action_name:
-				action.interface.priority = 1.0
-				return
+		# for action in self.actions:
+		# 	if action.name == action_name:
+		# 		action.interface.priority = 1.0
+		# 		return
 		# else:
 		#
 		# 	self.action_input.priority_peak.height = 0
@@ -378,11 +377,12 @@ class NodeAction(node.Node):
 		if self.pars.flags.DEV_RUN_TEST_ACTION:
 			self.start_test_action()
 
-		print "name!!!!", self.selector.selected
-		# do search action for test ~lucy
-		# if self.actions[self.selector.selected].name=='search':
-		self.testSearch()
-		print 'current',self.state.priority_peak.azim
+		# print "name!!!!", self.selector.selected
+		# do search action for test
+		if self.actions[self.selector.selected].name=='search':
+			print("????????????????")
+			self.testSearch()
+		# print 'current',self.state.priority_peak.azim
 		# update selection mechanism
 		self.selector.update(self.actions)
 
