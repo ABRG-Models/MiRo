@@ -1,4 +1,36 @@
 #!/usr/bin/python
+#
+#	@section COPYRIGHT
+#	Copyright (C) 2019 Consequential Robotics Ltd
+#	
+#	@section AUTHOR
+#	Consequential Robotics http://consequentialrobotics.com
+#	
+#	@section LICENSE
+#	For a full copy of the license agreement, and a complete
+#	definition of "The Software", see LICENSE in the MDK root
+#	directory.
+#	
+#	Subject to the terms of this Agreement, Consequential
+#	Robotics grants to you a limited, non-exclusive, non-
+#	transferable license, without right to sub-license, to use
+#	"The Software" in accordance with this Agreement and any
+#	other written agreement with Consequential Robotics.
+#	Consequential Robotics does not transfer the title of "The
+#	Software" to you; the license granted to you is not a sale.
+#	This agreement is a binding legal agreement between
+#	Consequential Robotics and the purchasers or users of "The
+#	Software".
+#	
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+#	KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+#	WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+#	PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+#	OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+#	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+#	OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+#	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	
 
 import rospy
 from std_msgs.msg import UInt8, UInt16, UInt32, Float32MultiArray, UInt16MultiArray, UInt32MultiArray
@@ -18,6 +50,12 @@ import miro2 as miro
 
 ################################################################
 
+# constants
+max_fwd_spd = 0.4
+T_ramp_up_down = 2.0
+
+################################################################
+
 def error(msg):
 
 	print(msg)
@@ -27,20 +65,60 @@ def usage():
 
 	print ("""
 Usage:
-	client_test.py wheels kin cos
+	client_test.py <options>
 
 	Without arguments, this help page is displayed. To run the
 	client you must specify at least one option.
 
 Options:
-	wheels
-		test the wheels (robot will move).
+	listen
+		just listen
 
-	kin
-		test the kin(ematic) joints.
+	wheels (wheels- for reverse)
+		move forward (robot will move).
 
-	cos
-		test the cos(metic) joints.
+	spin (spin- for reverse)
+		turn on the spot (robot will move).
+
+	stall (stall- for reverse)
+		test wheels and show additional data for stall analysis.
+
+	wheelsf (wheelsf- for reverse)
+		hold the wheels at maximum forward speed indefinitely.
+
+	push
+		test the push control channel.
+
+	kin (lift, yaw, pitch)
+		test all the kin(ematic) joints (or just one).
+
+	cos (cosl, cosr, eyes, ears, wag, droop, wagdroop)
+		test all the cos(metic) joints (or just a subset).
+
+	illum
+		exercise the LED illumination arrays.
+
+	workout
+		test all the kin and cos joints together.
+
+	forever
+		keep going until user hits CTRL+C
+
+	--quiet
+		be quiet
+
+	--no-cliff-reflex
+		disable robot's cliff reflex before beginning
+
+	--no-illum
+		disable illumination LEDs under shell
+
+	--status-leds
+		enable status LEDs on PCBs (won't work if locked)
+
+	--exit
+		exit immediately after setting flags, and make
+		flags persistent after exit
 	""")
 	sys.exit(0)
 
@@ -76,12 +154,14 @@ class controller:
 			opto = self.sensors.wheel_speed_opto.data
 			emf = self.sensors.wheel_speed_back_emf.data
 			pwm = self.sensors.wheel_effort_pwm.data
-			print \
-				fmtflt(msg_wheels.twist.linear.x), \
-				fmtflt(msg_wheels.twist.linear.x), \
-				fmtflt(opto[0]), fmtflt(opto[1]), \
-				fmtflt(emf[0]), fmtflt(emf[1]), \
-				fmtflt(pwm[0]), fmtflt(pwm[1])
+			msg = fmtflt(msg_wheels.twist.linear.x) + " " + \
+				fmtflt(msg_wheels.twist.angular.z) + " " + \
+				fmtflt(opto[0]) + " " + fmtflt(opto[1]) + " " + \
+				fmtflt(emf[0]) + " " + fmtflt(emf[1]) + " " + \
+				fmtflt(pwm[0]) + " " + fmtflt(pwm[1])
+			print msg
+			if not self.report_file is None:
+				self.report_file += msg + "\n"
 
 	def loop(self):
 
@@ -119,6 +199,7 @@ class controller:
 			# compute drive signals
 			xk = math.sin(t_now * f_kin * 2 * math.pi)
 			xc = math.sin(t_now * f_cos * 2 * math.pi)
+			xcc = math.cos(t_now * f_cos * 2 * math.pi)
 			xc2 = math.sin(t_now * f_cos * 1 * math.pi)
 
 			# feedback to user
@@ -187,7 +268,7 @@ class controller:
 			if not self.wheels is None:
 				v = 0.0
 				Tq = 0.2
-				T = 2.0
+				T = T_ramp_up_down
 				t1 = Tq
 				t2 = t1 + T
 				t3 = t2 + T
@@ -210,8 +291,8 @@ class controller:
 				self.imp_report_wheels(msg_wheels)
 
 			# send wheels
-			if self.wheelsf:
-				msg_wheels.twist.linear.x = 0.4
+			if not self.wheelsf is None:
+				msg_wheels.twist.linear.x = self.wheelsf
 				msg_wheels.twist.angular.z = 0.0
 				self.pub_wheels.publish(msg_wheels)
 				self.imp_report_wheels(msg_wheels)
@@ -251,33 +332,26 @@ class controller:
 				self.pub_push.publish(msg_push)
 
 			# send illum
-			q = int(xc * 127 + 128)
-			for i in range(0, 3):
-				msg_illum.data[i] = (q << ((2-i) * 8)) | 0xFF000000
-			for i in range(3, 6):
-				msg_illum.data[i] = (q << ((i-3) * 8)) | 0xFF000000
-			self.pub_illum.publish(msg_illum)
-
-			# send P1P
-			if not self.P1P is None:
-				msg_platform = UInt32()
-				msg_platform.data = 0
-				if self.P1P == 'x':
+			if self.illum:
+				q = int(xcc * -127 + 128)
+				if t_now >= 4.0:
 					self.active = False
-				else:
-					if self.P1P == 'P':
-						msg_platform.data = 1024
-					elif self.P1P == 'O':
-						msg_platform.data = 2048
-					elif self.P1P == 'I':
-						msg_platform.data = 2
-					self.pub_platform.publish(msg_platform)
-					self.P1P = 'x'
+					q = 0
+				for i in range(0, 3):
+					msg_illum.data[i] = (q << ((2-i) * 8)) | 0xFF000000
+				for i in range(3, 6):
+					msg_illum.data[i] = (q << ((i-3) * 8)) | 0xFF000000
+				self.pub_illum.publish(msg_illum)
 
 			# state
 			time.sleep(0.02)
 			self.count = self.count + 1
 			t_now = t_now + 0.02
+
+		# end loop
+		if not self.report_file is None:
+			with open('/tmp/client_test.report_file', 'w') as file:
+				file.write(self.report_file)
 
 	def __init__(self, args):
 
@@ -297,16 +371,29 @@ class controller:
 
 		# options
 		self.report_wheels = False
+		self.report_file = None
 		self.wheels = None
-		self.wheelsf = False
+		self.wheelsf = None
 		self.spin = None
 		self.kin = ""
 		self.cos = ""
-		self.P1P = None
+		self.illum = False
 		self.push = False
+		self.opts = []
+
+		# must have one option
+		if len(args) == 0:
+			usage()
+			sys.exit(0)
 
 		# handle args
 		for arg in args:
+
+			# collect opts
+			if arg[0:2] == '--':
+				self.opts.append(arg)
+				continue
+
 			f = arg.find('=')
 			if f == -1:
 				key = arg
@@ -314,38 +401,53 @@ class controller:
 			else:
 				key = arg[:f]
 				val = arg[f+1:]
-			if key == "state_file":
+			if key == "listen":
+				# allow use just to show output
+				pass
+			elif key == "--no-cliff-reflex":
+				self.opts.append(key)
+			elif key == "state_file":
 				self.state_file = val
 			elif key == "forever":
 				self.forever = True
 			elif key == "wheels":
-				self.wheels = 0.4
+				self.wheels = max_fwd_spd
+			elif key == "wheels-":
+				self.wheels = -max_fwd_spd
+			elif key == "wheelsc":
+				self.wheels = max_fwd_spd
+				self.report_wheels = True
+				self.report_input = False
+				self.report_file = ""
+			elif key == "wheelsc-":
+				self.wheels = -max_fwd_spd
+				self.report_wheels = True
+				self.report_input = False
+				self.report_file = ""
+			elif key == "wheelsf":
+				self.wheelsf = max_fwd_spd
+				self.report_wheels = True
+				self.report_input = False
+				self.report_file = ""
+			elif key == "wheelsf-":
+				self.wheelsf = -max_fwd_spd
+				self.report_wheels = True
+				self.report_input = False
+				self.report_file = ""
 			elif key == "stall":
 				self.wheels = 4.0
 				self.report_wheels = True
 				self.report_input = False
+				self.report_file = ""
 			elif key == "stall-":
 				self.wheels = -4.0
 				self.report_wheels = True
 				self.report_input = False
-			elif key == "wheels-":
-				self.wheels = -0.4
-			elif key == "wheelsf":
-				self.wheelsf = True
-				self.report_wheels = True
-				self.report_input = False
+				self.report_file = ""
 			elif key == "spin":
 				self.spin = 1.0
 			elif key == "spin-":
 				self.spin = -1.0
-			elif key == "wheels_cont":
-				self.wheels = 0.4
-				self.report_wheels = True
-				self.report_input = False
-			elif key == "spin_cont":
-				self.spin = 1.0
-				self.report_wheels = True
-				self.report_input = False
 			elif key == "push":
 				self.push = True
 			elif key == "kin":
@@ -376,89 +478,88 @@ class controller:
 				self.cos = "d"
 			elif key == "wagdroop":
 				self.cos = "x"
-			elif key == "P1P":
-				self.P1P = val
-			elif key == "quiet":
-				self.report_input = False
+			elif key == "illum":
+				self.illum = True
 			elif key == "workout":
 				self.cos = "lrx"
 				self.kin = "lyp"
 			else:
 				error("argument not recognised \"" + arg + "\"")
 
+		# handle opts
+		if "--quiet" in self.opts:
+			self.report_input = False
+
 		# robot name
-		topic_base = "/" + os.getenv("MIRO_ROBOT_NAME") + "/"
+		topic_base_name = "/" + os.getenv("MIRO_ROBOT_NAME")
 
 		# publish
-		topic = topic_base + "control/cmd_vel"
+		topic = topic_base_name + "/control/cmd_vel"
 		print ("publish", topic)
 		self.pub_wheels = rospy.Publisher(topic, TwistStamped, queue_size=0)
 
 		# publish
-		topic = topic_base + "control/kinematic_joints"
+		topic = topic_base_name + "/control/kinematic_joints"
 		print ("publish", topic)
 		self.pub_kin = rospy.Publisher(topic, JointState, queue_size=0)
 
 		# publish
-		topic = topic_base + "control/cosmetic_joints"
+		topic = topic_base_name + "/control/cosmetic_joints"
 		print ("publish", topic)
 		self.pub_cos = rospy.Publisher(topic, Float32MultiArray, queue_size=0)
 
 		# publish
-		topic = topic_base + "control/illum"
+		topic = topic_base_name + "/control/illum"
 		print ("publish", topic)
 		self.pub_illum = rospy.Publisher(topic, UInt32MultiArray, queue_size=0)
 
 		# publish
-		topic = topic_base + "core/mpg/push"
+		topic = topic_base_name + "/core/mpg/push"
 		print ("publish", topic)
 		self.pub_push = rospy.Publisher(topic, miro.msg.push, queue_size=0)
 
 		# publish
-		topic = topic_base + "control/platform"
+		topic = topic_base_name + "/control/flags"
 		print ("publish", topic)
-		self.pub_platform = rospy.Publisher(topic, UInt32, queue_size=0)
+		self.pub_flags = rospy.Publisher(topic, UInt32, queue_size=0)
 
 		# subscribe
-		topic = topic_base + "sensors/package"
+		topic = topic_base_name + "/sensors/package"
 		print ("subscribe", topic)
-		self.sub_package = rospy.Subscriber(topic, miro.msg.sensors_package, self.callback_package)
+		self.sub_package = rospy.Subscriber(topic, miro.msg.sensors_package, self.callback_package, queue_size=5, tcp_nodelay=True)
 
 		# wait for connect
 		print "wait for connect..."
 		time.sleep(1)
+
+		# send control flags
+		default_flags = miro.constants.PLATFORM_D_FLAG_DISABLE_STATUS_LEDS
+		msg = UInt32()
+		msg.data = default_flags
+		if "--exit" in self.opts:
+			msg.data |= miro.constants.PLATFORM_D_FLAG_PERSISTENT
+		if "--no-cliff-reflex" in self.opts:
+			msg.data |= miro.constants.PLATFORM_D_FLAG_DISABLE_CLIFF_REFLEX
+		if "--no-illum" in self.opts:
+			msg.data |= miro.constants.PLATFORM_D_FLAG_DISABLE_ILLUM
+		if "--status-leds" in self.opts:
+			msg.data &= ~(miro.constants.PLATFORM_D_FLAG_DISABLE_STATUS_LEDS)
+		print "send control flags... ",
+		print hex(msg.data),
+		self.pub_flags.publish(msg)
+		print "OK"
+
+		# and exit
+		if "--exit" in self.opts:
+			print "exit after setting flags..."
+			print "(NB: flags will be reset if you run this client again)"
+			exit()
 
 		# set to active
 		self.active = True
 
 if __name__ == "__main__":
 
-	"""
-	if len(sys.argv) >= 2 and sys.argv[1] == "governed":
-
-		state_file = os.getenv("MIRO_DIR_STATE") + "/client_test"
-
-		while True:
-
-			# wait for state file
-			if not os.path.isfile(state_file):
-				print "."
-				time.sleep(0.1)
-				continue
-			# read state file
-			with open(state_file) as f:
-				cmd = f.read().strip()
-			# split to args
-			args = cmd.split(' ')
-			# run controller
-			main = controller(args, state_file)
-			main.loop()
-	"""
-
 	# normal singular invocation
 	main = controller(sys.argv[1:])
 	main.loop()
-
-
-
-

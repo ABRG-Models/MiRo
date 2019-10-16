@@ -222,40 +222,134 @@
 				</material>
 			</visual>
 			<!-- eye_l -->
-			<sensor name="eye_l" type="camera">
-				<pose>0.0385 0.0434 0.2595 -0.27 -0.7854 0.3665</pose>
+			<sensor name="eye_l" type="wideanglecamera">
+				<!-- pose position come from miro_software_constants.h -->
+				<!-- pose angles come from dev/sim_camera_calib -->
+				<pose>0.0377 0.0431 0.2595 -0.4262 -0.6816 0.6244</pose>
 				<camera>
-					<!-- would be 90 degrees, but is increased to allow room
-					for the distortion model to be computed; increase is determined
-					empirically by adjusting until the camera_calib tool just fills
-					the field of view http://gazebosim.org/tutorials?tut=camera_distortion -->
-					<horizontal_fov>1.82</horizontal_fov>
+					<!--
+					this should be 120 degrees, but if a distortion model is used
+					this value may need to be adjusted so that the end result has
+					the correct horizontal FOV (120 degrees); this can be determined
+					empirically by adjusting the value here until the FOV is correct
+					in camera_calib.world:
+					
+					http://gazebosim.org/tutorials?tut=camera_distortion
+					
+					NB: 120 degrees is 2.0944 radians
+					NB: 120 degrees does seem to work fine for wideanglecamera
+					-->
+					<horizontal_fov>2.0944</horizontal_fov>
 					<image>
 						<width>1280</width>
 						<height>720</height>
 					</image>
 					<clip>
-						<near>0.001</near>
+						<!-- clip at short range to eliminate eyelid from view -->
+						<near>0.006</near>
 						<far>100</far>
 					</clip>
-					<distortion>
-						<k1>-0.75</k1>
-						<k2>0.25</k2>
-						<k3>0.0</k3>
-						<p1>0.0</p1>
-						<p2>0.0</p2>
-						<center>0.5 0.5</center>
-					</distortion>
+					<lens>
+						<type>custom</type>
+						<scale_to_hfov>1</scale_to_hfov>
+						<custom_function>
+							<c1>2.0</c1>
+							<c2>1.25</c2>
+							<c3>0.0</c3>
+							<f>1.0</f>
+							<fun>sin</fun>
+						</custom_function>
+					</lens>
 				</camera>
 				<always_on>1</always_on>
 				<update_rate>10</update_rate>
 				<visualize>false</visualize>
 			</sensor>
 			<!-- eye_r -->
-			<sensor name="eye_r" type="camera">
-				<pose>0.0385 -0.0434 0.2595 0.27 -0.7854 -0.3665</pose>
+			<sensor name="eye_r" type="wideanglecamera">
+				<pose>0.0377 -0.0431 0.2595 0.4261 -0.6816 -0.6244</pose>
 				<camera>
-					<horizontal_fov>1.82</horizontal_fov>
+					<horizontal_fov>2.0944</horizontal_fov>
+					<image>
+						<width>1280</width>
+						<height>720</height>
+					</image>
+					<clip>
+						<near>0.006</near>
+						<far>100</far>
+					</clip>
+					<lens>
+						<type>custom</type>
+						<scale_to_hfov>1</scale_to_hfov>
+						<custom_function>
+							<c1>2.0</c1>
+							<c2>1.25</c2>
+							<c3>0.0</c3>
+							<f>1.0</f>
+							<fun>sin</fun>
+						</custom_function>
+					</lens>
+				</camera>
+				<always_on>1</always_on>
+				<update_rate>10</update_rate>
+				<visualize>false</visualize>
+			</sensor>
+			<!-- eye_l narrow -->
+			<sensor name="eye_l_narrow" type="camera">
+				<!-- pose position come from miro_software_constants.h -->
+				<!-- pose angles come from dev/sim_camera_calib -->
+				<pose>0.0377 0.0431 0.2595 -0.4262 -0.6816 0.6244</pose>
+				<camera>
+					<!--
+					this should be 120 degrees, but if a distortion model is used
+					this value may need to be adjusted so that the end result has
+					the correct horizontal FOV (120 degrees); this can be determined
+					empirically by adjusting the value here until the FOV is correct
+					in camera_calib.world:
+					
+					http://gazebosim.org/tutorials?tut=camera_distortion
+					
+					NB: 120 degrees is 2.0944 radians
+					NB: 120 degrees does seem to work fine for wideanglecamera
+					-->
+					<horizontal_fov>2.0944</horizontal_fov>
+					<image>
+						<width>1280</width>
+						<height>720</height>
+					</image>
+					<clip>
+						<!-- clip at short range to eliminate eyelid from view -->
+						<near>0.006</near>
+						<far>100</far>
+					</clip>
+				</camera>
+				<always_on>1</always_on>
+				<update_rate>10</update_rate>
+				<visualize>false</visualize>
+			</sensor>
+			<!-- eye_r_narrow -->
+			<sensor name="eye_r_narrow" type="camera">
+				<pose>0.0377 -0.0431 0.2595 0.4261 -0.6816 -0.6244</pose>
+				<camera>
+					<horizontal_fov>2.0944</horizontal_fov>
+					<image>
+						<width>1280</width>
+						<height>720</height>
+					</image>
+					<clip>
+						<near>0.006</near>
+						<far>100</far>
+					</clip>
+				</camera>
+				<always_on>1</always_on>
+				<update_rate>10</update_rate>
+				<visualize>false</visualize>
+			</sensor>
+			<!-- gaze -->
+			<sensor name="gaze" type="camera">
+				<pose>0.0577 0 0.2795 0 -0.785398 0</pose>
+				<camera>
+					<horizontal_fov>1.0</horizontal_fov>
 					<image>
 						<width>1280</width>
 						<height>720</height>
@@ -264,14 +358,6 @@
 						<near>0.001</near>
 						<far>100</far>
 					</clip>
-					<distortion>
-						<k1>-0.75</k1>
-						<k2>0.25</k2>
-						<k3>0.0</k3>
-						<p1>0.0</p1>
-						<p2>0.0</p2>
-						<center>0.5 0.5</center>
-					</distortion>
 				</camera>
 				<always_on>1</always_on>
 				<update_rate>10</update_rate>

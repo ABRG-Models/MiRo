@@ -20,6 +20,9 @@
 # for details of individual parameters, see the documentation
 # page at Platform Parameters.
 
+# platform option flags
+option_flags=
+
 # camera
 frame=
 jpeg=
@@ -61,7 +64,4 @@ touch_head_sensitivity=
 
 # demo flags
 demo_flags=
-
-
-
 

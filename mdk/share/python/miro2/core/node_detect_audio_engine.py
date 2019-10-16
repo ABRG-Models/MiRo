@@ -252,6 +252,10 @@ class DetectAudioEngine():
 
 	def process_data(self, data):
 
+		# default
+		event = None
+		sound_level = []
+
 		# clear any pending event (so we can send only one per block)
 		self.level = 0.0
 
@@ -259,14 +263,20 @@ class DetectAudioEngine():
 		data = np.asarray(data, 'float32') * (1.0 / 32768.0)
 		data = data.reshape((4, SAMP_PER_BLOCK))
 
-		# only interested in left & right
+		# compute level
+		sound_level = []
+		for i in range(4):
+			x = np.mean(np.abs(data[i]))
+			sound_level.append(x)
+
+		# beyond sound level, only interested in left & right
 		data = data[0:2][:]
 
 		# first fill buffer
 		if self.buf is None:
 			self.buf = data
 			self.buf_abs = np.abs(data)
-			return
+			return (event, sound_level)
 
 		# roll buffers
 		self.buf = np.hstack((self.buf[:, -SAMP_PER_BLOCK:], data))
@@ -353,6 +363,9 @@ class DetectAudioEngine():
 		self.n = n
 		self.hn = hn
 
+		# default
+		event = None
+
 		# process any pending event
 		if self.level:
 
@@ -360,11 +373,10 @@ class DetectAudioEngine():
 			self.process_configuration()
 
 			# publish
-			return DetectAudioEvent([self.azim, self.elev, self.level])
+			event = DetectAudioEvent([self.azim, self.elev, self.level])
 
-		# return nothing
-		return None
-
+		# return
+		return (event, sound_level)
 
 
 

@@ -77,7 +77,7 @@ class Platform(object):
 	def __init__(self):
 
 		# time for movement to settle after commands stop changing
-		self.t_mov_settle = 0.75
+		self.t_mov_settle = 0.5
 
 		# time for head IMU to stop reporting jerk after eye blink command
 		self.t_blink_settle = 0.5
@@ -158,6 +158,10 @@ class Lower(object):
 		self.user_touch_min = 0.01
 		self.user_touch_gain = 0.2
 
+		# probability / period filter on user interactivity
+		self.interact_prob = 1.0 # probability of interaction in each interact_period
+		self.interact_period = 10.0 # seconds
+
 		# touch sensor masks mask out sensor elements that are unreliable
 		self.touch_head_mask = 0xFFFF
 		self.touch_body_mask = 0xFFF0
@@ -172,11 +176,15 @@ class Lower(object):
 			[9, 5, 1.0]
 		]
 
+		# ambient sound level filter
+		self.sound_level_tau = 10.0
+
 	def finalize(self, pars):
 
 		fS = pars.timing.tick_hz
 		self.user_touch_gamma_attack = miro.utils.tau2gamma( self.user_touch_tau_attack, fS )
 		self.user_touch_gamma_release = miro.utils.tau2gamma( self.user_touch_tau_release, fS )
+		self.sound_level_gamma = miro.utils.tau2gamma( self.sound_level_tau, fS )
 
 
 
@@ -225,6 +233,9 @@ class Action(object):
 
 	def __init__(self):
 
+		# probability that an action is executed (rather than shammed)
+		self.action_prob = 1.0
+
 		self.fixation_region_width = 0.5
 		self.range_estimate_min = 0.1
 		self.range_estimate_max = 2.0
@@ -244,6 +255,8 @@ class Action(object):
 		self.orient_min_steps = 25
 		self.orient_max_steps = 100
 		self.orient_appetitive_commitment = 0.5
+		self.orient_in_HEAD = False
+		self.orient_follow_arc = True
 
 		self.approach_base_prio = 0.2
 		self.approach_size_gain = 0.5
@@ -255,7 +268,7 @@ class Action(object):
 		self.approach_max_steps = 300
 		self.approach_appetitive_commitment = 0.5
 
-		self.flee_base_prio = -0.2
+		self.flee_base_prio = 0.0
 		self.flee_fixation_gain = 0.0
 		self.flee_arousal_gain = 0.25
 		self.flee_valence_gain = 0.5
@@ -265,6 +278,16 @@ class Action(object):
 		self.flee_max_steps = 300
 
 		self.avert_base_prio = 0.0
+		self.avert_algorithm = 'body'
+		self.avert_mean_speed = 0.2
+		self.avert_min_steps = 75
+		self.avert_max_steps = 200
+		self.avert_retreat_distance = 0.4
+		self.avert_turn_distance = 0.1
+		self.avert_variability = 0.1
+		self.avert_yaw_gain = 0.1
+		#self.avert_retreat_boost = 0.0
+		#self.avert_retreat_boost_tau = 0.25
 
 		self.retreat_distance_m = 0.6
 		self.retreat_speed_mps = 0.2
@@ -280,22 +303,27 @@ class Action(object):
 		self.priority_low = 0.25
 
 		# known sizes of particular objects are used to estimate range
-		self.face_size_m = 0.3
-		self.ball_size_m = 0.2
+		self.face_size_m = 0.25
+		self.ball_size_m = 0.055
+		self.april_size_m = 0.060
 
-		# these entries correspond to the entries in priority_peak.source_conf
-		# each is the value to MIRO attached to that class of target; at
-		# time of writing, that's 1.0 for his ball (my toy!) and 0.5 for a
-		# person's face.
-		self.priority_peak_source_value = np.array([0.5, 1.0])
+		# these are the definitions of the source types, each of which
+		# has a distinct appetitive value
+		self.priority_source_count = 3
+		self.priority_source_index_face = 0
+		self.priority_source_index_ball = 1
+		self.priority_source_index_april = 2
+		self.priority_source_appetitive_value = np.array([0.25, 0.25, 1.0])
 
 	def finalize(self, pars):
 
 		# derived
+		fS = pars.timing.tick_hz
 		self.fixation_width_recip = 1.0 / self.fixation_region_width
 		self.size_large_recip = 1.0 / self.size_large
 		self.approach_speed_spm = 1.0 / self.approach_speed_mps
 		self.flee_speed_spm = 1.0 / self.flee_speed_mps
+		#self.avert_retreat_boost_lambda = miro.utils.tau2lambda(self.avert_retreat_boost_tau, fS)
 
 
 
@@ -303,31 +331,29 @@ class Spatial(object):
 
 	def __init__(self):
 
-		self.audio_event_level_gain = 10
-		self.audio_event_assumed_range = 2000
-		self.audio_event_assumed_height = 600
-		self.moving_afferent_filter_gain = 0.9
-		self.moving_afferent_filter_thresh = 1.0
-		self.t_aec_settle = 1.0
-		self.t_aud_history = 50 * 1000
+		self.degrees_hindsight = 30
+		self.association_angle = 0.0872 # 5 degrees is 0.0872 rad
+		self.pri_decay_lambda = 0.25
+		self.pri_peak_height_thresh = 0.75
 		self.audio_event_azim_size_rad = 0.1
 		self.audio_event_elev_size_rad = 0.3
 		self.audio_event_gain = 5.0
 		self.audio_event_gain_making_noise = 1.0
-		self.face_gain = 1.0
-		self.pri_decay_lambda = 0.7
-		self.pri_peak_height_thresh = 0.75
-		self.pri_filt_width = 2
-		self.degrees_hindsight = 30
-		self.wide_stream_n = 256
-		self.ball_gain = 0.75
-		self.face_gain = 1.0
-		self.association_angle = 0.0872 # 5 degrees is 0.0872 rad
+		self.mov_gain = 1.0
+		self.mov_gain_adapt_tgt = 0.04
+		self.mov_gain_adapt_tau = 5.0
+		self.mov_gain_adapt_max = 3.0
+		self.mov_gain_adapt_min = 0.5
+		self.ball_gain = 0.5
+		self.face_gain = 0.65
+		self.april_gain_at_1m = 0.35
 
 	def finalize(self, pars):
 
+		fS = pars.timing.tick_hz
 		self.audio_event_azim_size_recip = 1.0 / self.audio_event_azim_size_rad
 		self.audio_event_elev_size_recip = 1.0 / self.audio_event_elev_size_rad
+		self.mov_gain_adapt_gamma = miro.utils.tau2gamma( self.mov_gain_adapt_tau, fS )
 
 
 
@@ -344,7 +370,7 @@ class Affect(object):
 		self.valence_jerk_thresh = 1.0
 		self.valence_jerk_thresh_2 = 4.0
 		self.valence_jerk_slope = 0.5
-		self.valence_jerk_gain = -0.2
+		self.valence_jerk_gain = -0.4
 		self.valence_orient_fixation_gain = 0.1
 		self.valence_sleep_blocked_thresh = 0.75
 		self.valence_sleep_blocked_gain = -0.001
@@ -432,8 +458,9 @@ class Flags( object ):
 
 		self.SALIENCE_FROM_MOTION		= 1
 		self.SALIENCE_FROM_SOUND		= 1
+		self.SALIENCE_FROM_FACE			= 1
 		self.SALIENCE_FROM_BALL			= 1
-		self.SALIENCE_FROM_FACES		= 1
+		self.SALIENCE_FROM_APRIL		= 1
 
 		self.BODY_ENABLE_CLIFF_REFLEX	= 1
 		self.BODY_ENABLE_TRANSLATION	= 1
@@ -446,16 +473,25 @@ class Flags( object ):
 		self.DEV_DEBUG_HALT				= 0
 		self.DEV_DETECT_FACE			= 0
 		self.DEV_DETECT_BALL			= 0
+		self.DEV_MULL_ONLY				= 0
 		self.DEV_ORIENT_ONLY			= 0
+		self.DEV_NO_FLEE				= 0
 		self.DEV_RUN_TEST_ACTION		= 0
 		self.DEV_RECONFIG_CAMERA_QUICK	= 0
 		self.DEV_DEBUG_ACTION_PARAMS	= 1
 		self.DEV_DEBUG_ORIENT_START		= 0
-		self.DEV_SEND_DEBUG_TOPICS		= 0
+		self.DEV_DEBUG_ORIENTS			= 0
+		self.DEV_SEND_DEBUG_TOPICS		= 1
+		self.DEV_DEBUG_WRITE_TRACES		= 0
+		self.DEV_IGNORE_CLIFF_SENSORS	= 0
+		self.DEV_START_CAMS_HORIZ		= 0
+		self.DEV_SHOW_LOC_EYE			= 0
+		self.DEV_DEBUG_AUTO_STOP		= 0
+		self.DEV_SIMULATE_CLIFF			= 0
 
 		# developer flags accessible from MIROapp (for now)
-		self.DEV_DEBUG_SONAR			= 0
-		self.DEV_DEBUG_DETECTION		= 0
+		self.DEBUG_SONAR				= 0
+		self.DEBUG_DETECTION			= 0
 
 
 
@@ -484,67 +520,92 @@ class CorePars (object):
 		self.detect_face = DetectFace()
 		self.flags = Flags()
 
-		# finalize
-		self.finalize()
+		# set default demo_flags
+		self.demo_flags = ""
+		self.allow_dev_flags = False
 
-	def action_demo_flags(self, flags):
+		# finalize components
+		self.finalize_components()
+
+	def demo_flag_state_string(self, state):
+
+		return "(FLAG SET)" if state else "-"
+
+	def demo_flag_norm_on(self, flag, desc):
+
+		# process a flag and return a "normally on" state unless the flag is set
+		state = flag in self.demo_flags
+		print flag, "|", desc.ljust(32), "|", self.demo_flag_state_string(state)
+		return 0 if state else 1
+
+	def demo_flag_norm_off(self, flag, desc):
+
+		# process a flag and return a "normally off" state unless the flag is set
+		return 1 - self.demo_flag_norm_on(flag, desc)
+
+	def action_demo_flags(self):
 
 		# report
+		flags = self.demo_flags
+		print "----------------------------------------------------------------"
 		print "demo_flags: \"" + flags + "\""
+		print "----------------------------------------------------------------"
 
 		# handle flags
-		if "v" in flags: print "v disable vocalisation"
-		if "t" in flags: print "t disable translation"
-		if "r" in flags: print "r disable rotation"
-		if "n" in flags: print "n disable neck movement"
-		if "s" in flags: print "s disable sleep"
-		if "c" in flags: print "c disable cliff reflex"
-		if "u" in flags: print "u disable shun cliffs"
-		if "d" in flags: print "d disable affect from sound"
-		if "M" in flags: print "M disable salience from motion"
-		if "S" in flags: print "S disable salience from sound"
-		if "F" in flags: print "F disable salience from faces"
-		if "B" in flags: print "B disable salience from ball"
-		if "T" in flags: print "T disable express through tail"
-		if "h" in flags: print "h disable negative valence"
-		if "a" in flags: print "a disable move away"
-		if "H" in flags: print "H disable halt on stall"
-		if "m" in flags: print "m disable sonar modulation"
-		if "P" in flags: print "P debug sonar modulation"
-		if "Q" in flags: print "Q debug detection"
-
-		# not accessible from MIROapp
-		if "R" in flags: print "R debug halt"
-		if "I" in flags: print "I disable action input"
+		# DOCLINK demo_flags
+		# follow DOCLINK (in lib/miro2, lib/miro2_docs) to see all places where flags must be sync'd
+		#
+		# note "A" is actioned in on_system_ready.sh
+		#
+		self.flags.EXPRESS_THROUGH_VOICE = self.demo_flag_norm_on("v", "disable vocalisation")
+		self.flags.BODY_ENABLE_TRANSLATION = self.demo_flag_norm_on("t", "disable translation")
+		self.flags.BODY_ENABLE_ROTATION = self.demo_flag_norm_on("r", "disable rotation")
+		self.flags.BODY_ENABLE_NECK_MOVEMENT = self.demo_flag_norm_on("n", "disable neck movement")
+		#
+		self.flags.AFFECT_ENABLE_SLEEP = self.demo_flag_norm_on("s", "disable sleep")
+		self.flags.BODY_ENABLE_CLIFF_REFLEX = self.demo_flag_norm_on("c", "disable cliff reflex")
+		self.flags.ACTION_MODULATE_BY_CLIFF = self.demo_flag_norm_on("u", "disable shun cliffs")
+		self.flags.AFFECT_FROM_SOUND = self.demo_flag_norm_on("d", "disable affect from sound")
+		#
+		self.flags.SALIENCE_FROM_MOTION = self.demo_flag_norm_on("M", "disable attend motion")
+		self.flags.SALIENCE_FROM_SOUND = self.demo_flag_norm_on("S", "disable attend sound")
+		self.flags.SALIENCE_FROM_FACE = self.demo_flag_norm_on("F", "disable attend face")
+		self.flags.SALIENCE_FROM_BALL = self.demo_flag_norm_on("B", "disable attend ball")
+		self.flags.SALIENCE_FROM_APRIL = self.demo_flag_norm_on("G", "disable attend control cube")
+		#
+		self.flags.EXPRESS_THROUGH_TAIL = self.demo_flag_norm_on("T", "disable express through tail")
+		self.flags.EXPRESS_THROUGH_LIGHT = self.demo_flag_norm_on("L", "disable express through light")
+		self.flags.EXPRESS_THROUGH_EARS = self.demo_flag_norm_on("E", "disable express through ears")
+		self.flags.EXPRESS_THROUGH_EYELIDS = self.demo_flag_norm_on("Y", "disable express through eyelids")
+		#
+		self.flags.AFFECT_ENABLE_UNHAPPY = self.demo_flag_norm_on("h", "disable negative valence")
+		self.flags.ACTION_ENABLE_MOVE_AWAY = self.demo_flag_norm_on("a", "disable move away")
+		self.flags.ACTION_HALT_ON_STALL = self.demo_flag_norm_on("H", "disable halt on stall")
+		self.flags.ACTION_MODULATE_BY_SONAR = self.demo_flag_norm_on("m", "disable sonar modulation")
+		self.flags.ACTION_ENABLE_SONAR_STOP = self.flags.ACTION_MODULATE_BY_SONAR
+		#
+		self.flags.DEBUG_SONAR = self.demo_flag_norm_off("P", "[debug] debug sonar modulation")
+		self.flags.DEBUG_DETECTION = self.demo_flag_norm_off("Q", "[debug] debug detection")
+		#
+		# dev flags are not accessible from MIROapp, but must be "allowed" by locally setting "D";
+		# this ensures that if we accidentally leave any DEV flags on in a release, they are muted
+		# on production systems
+		self.allow_dev_flags = self.demo_flag_norm_off("D", "[dev] allow developer flags")
 
 		# report
-		print "end demo_flags"
+		print "----------------------------------------------------------------"
 
-		# do config (normally on)
-		self.flags.EXPRESS_THROUGH_VOICE = 0 if "v" in flags else 1
-		self.flags.BODY_ENABLE_TRANSLATION = 0 if "t" in flags else 1
-		self.flags.BODY_ENABLE_ROTATION = 0 if "r" in flags else 1
-		self.flags.BODY_ENABLE_NECK_MOVEMENT = 0 if "n" in flags else 1
-		self.flags.AFFECT_ENABLE_SLEEP = 0 if "s" in flags else 1
-		self.flags.BODY_ENABLE_CLIFF_REFLEX = 0 if "c" in flags else 1
-		self.flags.ACTION_MODULATE_BY_CLIFF = 0 if "u" in flags else 1
-		self.flags.AFFECT_FROM_SOUND = 0 if "d" in flags else 1
-		self.flags.SALIENCE_FROM_MOTION = 0 if "M" in flags else 1
-		self.flags.SALIENCE_FROM_SOUND = 0 if "S" in flags else 1
-		self.flags.SALIENCE_FROM_FACES = 0 if "F" in flags else 1
-		self.flags.SALIENCE_FROM_BALL = 0 if "B" in flags else 1
-		self.flags.EXPRESS_THROUGH_TAIL = 0 if "T" in flags else 1
-		self.flags.AFFECT_ENABLE_UNHAPPY = 0 if "h" in flags else 1
-		self.flags.ACTION_ENABLE_MOVE_AWAY = 0 if "a" in flags else 1
-		self.flags.ACTION_HALT_ON_STALL = 0 if "H" in flags else 1
-		self.flags.ACTION_MODULATE_BY_SONAR = 0 if "m" in flags else 1
-		self.flags.ACTION_ENABLE_SONAR_STOP = 0 if "m" in flags else 1
-		self.flags.ACTION_ENABLE_INPUT = 0 if "I" in flags else 1
+	def finalize_components(self):
 
-		# do config (normally off)
-		self.flags.DEV_DEBUG_SONAR = 1 if "P" in flags else 0
-		self.flags.DEV_DEBUG_DETECTION = 1 if "Q" in flags else 0
-		self.flags.DEV_DEBUG_HALT = 1 if "R" in flags else 0
+		# you must call this function after you change any parameters
+		self.platform.finalize(self)
+		self.lower.finalize(self)
+		self.decode.finalize(self)
+		self.action.finalize(self)
+		self.affect.finalize(self)
+		self.detect_audio.finalize(self)
+		self.detect_face.finalize(self)
+		self.spatial.finalize(self)
 
 	def finalize(self):
 
@@ -561,7 +622,7 @@ class CorePars (object):
 			# for developer convenience, we also allow demo_flags
 			# in this file, but we don't advertise this to the user
 			try:
-				self.action_demo_flags(module.demo_flags)
+				self.demo_flags = module.demo_flags
 			except:
 				pass
 		finally:
@@ -606,22 +667,42 @@ class CorePars (object):
 					if key == "cliff_margin":
 						if val:
 							self.action.cliff_margin = int(val)
+					if key == "behav_prob":
+						if val:
+							self.action.action_prob = float(val) / 100.0
+							self.lower.interact_prob = float(val) / 100.0
 					if key == "demo_flags":
-						self.action_demo_flags(val)
+						self.demo_flags = val
 
 				except:
 
 					print "exception handling line:", line
 
-		# you must call this function after you change any parameters
-		self.platform.finalize(self)
-		self.lower.finalize(self)
-		self.decode.finalize(self)
-		self.action.finalize(self)
-		self.affect.finalize(self)
-		self.detect_audio.finalize(self)
-		self.detect_face.finalize(self)
-		self.spatial.finalize(self)
+		# action demo_flags
+		self.action_demo_flags()
 
+		# if not ALLOW_DEV_FLAGS (all production units) disable all DEV flags
+		if not self.allow_dev_flags:
+			print "disabling developer flags..."
+			flags = dir(self.flags)
+			for flag in flags:
+				if flag[0:4] == "DEV_":
+					value = getattr(self.flags, flag)
+					if value:
+						setattr(self.flags, flag, 0)
+						print "\t" + flag
+		else:
+			print "allowing developer flags..."
 
+		# finalize components (again, in case any changes happened above)
+		self.finalize_components()
 
+		# final reports
+		if self.lower.interact_prob == 1.0:
+			print "not rolling interact dice (interact_prob = 100%)"
+		if self.action.action_prob == 1.0:
+			print "not rolling sham dice (action_prob = 100%)"
+
+		# report
+		print "parameters now finalized"
+		print "----------------------------------------------------------------"

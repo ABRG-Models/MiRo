@@ -17,7 +17,7 @@ import miro2 as miro
 topic_root = "/" + os.getenv("MIRO_ROBOT_NAME")
 
 # Python needs to initialise a ROS node for publishing data
-rospy.init_node("python_pubisher", anonymous=True)
+rospy.init_node("python_publisher", anonymous=True)
 
 # Define ROS publisher
 pub_cmd_vel = rospy.Publisher(topic_root + "/control/cmd_vel", TwistStamped, queue_size=10)
@@ -26,8 +26,8 @@ pub_cmd_vel = rospy.Publisher(topic_root + "/control/cmd_vel", TwistStamped, que
 velocity = TwistStamped()
 
 # Set left/right wheels speeds in m/s
-l_val =  np.random.uniform(-1, 1, 1)
-r_val =  np.random.uniform(-1, 1, 1)
+l_val = np.random.uniform(-1, 1, 1)
+r_val = np.random.uniform(-1, 1, 1)
 wheel_speed = [l_val, r_val]
 
 # Convert to command velocity
@@ -37,8 +37,11 @@ wheel_speed = [l_val, r_val]
 velocity.twist.linear.x = dr
 velocity.twist.angular.z = dtheta
 
+print wheel_speed
+
 # Publish command velocity
 while True:
+	print(velocity)
 	pub_cmd_vel.publish(velocity)
 
 # Take a look at the client_gui.py code (mdk/bin/shared/client_gui.py) for a more detailed use of ROSPy

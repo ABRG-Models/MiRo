@@ -33,8 +33,10 @@
 import numpy as np
 import time
 import os
+import copy
 
 import node
+import miro2 as miro
 
 import cv2
 from cv_bridge import CvBridge
@@ -46,9 +48,7 @@ class NodeDecode(node.Node):
 	def __init__(self, sys):
 
 		node.Node.__init__(self, sys, "decode")
-
-		# resources
-		self.bridge = CvBridge()
+		self.first_call = True
 
 	def tick_camera(self, stream_index, msg):
 
@@ -63,13 +63,38 @@ class NodeDecode(node.Node):
 		except:
 			# treat as if no image arrived
 			print "JPEG decoding error - frame discarded"
-			return False
+			return 0
+
+		# if no image at all, wait for one
+		if img is None:
+			return 0
+
+		# always return -1 on the first call to force a camera
+		# reconfiguration, which will fix the frame rate if it
+		# not already correct
+		if self.first_call:
+			print "first call"
+			self.first_call = False
+			return -1
 
 		# check image size - we are now only accepting the correct
 		# image size, and we'll raise a flag to correct it if not
-		if img.shape != (176, 320, 3):
+		SX = 640
+		SY = 360
+		if img.shape != (SY, SX, 3):
 			print "image wrong size"
-			return True
+			return -1
+
+		# intialize camera model
+		if self.state.camera_model_full is None:
+			self.state.camera_model_full = miro.utils.camera_model.CameraModel(self.pars)
+			self.state.camera_model_full.set_frame_size_from_img(img)
+
+		# store color frame
+		self.state.frame_bgr_full[stream_index] = copy.copy(img)
+
+		# store greyscale frame
+		self.state.frame_gry_full[stream_index] = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 		# resize image to the size we process at in the demo
 		des_image_height = self.pars.decode.image_height
@@ -77,17 +102,22 @@ class NodeDecode(node.Node):
 			sc = float(des_image_height) / img.shape[0]
 			img = cv2.resize(img, dsize=(0, 0), fx=sc, fy=sc)
 
-		# store raw
-		self.state.frame_raw[stream_index] = img
+		# intialize camera model
+		if self.state.camera_model_mini is None:
+			self.state.camera_model_mini = miro.utils.camera_model.CameraModel(self.pars)
+			self.state.camera_model_mini.set_frame_size_from_img(img)
 
-		# do grey for anyone that needs it
+		# store color frame
+		self.state.frame_bgr[stream_index] = img
+
+		# store greyscale frame
 		self.state.frame_gry[stream_index] = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 		# perf
 		self.perf.step('wait')
 
 		# success
-		return False
+		return 1
 
 
 

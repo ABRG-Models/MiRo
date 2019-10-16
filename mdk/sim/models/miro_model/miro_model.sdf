@@ -46,6 +46,13 @@
 			<pose>0 0 0 0 0 0</pose>
 		</include>
 
+		<!--
+		<joint type="fixed" name="dev_fix_body_to_world">
+			<parent>world</parent>
+			<child>miro_body::body</child>
+		</joint>
+		-->
+
 		<joint type="revolute" name="body_neck">
 			<pose>-0.002 0 0.081 0 0 0</pose>
 			<parent>miro_body::body</parent>

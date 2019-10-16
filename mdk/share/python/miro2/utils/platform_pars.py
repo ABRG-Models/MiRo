@@ -64,13 +64,14 @@ class CameraPars(object):
 			[miro.constants.LOC_EYE_X, -miro.constants.LOC_EYE_Y, miro.constants.LOC_EYE_Z]
 			]
 		self.hori_half_fov = miro.constants.CAM_HORI_HALF_FOV
+		self.vert_half_fov = miro.constants.CAM_VERT_HALF_FOV
 		self.tan_hori_half_fov = np.tan(self.hori_half_fov)
 		self.norm_focal_length = 0.5 / self.tan_hori_half_fov
 		self.pixel_aspect_ratio = miro.constants.CAM_PIXEL_ASPECT_RATIO
-		self.distortion_model_k1 = miro.constants.CAM_DISTORTION_MODEL_K1
-		self.distortion_model_k2 = miro.constants.CAM_DISTORTION_MODEL_K2
-		self.distortion_model_k3 = miro.constants.CAM_DISTORTION_MODEL_K3
-		self.distortion_model_k4 = miro.constants.CAM_DISTORTION_MODEL_K4
+		self.distortion_model_h1 = miro.constants.CAM_DISTORTION_MODEL_H1
+		self.distortion_model_h2 = miro.constants.CAM_DISTORTION_MODEL_H2
+		self.distortion_model_h3 = miro.constants.CAM_DISTORTION_MODEL_H3
+		self.distortion_model_h4 = miro.constants.CAM_DISTORTION_MODEL_H4
 
 
 

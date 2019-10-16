@@ -68,6 +68,9 @@ class ActionMull(ActionTemplate):
 
 		pass
 
+	def debug_event_start(self):
+
+		pass
 
 
 

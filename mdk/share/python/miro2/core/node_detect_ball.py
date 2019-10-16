@@ -33,11 +33,12 @@
 import numpy as np
 import time
 import os
+#import pickle
 
 import node
+import miro2 as miro
 
 import cv2
-from cv_bridge import CvBridge
 
 
 
@@ -47,16 +48,13 @@ class NodeDetectBall(node.Node):
 
 		node.Node.__init__(self, sys, "detect_ball")
 
-		# resources
-		self.bridge = CvBridge()
-
 		# clock state
 		self.ticks = [0, 0]
 
-	def tick_camera(self, stream_index):
+	def tick_camera(self, stream_index, msg_obj):
 
 		# get image from stream
-		img = self.state.frame_raw[stream_index]
+		img = self.state.frame_bgr[stream_index]
 
 		# load test image
 		if self.pars.flags.DEV_DETECT_BALL and stream_index == 0 and (self.ticks[stream_index] & 30) < 1:
@@ -79,9 +77,16 @@ class NodeDetectBall(node.Node):
 		# hi = np.array([180, 255, 255])
 
 		# get blue mask
-		lo = np.array([80,  40,  40])
-		hi = np.array([140, 255, 255])
+		# blue ~ 90-150
+		# green ~ 30-90
+		# red ~ 150-30
+		lo = np.array([90,  80,  80])
+		hi = np.array([150, 255, 255])
 		mask = cv2.inRange(hsv, lo, hi)
+
+		# dump example for use with dev/ball_detect
+		#with open('/tmp/ball', 'wb') as f:
+		#	pickle.dump(mask, f)
 
 		# clean up
 		seg = mask
@@ -89,12 +94,21 @@ class NodeDetectBall(node.Node):
 		seg = cv2.erode(seg, None, iterations=2)
 		seg = cv2.dilate(seg, None, iterations=2)
 
+		# parameters
+		canny_high_thresh = 128 # don't think it matters much for binary image, but does affect our grey image
+		ball_detect_sensitivity = 20 # was 33 in Tom's code, lower detects more circles, so it's a trade-off
+		ball_detect_min_dist_between_cens = 40 # was 40 in Tom's code, arbitrary
+		ball_detect_min_radius = 5 # arbitrary, empirical, too small and we'll pick up noise objects
+		ball_detect_max_radius = 60 # arbitrary, empirical
+
 		# get circles
 		circles = cv2.HoughCircles(seg, cv2.HOUGH_GRADIENT,
-				1, 40, param1=10, param2=33, minRadius=0, maxRadius=40)
+				1, ball_detect_min_dist_between_cens, \
+				param1=canny_high_thresh, param2=ball_detect_sensitivity, \
+				minRadius=ball_detect_min_radius, maxRadius=ball_detect_max_radius)
 
 		# get largest circle
-		max_circle = None
+		ball = None
 		if circles is not None:
 			self.max_rad = 0
 			circles = np.uint16(np.around(circles))
@@ -104,14 +118,27 @@ class NodeDetectBall(node.Node):
 
 				if c[2] > self.max_rad:
 					self.max_rad = c[2]
-					max_circle = c
+					ball = c
 
 		# store detection
-		self.state.detect_ball[stream_index] = max_circle
+		if not ball is None:
+
+			# convert to d
+			cen_d = self.state.camera_model_mini.p2d(np.array(ball[0:2]).astype('float32'))
+			rad_d = self.state.camera_model_mini.length_p2d(np.array(ball[2:]).astype('float32'))
+
+			# create message
+			msg = miro.msg.object_ball()
+			msg.conf = 1.0
+			msg.centre = cen_d
+			msg.radius = rad_d
+
+			# send
+			msg_obj.balls.append(msg)
 
 		# report detection
-		if not max_circle is None:
-			print "detect ball", max_circle
+		if not ball is None:
+			print "detect ball", stream_index, ball
 
 		# publish for debug
 		self.state.frame_bal[stream_index] = seg

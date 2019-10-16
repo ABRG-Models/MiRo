@@ -30,8 +30,11 @@
 #	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #	
 #
-#	Action Halt
-#	Action to suddenly stop MIRO in the face of a sudden looming stimulus
+#	action "halt"
+#
+#	priority is high if a wheel stall is detected, causing
+#	the current movement to be interrupted by a "halt"; the
+#	priority is zero if the wheels are not stalled.
 
 import numpy as np
 import miro2 as miro

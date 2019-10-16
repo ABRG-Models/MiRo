@@ -83,7 +83,7 @@
 #	oh				three dimensional position in HEAD
 #					mm x, y, z
 #
-#	vh				azimuth & elevation in HEAD
+#	vh				view line from camera optical centre, but with azim/elev referenced to HEAD
 #					Radians
 
 
@@ -115,10 +115,12 @@ class CameraModel:
 
 		self.pars = pars.camera
 		self.pars.pixel_aspect_ratio_recip = 1.0 / self.pars.pixel_aspect_ratio
+		self.pars.v2u_scale = -0.5 / self.pars.hori_half_fov
+		self.pars.u2v_scale = 1.0 / self.pars.v2u_scale
 
-		# distort_coeff_scale is calculated so that radii of 0.5 are not distorted
-		self.distort_coeff_scale = 1.0
-		self.distort_coeff_scale = 1.0 / self.distort_coeff_radius( 0.5 )
+	def set_frame_size_from_img( self, img ):
+
+		self.set_frame_size(img.shape[1], img.shape[0])
 
 	def set_frame_size( self, x, y ):
 
@@ -152,7 +154,7 @@ class CameraModel:
 			y = 180
 
 		# assume 16:9
-		x = np.round(y * 16 / 9)
+		x = int(np.round(y * 16.0 / 9.0))
 		print "using 16:9 frame size [" + str(x) + " x " + str(y) + "] to initialise camera model"
 
 		# use assumed wide frame size to scale p <-> d
@@ -168,59 +170,69 @@ class CameraModel:
 		ret.sy = int(obj.sy * self.d2p_scale)
 		return ret
 
-	# compute distortion coefficient
-	#
-	# We use a quartic barrel distortion model. Pass in the radius of a point
-	# in the affine projection to find the distortion coefficient. In fact,
-	# for performance reasons, we pass in the radius squared
-	def distort_coeff_radius( self, r ):
-
-		r2 = r * r
-		r3 = r2 * r
-		r4 = r3 * r
-		coeff = 1.0 \
-			+ self.pars.distortion_model_k1 * r \
-			+ self.pars.distortion_model_k2 * r2 \
-			+ self.pars.distortion_model_k3 * r3 \
-			+ self.pars.distortion_model_k4 * r4
-		return coeff * self.distort_coeff_scale
-
 	# apply distortion (map from affine projection space to image space).
 	def u2d( self, u ):
 
-		r = np.sqrt(u[0]*u[0] + u[1]*u[1])
-		coeff = self.distort_coeff_radius( r )
-		x = u[0] * coeff
-		y = u[1] * coeff
-		return [x, y]
+		x_u = u[0]
+		y_u = u[1]
+
+		r = np.sqrt(x_u*x_u+y_u*y_u)
+		z = 1.0 + self.pars.distortion_model_h1 * r
+		x_i = z * x_u
+		y_i = z * y_u
+
+		q = x_i*x_i*y_i*y_i
+		x_j = x_i * (1.0 - self.pars.distortion_model_h2 * q)
+		y_j = y_i * (1.0 + self.pars.distortion_model_h3 * q)
+
+		x_d = x_j * self.pars.distortion_model_h4
+		y_d = y_j * self.pars.distortion_model_h4
+
+		return [x_d, y_d]
 
 	# apply distortion in reverse (map from image space to affine projection space).
 	def d2u( self, d ):
 
-		# first estimate of radius (zero is fine)
-		r = 0
+		# first estimates are equal to input
+		x_d = d[0]
+		y_d = d[1]
+		x_i = x_d
+		y_i = y_d
+		x_u = x_d
+		y_u = y_d
 
-		# iterate a fixed number of times to solve for radius (no analytical solution)
+		# iterate a fixed number of times to solve for input variables (no analytical solution)
 		for iter in range(0, 4):
 
-			# compute coeff assuming radius
-			coeff = 1.0 / self.distort_coeff_radius( r )
+			# invert operation
+			x_j = x_d / self.pars.distortion_model_h4
+			y_j = y_d / self.pars.distortion_model_h4
 
-			# apply distortion using that coefficient
-			x = d[0] * coeff
-			y = d[1] * coeff
+			# invert operation
+			q = x_i*x_i*y_i*y_i
+			x_i = x_j / (1.0 - self.pars.distortion_model_h2 * q)
+			y_i = y_j / (1.0 + self.pars.distortion_model_h3 * q)
 
-			# update estimate of radius (squared)
-			r = np.sqrt(x * x + y * y)
+			# invert operation
+			r = np.sqrt(x_u*x_u+y_u*y_u)
+			z = 1.0 + self.pars.distortion_model_h1 * r
+			x_u = x_i / z
+			y_u = y_i / z
 
 		# ok
-		return [x, y]
+		return [x_u, y_u]
+
+	# Map length from d (true) to p (pixel)
+	def length_d2p( self, l_d ):
+
+		return l_d * self.d2p_scale
+
+	# Map length from p (pixel) to d (true)
+	def length_p2d( self, l_p ):
+
+		return l_p * self.p2d_scale
 
 	# Map from d (true) to p (pixel).
-	#
-	# NB: This is strictly a transform into an image, and the
-	# image can be any size, so it's unsurprising that we have to
-	# indicate the image size as a parameter.
 	def d2p( self, d ):
 
 		# create return value
@@ -230,8 +242,8 @@ class CameraModel:
 		p[1] *= self.pars.pixel_aspect_ratio
 
 		# scale by image width (yes, for y coordinate too - that's our standard)
-		d[0] *= self.d2p_scale
-		d[1] *= self.d2p_scale
+		p[0] *= self.d2p_scale
+		p[1] *= self.d2p_scale
 
 		# transform by image centre
 		p[0] += self.p_cen_x
@@ -269,10 +281,17 @@ class CameraModel:
 		# apply inverse barrel distortion
 		u = self.d2u( d )
 
-		# Recover view line assuming pinhole model
-		azim = -np.arctan2( u[0], self.pars.norm_focal_length )
-		elev = -np.arctan2( u[1], self.pars.norm_focal_length )
+		# recover view line from undistorted frame location
+		#
+		# the proper way to do this is to learn the mapping after the
+		# inverse distortion model has been applied. this could be done
+		# empirically, easily enough. however, informal tests show that
+		# the mapping is pretty close to linear, so for expediency we
+		# just use a linear model.
+		azim = u[0] * self.pars.u2v_scale
+		elev = u[1] * self.pars.u2v_scale
 		v = ViewLine( azim, elev )
+		#print self.p_cen_y, p[1], d[1], u[1], elev/np.pi*180.0
 
 		# ok
 		return v
@@ -282,6 +301,12 @@ class CameraModel:
 		vh = copy.copy(v)
 		vh.azim += self.pars.azimuth[stream_index]
 		vh.elev += self.pars.elevation[stream_index]
+		return vh
+
+	def p2vh(self, p, stream_index):
+
+		v = self.p2v(p)
+		vh = self.v2vh(stream_index, v)
 		return vh
 
 	def vh2oh(self, stream_index, vh, r):

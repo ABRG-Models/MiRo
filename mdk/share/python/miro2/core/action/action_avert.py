@@ -36,6 +36,7 @@
 
 import rospy
 import copy
+import random
 import numpy as np
 import miro2 as miro
 
@@ -73,54 +74,108 @@ class ActionAvert(ActionTemplate):
 				1.0 - self.input.conf_surf,
 				+1)
 
-		# modulate for dev
-		if self.pars.flags.DEV_ORIENT_ONLY:
-			priority = 0.0
-
 		# ok
 		return priority
 
 	def start(self):
 
-		"""
-		# compute start point for fovea in WORLD
-		self.fovea_i_WORLD = self.kc.changeFrameAbs(miro.constants.LINK_HEAD, miro.constants.LINK_WORLD, self.fovea_HEAD)
+		# get pattern direction from cliff sensor asymmetry
+		if self.input.cliff[1] > self.input.cliff[0]:
+			dtheta = -1.0
+		elif self.input.cliff[1] < self.input.cliff[0]:
+			dtheta = 1.0
+		else:
+			# if they are both the same, either direction is good, and it
+			# makes "circling behaviour" less weird if we randomize the
+			# direction it goes in. an alternative is to use the current
+			# head yaw direction to control it, but it gets repetitive.
+			if True:
+				if random.randint(0,1) == 0:
+					dtheta = 1.0
+				else:
+					dtheta = -1.0
+			else:
+				if config[2] >= 0.0:
+					dtheta = 1.0
+				else:
+					dtheta = -1.0
 
-		# compute rotate point for movement in WORLD
-		self.rotate_cen_WORLD = self.kc.changeFrameAbs(miro.constants.LINK_FOOT, miro.constants.LINK_WORLD, np.array([-0.3, 0.0, 0.0]))
-		self.rotate_cen_WORLD[2] = self.fovea_i_WORLD[2]
+		# compute movement parameters
+		q = 1 + self.pars.action.avert_variability * np.random.normal()
+		x = -self.pars.action.avert_retreat_distance * q
+		q = 1 + self.pars.action.avert_variability * np.random.normal()
+		y = dtheta * self.pars.action.avert_turn_distance * q
+		#print "\nAVERT", x, y, "\n"
 
-		# compute start point as relative vector
-		self.fovea_i_REL = self.fovea_i_WORLD - self.rotate_cen_WORLD
-		"""
+		# choose algorithm
+		if self.pars.action.avert_algorithm == 'fovea':
 
-		# compute pattern time
-		secs_ideal = 2.0
-		steps_ideal = int(secs_ideal * self.pars.timing.tick_hz)
-		steps_constrained = np.clip(steps_ideal,
-					self.pars.action.approach_min_steps,
-					self.pars.action.approach_max_steps
+			""" OLD ALGORITHM, nice looking but difficult to get a reliable retreat out of it... """
+
+			# ignore current head position in following computations
+			config_current = self.kc.getConfig()
+			config_init = self.kc.getConfigInit()
+			self.kc.setConfig(config_init)
+
+			# fovea now (with head at calibration position)
+			self.fovea_i_WORLD = self.kc.changeFrameAbs(miro.constants.LINK_HEAD, miro.constants.LINK_WORLD, self.fovea_HEAD)
+
+			# restore original config
+			self.kc.setConfig(config_current)
+
+			# generate fovea target
+			xyzf_FOOT = np.array([x, y, self.fovea_i_WORLD[2]])
+			self.fovea_f_WORLD = self.kc.changeFrameAbs(miro.constants.LINK_FOOT, miro.constants.LINK_WORLD, xyzf_FOOT)
+
+			# add retreat boost - this causes us to override the pattern in
+			# the early stages to force a retreat movement, which makes it
+			# easier to control coming away from a cliff fairly safely
+			self.retreat_boost = 1.0
+
+			# get distance to cover
+			d = np.linalg.norm(self.fovea_f_WORLD - self.fovea_i_WORLD)
+
+		# choose algorithm
+		if self.pars.action.avert_algorithm == 'body':
+
+			""" NEW ALGORITHM: prosaic, will do for now """
+
+			# get position now
+			fovea_BODY = copy.copy(self.fovea_BODY)
+			self.fovea_BODY_i_WORLD = self.kc.changeFrameAbs(miro.constants.LINK_BODY, miro.constants.LINK_WORLD, fovea_BODY)
+
+			# get position after move
+			fovea_BODY += np.array([x, y, 0.0])
+			self.fovea_BODY_f_WORLD = self.kc.changeFrameAbs(miro.constants.LINK_BODY, miro.constants.LINK_WORLD, fovea_BODY)
+
+			"""
+			# get current gaze target in WORLD
+			self.gaze_target_i_WORLD = self.kc.changeFrameAbs(
+					miro.constants.LINK_HEAD,
+					miro.constants.LINK_WORLD,
+					self.gaze_target_i_HEAD_OR_SENSOR
 					)
 
-		# mark pattern direction
-		if self.input.cliff[1] > self.input.cliff[0]:
-			dtheta = np.pi
-		else:
-			dtheta = -np.pi
-		#dtheta = np.pi
+			# get final gaze target (direction only) in WORLD
+			fovea_BODY += np.array([x * 100.0, y * 100.0, 0.0])
+			self.gaze_target_f_WORLD = self.kc.changeFrameAbs(miro.constants.LINK_BODY, miro.constants.LINK_WORLD, fovea_BODY)
+			"""
 
-		# scale pattern direction by pattern distance
-		self.dfov = dtheta * 0.13
+			# get distance to cover
+			d = np.linalg.norm(self.fovea_BODY_f_WORLD - self.fovea_BODY_i_WORLD)
+
+		""" COMMON TO BOTH ALGORITHMS """
+
+		# compute pattern time
+		secs_ideal = d / self.pars.action.avert_mean_speed
+		steps_ideal = int(secs_ideal * self.pars.timing.tick_hz)
+		steps_constrained = np.clip(steps_ideal,
+					self.pars.action.avert_min_steps,
+					self.pars.action.avert_max_steps
+					)
 
 		# start pattern
-		self.x_bak = 0.0
 		self.clock.start(steps_constrained)
-
-		# debug
-		if self.debug:
-			print "rotate_cen_WORLD", self.rotate_cen_WORLD
-			print "fovea_i_REL", self.fovea_i_REL
-			print "pattern time", secs_ideal, steps_ideal, steps_constrained
 
 	def service(self):
 
@@ -128,41 +183,85 @@ class ActionAvert(ActionTemplate):
 		x = self.clock.cosine_profile()
 		self.clock.advance(True)
 
-		# get step
-		dx = x - self.x_bak
-		self.x_bak = x
+		# choose algorithm
+		if self.pars.action.avert_algorithm == 'fovea':
+
+			# get target
+			xyz_WORLD = self.fovea_i_WORLD + x * (self.fovea_f_WORLD - self.fovea_i_WORLD)
+
+			# in HEAD
+			xyz_HEAD = self.kc.changeFrameAbs(miro.constants.LINK_WORLD, miro.constants.LINK_HEAD, xyz_WORLD)
+
+			# compute vector
+			dfov_HEAD = xyz_HEAD - self.fovea_HEAD
+
+			# if using retreat boost
+			if self.pars.action.avert_retreat_boost > 0:
+
+				# NB: this doesn't work yet, it's a work in progress; I
+				# think the open loop control of body is conflicting with
+				# the closed loop control of fovea...
+
+				# apply a firm backwards push at the start
+				x = -self.pars.action.avert_retreat_boost * self.retreat_boost
+				self.apply_push_body(np.array([x, 0.0, 0.0]), flags=miro.constants.PUSH_FLAG_VELOCITY)
+
+				# but move over to respecting the move itself as time goes by
+				self.apply_push_fovea(dfov_HEAD * (1.0 - self.retreat_boost))
+
+				# decay retreat boost
+				self.retreat_boost *= self.pars.action.avert_retreat_boost_lambda
+
+			# if not using retreat boost
+			else:
+
+				# just apply push to HEAD
+				self.apply_push_fovea(dfov_HEAD)
+
+		# choose algorithm
+		if self.pars.action.avert_algorithm == 'body':
+
+			# get target
+			xyz_WORLD = self.fovea_BODY_i_WORLD + x * (self.fovea_BODY_f_WORLD - self.fovea_BODY_i_WORLD)
+
+			# in BODY, HEAD
+			xyz_BODY = self.kc.changeFrameAbs(miro.constants.LINK_WORLD, miro.constants.LINK_BODY, xyz_WORLD)
+			xyz_HEAD = self.kc.changeFrameAbs(miro.constants.LINK_BODY, miro.constants.LINK_HEAD, xyz_BODY)
+
+			# compute vector
+			dfov_BODY = xyz_BODY - self.fovea_BODY
+
+			# do push
+			self.apply_push_body(dfov_BODY)
+
+			""" do this later...
+
+			# compute desired gaze target along a straight line (not quite an arc, but no matter...)
+			gaze_x_WORLD = self.gaze_target_i_WORLD + x * (self.gaze_target_f_WORLD - self.gaze_target_i_WORLD)
+
+			# transform into HEAD for actioning as a push
+			gaze_x_HEAD = self.kc.changeFrameAbs(
+					miro.constants.LINK_WORLD,
+					miro.constants.LINK_HEAD,
+					gaze_x_WORLD
+					)
+
+			# correct range
+			gaze_x_HEAD *= np.linalg.norm(self.gaze_target_f_SENSOR) / np.linalg.norm(gaze_x_HEAD)
+
+			# move yaw to point at distant target
+			#target = self.kc.changeFrameAbs(miro.constants.LINK_WORLD, miro.constants.LINK_HEAD, self.fovea_BODY_q_WORLD)
+			#f = miro.constants.PUSH_FLAG_IMPULSE | miro.constants.PUSH_FLAG_NO_ROTATION
+			#self.apply_push_fovea(np.array([0.0, -y, 0.0]), flags=f)
+			"""
+
+	def event_stop(self):
 
 		"""
-		# compute theta
-		theta = x * self.dtheta
+		x1 = self.kc.changeFrameAbs(miro.constants.LINK_HEAD, miro.constants.LINK_WORLD, self.fovea_HEAD)
+		x2 = self.fovea_BODY_f_WORLD
+		print "stop", x1, x2
 
-		# compute rots
-		c = np.cos(theta)
-		s = np.sin(theta)
-
-		# compute interim target
-		x = copy.copy(self.fovea_i_REL)
-		y = copy.copy(self.fovea_i_REL)
-		y[0] = c * x[0] - s * x[1]
-		y[1] = s * x[0] + c * x[1]
-		fovea_x_WORLD = self.rotate_cen_WORLD + y
-
-		# add a bit of backwards motion
-		q = self.clock.linear_profile()
-		#fovea_x_WORLD -= q * x
-		#print q, theta, c, s
-
-		# transform interim target into HEAD for actioning
-		fovea_x_HEAD = self.kc.changeFrameAbs(miro.constants.LINK_WORLD, miro.constants.LINK_HEAD, fovea_x_WORLD)
-
-		# apply push
-		self.apply_push_fovea(fovea_x_HEAD - self.fovea_HEAD)
-
-		fovea_now_WORLD = \
-			self.kc.changeFrameAbs(miro.constants.LINK_HEAD, miro.constants.LINK_WORLD, self.fovea_HEAD)
-		print fovea_x_WORLD, fovea_now_WORLD
+		self.stop_client()
 		"""
-
-		# compute vector
-		vec = np.array([0.0, self.dfov * dx, 0.0])
-		self.apply_push_fovea(vec)
+		pass

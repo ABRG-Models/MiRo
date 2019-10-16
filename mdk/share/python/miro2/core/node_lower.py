@@ -33,6 +33,7 @@
 import numpy as np
 import time
 import os
+import random
 
 import node
 
@@ -56,6 +57,12 @@ class NodeLower(node.Node):
 		self.imu_body = None
 		self.imu_head_bak = None
 		self.imu_body_bak = None
+
+		# interaction state
+		self.interact_t = 0.0
+
+		# sound level state
+		self.sound_level = 0.0
 
 	def process_stroke(self, i, line):
 
@@ -155,6 +162,19 @@ class NodeLower(node.Node):
 
 		self.perf.step('tick')
 
+		# do interaction probability
+		if self.interact_t == 0.0:
+			if self.pars.lower.interact_prob == 1.0:
+				# do not roll dice or annoy dev with message
+				self.state.interact_enable = True
+			else:
+				u = random.uniform(0.0, 1.0)
+				self.state.interact_enable = u < self.pars.lower.interact_prob
+				print "interact dice:", u, self.pars.lower.interact_prob, self.state.interact_enable
+		self.interact_t += self.pars.timing.tick_sec
+		if self.interact_t >= self.pars.lower.interact_period:
+			self.interact_t = 0.0
+
 		# process sensors_package
 		msg = self.input.sensors_package
 
@@ -169,12 +189,21 @@ class NodeLower(node.Node):
 		self.touch_head = msg.touch_head.data & self.pars.lower.touch_head_mask
 		self.touch_body = msg.touch_body.data & self.pars.lower.touch_body_mask
 
+		# interact_prob
+		if not self.state.interact_enable:
+			self.touch_head = 0
+			self.touch_body = 0
+
 		# compute
 		self.compute_jerks()
 		self.process_touch()
 
+		# estimate ambient sound level as average of two ear levels, LP filtered
+		if not self.state.audio_level is None:
+			#print self.state.audio_level
+			x = np.mean(self.state.audio_level[0:2])
+			self.sound_level += self.pars.lower.sound_level_gamma * (x - self.sound_level)
+			self.output.animal_state.sound_level = self.sound_level
+
 		# wait
 		self.perf.step('wait')
-
-
-

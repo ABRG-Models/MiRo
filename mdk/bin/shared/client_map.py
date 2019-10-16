@@ -1,4 +1,36 @@
 #!/usr/bin/python
+#
+#	@section COPYRIGHT
+#	Copyright (C) 2019 Consequential Robotics Ltd
+#	
+#	@section AUTHOR
+#	Consequential Robotics http://consequentialrobotics.com
+#	
+#	@section LICENSE
+#	For a full copy of the license agreement, and a complete
+#	definition of "The Software", see LICENSE in the MDK root
+#	directory.
+#	
+#	Subject to the terms of this Agreement, Consequential
+#	Robotics grants to you a limited, non-exclusive, non-
+#	transferable license, without right to sub-license, to use
+#	"The Software" in accordance with this Agreement and any
+#	other written agreement with Consequential Robotics.
+#	Consequential Robotics does not transfer the title of "The
+#	Software" to you; the license granted to you is not a sale.
+#	This agreement is a binding legal agreement between
+#	Consequential Robotics and the purchasers or users of "The
+#	Software".
+#	
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+#	KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+#	WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+#	PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+#	OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+#	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+#	OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+#	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	
 
 import rospy
 import miro2 as miro
@@ -84,7 +116,7 @@ class client_map:
 
 		# state
 		self.cam = miro.utils.camera_model.CameraModel()
-		self.kc = miro.utils.kc.kc_miro()
+		self.kc = miro.utils.kc_interf.kc_miro()
 		self.pose = np.array([0.0, 0.0, 0.0])
 
 		# this needs to be set based on the actual frame size, which
@@ -93,12 +125,12 @@ class client_map:
 		self.cam.set_frame_size(320, 180)
 
 		# robot name
-		topic_base = "/" + os.getenv("MIRO_ROBOT_NAME") + "/"
+		topic_base_name = "/" + os.getenv("MIRO_ROBOT_NAME")
 
 		# subscribe
-		topic = topic_base + "sensors/package"
+		topic = topic_base_name + "/sensors/package"
 		print ("subscribe", topic)
-		self.sub_log = rospy.Subscriber(topic, miro.msg.sensors_package, self.callback_sensors)
+		self.sub_log = rospy.Subscriber(topic, miro.msg.sensors_package, self.callback_sensors, queue_size=5, tcp_nodelay=True)
 
 if __name__ == "__main__":
 

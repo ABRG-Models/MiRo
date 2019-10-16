@@ -63,9 +63,17 @@ class NodeSpatial(node.Node):
 
 		# inputs
 		self.audio_events = [[], [], []]
-		self.frame_mov = [None, None]
 		self.wide_field_elev = 0.0
 		self.face = [None, None]
+
+		# state
+		self.mru_eye = 0
+		self.mov_gain = self.pars.spatial.mov_gain
+
+		# debug
+		if self.pars.flags.DEV_DEBUG_WRITE_TRACES:
+			with open("/tmp/spatial", "w") as file:
+				file.write("")
 
 	def jit_init(self, stream_index, img_shape):
 
@@ -93,10 +101,11 @@ class NodeSpatial(node.Node):
 		self.sw = 256
 
 		# intialize camera model
-		self.state.camera_model.set_frame_size(self.sx, self.sy)
+		self.state.camera_model_mini = miro.utils.camera_model.CameraModel(self.pars)
+		self.state.camera_model_mini.set_frame_size(self.sx, self.sy)
 
 		# test camera model
-		#print self.state.camera_model.p2d([0.0, 0.0]).as_string()
+		#print self.state.camera_model_mini.p2d([0.0, 0.0]).as_string()
 		#miro.utils.error("stop")
 
 		# initialize blank
@@ -125,14 +134,14 @@ class NodeSpatial(node.Node):
 			central_axis_azim = np.zeros((self.sx))
 			for xp in range(0, self.sx):
 				p = [xp, self.sy * 0.5 - 0.5]
-				v = self.state.camera_model.p2v(p)
+				v = self.state.camera_model_mini.p2v(p)
 				central_axis_azim[xp] = v.azim + self.pars.camera.azimuth[stream_index]
 			self.central_axis_azim[stream_index] = central_axis_azim
 
 			central_axis_elev = np.zeros((self.sy))
 			for yp in range(0, self.sy):
 				p = [self.sx * 0.5 - 0.5, yp]
-				v = self.state.camera_model.p2v(p)
+				v = self.state.camera_model_mini.p2v(p)
 				central_axis_elev[yp] = v.elev + self.pars.camera.elevation[stream_index]
 			self.central_axis_elev[stream_index] = central_axis_elev
 
@@ -221,7 +230,8 @@ class NodeSpatial(node.Node):
 		#cv2.circle(frame, center, radius, height, -1)
 
 		# get dome
-		dome = self.get_dome(radius) * height
+		dome = self.get_dome(radius)
+		dome = dome * height
 
 		# inject into frame
 		self.inject_pattern(frame, center, dome)
@@ -239,7 +249,7 @@ class NodeSpatial(node.Node):
 		# dependent on the camera distortion model) I'm just going
 		# to estimate it empirically for now
 		if size_rel > 0.0:
-			range = 0.4 / size_rel
+			range = 0.5 / size_rel
 			#print "est range", size_in_pix, size_in_m, range
 		else:
 			range = self.pars.action.range_estimate_max
@@ -254,60 +264,64 @@ class NodeSpatial(node.Node):
 
 	def inject_face(self, stream_index):
 
-		# extract and clear signal
-		faces = self.state.detect_face[stream_index]
-		self.state.detect_face[stream_index] = None
+		# extract signal
+		if self.state.detect_objects[stream_index] is None:
+			return
 
-		# if signal is new
-		if not faces is None:
+		# for each face
+		for face in self.state.detect_objects[stream_index].faces:
 
-			for face in faces:
+			# move coordinates into frame pixels
+			conf = face.conf
+			corn = self.state.camera_model_mini.d2p(np.array(face.corner)).astype('int32')
+			size = self.state.camera_model_mini.length_d2p(np.array(face.size)).astype('int32')
 
-				# extract
-				rect = face[0:4]
-				conf = face[4]
+			# get range
+			range = self.estimate_range(size[0], self.pars.action.face_size_m)
 
-				# get range
-				range = self.estimate_range(face[2], self.pars.action.face_size_m)
+			# debug
+			if not self.pars.flags.DEV_DEBUG_HALT: # do not pollute info
+				print "face at range", range, "with conf", conf
+			if self.pars.flags.DEBUG_DETECTION:
+				self.output.tone = 255
 
-				# debug
-				if not self.pars.flags.DEV_DEBUG_HALT: # do not pollute info
-					print "face at range", range, "with conf", conf
-				if self.pars.flags.DEV_DEBUG_DETECTION:
-					self.output.tone = 255
+			# paint in face
+			x = int(corn[0] + size[0] * 0.5)
+			y = int(corn[1] + size[1] * 0.5)
+			r = (size[0] + size[1]) * 0.25
+			m = self.pars.spatial.face_gain * conf
 
-				# paint in face
-				x = int(face[0] + face[2] * 0.5)
-				y = int(face[1] + face[3] * 0.5)
-				r = (face[2] + face[3]) * 0.25
-				m = int(self.pars.spatial.face_gain * conf * 255.0)
+			# choose radius that reflects representational size
+			# based on physical size in image
+			r = int(r * 0.5)
 
-				# choose radius that reflects representational size
-				# based on physical size in image
-				r = int(r * 0.5)
+			# inject stimulus
+			self.inject_dome(self.pri[stream_index], (x, y), r, m)
 
-				# inject stimulus
-				self.inject_dome(self.pri[stream_index], (x, y), r, m)
-
-				# store source
-				p = [x, y]
-				v = self.p2v(p, stream_index)
-				self.sources.append([0, v, range])
+			# store source
+			p = [x, y]
+			vh = self.state.camera_model_mini.p2vh(p, stream_index)
+			self.sources.append([self.pars.action.priority_source_index_face, vh, range])
 
 	def inject_ball(self, stream_index):
 
-		# extract and clear signal
-		ball = self.state.detect_ball[stream_index]
-		self.state.detect_ball[stream_index] = None
+		# extract signal
+		if self.state.detect_objects[stream_index] is None:
+			return
 
-		# if signal is new
-		if not ball is None:
+		# for each ball
+		for ball in self.state.detect_objects[stream_index].balls:
+
+			# move coordinates into frame pixels
+			cen_p = self.state.camera_model_mini.d2p(np.array(ball.centre))
+			rad_p = self.state.camera_model_mini.length_d2p(ball.radius)
 
 			# get ball parameters
-			x = ball[0]
-			y = ball[1]
-			r = ball[2]
-			m = int(self.pars.spatial.ball_gain * 255.0)
+			x = int(cen_p[0])
+			y = int(cen_p[1])
+			r = int(rad_p)
+			m = self.pars.spatial.ball_gain
+			print x, y, r, m
 
 			# get range
 			range = self.estimate_range(r * 2, self.pars.action.ball_size_m)
@@ -315,7 +329,7 @@ class NodeSpatial(node.Node):
 			# debug
 			if not self.pars.flags.DEV_DEBUG_HALT: # do not pollute info
 				print "ball at range", range
-			if self.pars.flags.DEV_DEBUG_DETECTION:
+			if self.pars.flags.DEBUG_DETECTION:
 				self.output.tone = 253
 
 			# choose radius that reflects representational size
@@ -327,20 +341,94 @@ class NodeSpatial(node.Node):
 
 			# store source
 			p = [x, y]
-			v = self.p2v(p, stream_index)
-			self.sources.append([1, v, range])
+			vh = self.state.camera_model_mini.p2vh(p, stream_index)
+			self.sources.append([self.pars.action.priority_source_index_ball, vh, range])
+
+	def inject_april(self, stream_index):
+
+		# extract signal
+		if self.state.detect_objects[stream_index] is None:
+			return
+
+		# for each tag
+		for tag in self.state.detect_objects[stream_index].tags:
+
+			# extract tag
+			id = tag.id
+			cen = [tag.centre[0], tag.centre[1]]
+			corn = [tag.corners[0:2], tag.corners[2:4], tag.corners[4:6], tag.corners[6:8]]
+
+			# move coordinates into frame pixels
+			cen = self.state.camera_model_mini.d2p(cen)
+			c0 = self.state.camera_model_mini.d2p(np.array(corn[0]))
+			c2 = self.state.camera_model_mini.d2p(np.array(corn[2]))
+
+			# get size
+			d = np.linalg.norm(c2 - c0)
+
+			# get parameters
+			x = int(cen[0])
+			y = int(cen[1])
+			r = int(d/2.0)
+
+			# get range
+			range = self.estimate_range(d * 0.707, self.pars.action.april_size_m)
+
+			# compute magnitude
+			gain = self.pars.spatial.april_gain_at_1m
+			if range < 0.1:
+				range = 0.1
+			gain *= 1.0 / np.sqrt(range)
+			gain = np.clip(gain, 0.0, 1.0)
+			m = gain
+			#print gain, range, m
+
+			# inject stimulus
+			self.inject_dome(self.pri[stream_index], (x, y), r, m)
+
+			# debug
+			if self.pars.flags.DEBUG_DETECTION:
+				self.output.tone = 200
+
+			# store source
+			p = [x, y]
+			vh = self.state.camera_model_mini.p2vh(p, stream_index)
+			self.sources.append([self.pars.action.priority_source_index_april, vh, range])
+
+	def inject_motion_debug(self, stream_index):
+
+		if stream_index != 0:
+			return
+
+		frame_mov = self.state.frame_mov[stream_index].astype('float32') * (1.0 / 255.0)
+		f = frame_mov - np.mean(frame_mov)
+		x = np.max(f)
+		with open("/tmp/mov", "a") as file:
+			file.write(str(x) + " " + str(self.state.in_motion) + " " + str(self.mov_gain) + "\n")
 
 	def inject_motion(self, stream_index):
 
-		# extract and clear signal
-		frame_mov = self.frame_mov[stream_index]
-		self.frame_mov[stream_index] = None
+		# if conditions are met
+		if self.state.in_motion == 0 and self.state.in_blink == 0:
 
-		# if signal is new
-		if not frame_mov is None:
-			if self.state.in_motion == 0 and self.state.in_blink == 0:
-				frame_mov_mean = np.mean(frame_mov)
-				self.pri[stream_index] += frame_mov - frame_mov_mean
+			# extract signal
+			frame_mov = self.state.frame_mov[stream_index].astype('float32') * (1.0 / 255.0)
+
+			# get de-meaned frame
+			frame_mov_mean = np.mean(frame_mov)
+			mov = frame_mov - frame_mov_mean
+
+			# do adaptive threshold
+			x = np.max(mov)
+			if x > 0.0:
+				tgt_gain = self.pars.spatial.mov_gain_adapt_tgt / x
+				d = tgt_gain - self.mov_gain
+				self.mov_gain += self.pars.spatial.mov_gain_adapt_gamma * d
+				self.mov_gain = np.clip(self.mov_gain, self.pars.spatial.mov_gain_adapt_min, self.pars.spatial.mov_gain_adapt_max)
+
+			# inject the de-meaned frame
+			#print self.mov_gain
+			self.pri[stream_index] += self.mov_gain * mov
 
 	def inject_audio(self, stream_index):
 
@@ -386,7 +474,7 @@ class NodeSpatial(node.Node):
 				self.wide_field_elev = audio_event.elev
 
 			# inject
-			self.pri[stream_index] += (gain * 255.0 * audio_event.level) * response
+			self.pri[stream_index] += (gain * audio_event.level) * response
 
 	def publish_peak(self, peak):
 
@@ -404,74 +492,84 @@ class NodeSpatial(node.Node):
 
 	def find_best_peak(self):
 
+		# extract peaks
+		h = [
+			self.priority_peak[0].height,
+			self.priority_peak[1].height,
+			self.priority_peak[2].height
+		]
+
+		# switching between orienting to the two eyes alternately
+		# is problematic in a minor way because the cameras are
+		# slightly mis-aligned so the focus is constantly switching.
+		# to avoid this, we specify a slight tendency to stay with
+		# the MRU eye.
+		e = 1 - self.mru_eye
+		h[e] *= 0.95
+
 		# find best peak
-		best_peak = self.priority_peak[0]
+		best_peak = 0
 		for j in range(1, 3):
-			q = self.priority_peak[j]
-			if q.height > best_peak.height:
-				best_peak = q
+			if h[j] > h[best_peak]:
+				best_peak = j
+
+		# set mru_eye
+		if best_peak < 2:
+			self.mru_eye = best_peak
 
 		# ok
-		return best_peak
+		return self.priority_peak[best_peak]
 
-	def set_priority_peak(self, stream_index, peak):
-
-		with self.lock:
-			self.priority_peak[stream_index] = peak
-
-	def p2v(self, p, stream_index):
-
-		# convert pixel location in IMAGE to view line in HEAD
-		v = self.state.camera_model.p2v(p)
-		v.azim += self.pars.camera.azimuth[stream_index]
-		v.elev += self.pars.camera.elevation[stream_index]
-
-		# ok
-		return v
-
-	def find_stream_peak(self, stream_index):
+	def compute_stream_peak(self, stream_index):
 
 		# get image
 		img = self.pri[stream_index]
 
 		# find threshold for measuring size of priority region
 		height = float(img.max())
+		height_min = float(img.min())
 		thresh = self.pars.spatial.pri_peak_height_thresh * height
 
-		# and scale height into [0.0, 1.0]
-		height *= (1.0 / 255.0)
+		# handle special cases
+		if height <= 0.0 or height_min >= thresh or height < 1e-4:
+			N_accum = 0
 
-		# find all points above threshold
-		(y, x) = np.where(img > thresh)
+		# handle normal case
+		else:
 
-		# describe region by centroid
-		y_accum = sum(y)
-		x_accum = sum(x)
-		N_accum = len(x)
+			# find all points above threshold
+			(y, x) = np.where(img > thresh)
+
+			# describe region by centroid
+			y_accum = sum(y)
+			x_accum = sum(x)
+			N_accum = len(x)
 
 		# if nothing, we're done
 		if N_accum == 0:
 
 			# null peak
-			self.set_priority_peak(stream_index, signals.PriorityPeak(stream_index))
+			peak = signals.PriorityPeak(stream_index)
 
 		else:
 
 			# centroid in pixel space
-			p = [x_accum / N_accum, y_accum / N_accum]
+			p = [float(x_accum) / N_accum, float(y_accum) / N_accum]
 
 			# handle camera streams
 			if stream_index < 2:
 
-				# convert to view line in HEAD
-				v = self.p2v(p, stream_index)
+				# convert to d space
+				loc_d = self.state.camera_model_mini.p2d(p)
+
+				# convert to view line referenced to head ("vh" in camera_model)
+				vh = self.state.camera_model_mini.p2vh(p, stream_index)
 
 				# size and height
-				size = float(N_accum) / float(self.state.camera_model.frame_pixel_count)
+				size = float(N_accum) / float(self.state.camera_model_mini.frame_pixel_count)
 
-				# create output
-				self.set_priority_peak(stream_index,
-						signals.PriorityPeak(stream_index, height, size, v.azim, v.elev))
+				# create peak
+				peak = signals.PriorityPeak(stream_index, loc_d, height, size, vh.azim, vh.elev)
 
 			# handle wide stream
 			else:
@@ -480,15 +578,18 @@ class NodeSpatial(node.Node):
 				size = float(N_accum) / float(self.sw)
 
 				# get azim and elev
-				azim = self.wide_azim[p[0]]
+				azim = self.wide_azim[int(p[0])]
 				elev = self.wide_field_elev
 
-				# create output
-				self.set_priority_peak(stream_index, \
-					signals.PriorityPeak(stream_index, height, size, azim, elev))
+				# create peak
+				peak = signals.PriorityPeak(stream_index, None, height, size, azim, elev)
 
-		# return peak for this stream
-		return self.priority_peak[stream_index]
+		# lay in, with protection
+		with self.lock:
+			self.priority_peak[stream_index] = peak
+
+		# return peak
+		return peak
 
 	def process_stream(self, stream_index):
 
@@ -506,48 +607,83 @@ class NodeSpatial(node.Node):
 					self.audio_events[i].append(event)
 
 		# do pri dynamics
-		prif = cv2.GaussianBlur(self.pri[stream_index], (15, 15), 0)
+		r = int(self.pars.decode.image_height * 0.15)
+		prif = cv2.GaussianBlur(self.pri[stream_index], (r, r), 0)
+		prif *= self.pars.spatial.pri_decay_lambda
 		prif_mean = np.mean(prif)
-		self.pri[stream_index] = self.pars.spatial.pri_decay_lambda * prif - prif_mean
+		self.pri[stream_index] = prif - prif_mean
 
 		# clear sources
 		self.sources = []
 
-		# for camera streams
-		if stream_index < 2:
+		#DebugAdaptiveMotionThresh
+		#self.inject_motion_debug(stream_index)
 
-			# inject motion detector output
-			if self.pars.flags.SALIENCE_FROM_MOTION:
-				self.inject_motion(stream_index)
+		# since servos do not complete their motion for a period after being
+		# commanded, the configuration of the robot will not match the configuration
+		# in kc_m for a period starting when a movement begins, and ending t_mov_settle
+		# after the movement completes. if we continue injecting energy during this
+		# period, we may begin a movement using false data (typically during the
+		# settling period). one simple way to avoid this is to simply disallow any
+		# injection during that period.
+		#
+		# NB: a more sophisticated way of handling this is to use a more timely model
+		# of the body when interpreting the incoming data. this is what kc_s is intended
+		# for. however, that requires some quite thorny processing - interpreting what
+		# is in kc_s, but using it to drive a kc_m that is already ahead in time. this
+		# is certainly possible, but will require some development. #SpeedyResponse
+		if self.state.in_motion == 0.0:
 
-			# inject detected balls
-			if self.pars.flags.SALIENCE_FROM_BALL:
-				self.inject_ball(stream_index)
+			# for camera streams
+			if stream_index < 2:
 
-			# inject faces
-			if self.pars.flags.SALIENCE_FROM_FACES:
-				self.inject_face(stream_index)
+				# inject motion detector output
+				if self.pars.flags.SALIENCE_FROM_MOTION:
+					self.inject_motion(stream_index)
 
-		# inject sound events
-		if self.pars.flags.SALIENCE_FROM_SOUND:
-			self.inject_audio(stream_index)
+				# inject detected balls
+				if self.pars.flags.SALIENCE_FROM_BALL:
+					self.inject_ball(stream_index)
 
-		# clip
-		self.pri[stream_index] = np.clip(self.pri[stream_index], 0, 255)
+				# inject detected faces
+				if self.pars.flags.SALIENCE_FROM_FACE:
+					self.inject_face(stream_index)
 
-		# find priority peak for this stream
-		peak = self.find_stream_peak(stream_index)
+				# inject detected tags
+				if self.pars.flags.SALIENCE_FROM_APRIL:
+					self.inject_april(stream_index)
 
-		# review possible sources of peak
-		peak.source_conf *= self.pars.spatial.pri_decay_lambda
+			# inject sound events
+			if self.pars.flags.SALIENCE_FROM_SOUND:
+				self.inject_audio(stream_index)
+
+		# compute and access priority peak for this stream
+		peak = self.compute_stream_peak(stream_index)
+
+		# review possible sources of this peak by comparing view lines of
+		# each active source with the view line of the peak.
+		#
+		# NB: we are comparing sources we /just/ injected into this stream
+		# with the peak of this stream, so it is safe to compare view lines
+		# because they are all defined in the same coordinate space.
 		for source in self.sources:
+
+			# extract
 			source_index = source[0]
-			da = source[1].azim - peak.azim
-			de = source[1].elev - peak.elev
+			source_vh = source[1]
+			source_range = source[2]
+
+			# compare
+			da = source_vh.azim - peak.azim
+			de = source_vh.elev - peak.elev
 			d = np.sqrt(da*da + de*de)
+
+			# confidence that this individual source caused the overall peak
 			conf = max(1.0 - d / self.pars.spatial.association_angle, 0.0)
-			peak.source_conf[source_index] = max(peak.source_conf[source_index], conf)
-			peak.source_range[source_index] = source[2]
+
+			# load that source into peak
+			value = self.pars.action.priority_source_appetitive_value[source_index]
+			peak.append_source(conf, source_range, value)
 
 		# find best peak across streams
 		best_peak = self.find_best_peak()
@@ -559,27 +695,59 @@ class NodeSpatial(node.Node):
 		self.publish_peak(best_peak)
 
 		# publish priority map (mostly for debug)
-		self.state.frame_pri[stream_index] = self.pri[stream_index].astype(np.uint8)
+		x = self.pri[stream_index] * 255.0
+		x = np.clip(x, 0, 255)
+		self.state.frame_pri[stream_index] = x.astype(np.uint8)
+
+		# for camera streams
+		if stream_index < 2:
+
+			# debug
+			if self.pars.flags.DEV_DEBUG_WRITE_TRACES and stream_index == 0:
+
+				if not self.state.detect_objects[stream_index] is None:
+
+					# prepare string representing single tag and best_peak
+					tags = self.state.detect_objects[stream_index].tags
+					if len(tags) > 0:
+						tag = tags[0]
+						cen = tag.centre
+					else:
+						cen = [-1.0, -1.0]
+					if best_peak.stream_index == 0:
+						loc_d = best_peak.loc_d
+					else:
+						loc_d = [-1.0, -1.0]
+					if loc_d is None:
+						s_loc_d = "-1 -1"
+					else:
+						s_loc_d = str(loc_d[0]) + " " + str(loc_d[1])
+					s_cen = str(cen[0]) + " " + str(cen[1])
+					s = str(self.state.tick)
+					s += " " + s_cen
+					s += " " + s_loc_d
+					s += " " + str(self.state.in_motion)
+
+					# append to file
+					with open("/tmp/spatial", "a") as file:
+						file.write(s + "\n")
+
+			# clear detected objects
+			self.state.detect_objects[stream_index] = None
 
 	def tick_camera(self, stream_index):
 
 		# return list of streams updated
 		updated = []
 
-		# get frame
-		frame_mov = self.state.frame_mov[stream_index]
-
-		# may be None during startup
-		if frame_mov is None:
+		# skip processing completely if motion processor not yet pipeline-full
+		if self.state.frame_mov[stream_index] is None:
 			return updated
 
 		# ensure jit_init has been run
 		if not self.jit_init_complete:
-			if not self.jit_init(stream_index, frame_mov.shape):
+			if not self.jit_init(stream_index, self.state.frame_mov[stream_index].shape):
 				return updated
-
-		# store frame for processing
-		self.frame_mov[stream_index] = frame_mov
 
 		# this also triggers processing of that stream
 		self.process_stream(stream_index)

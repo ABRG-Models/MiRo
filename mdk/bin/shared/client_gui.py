@@ -1,4 +1,36 @@
 #!/usr/bin/python
+#
+#	@section COPYRIGHT
+#	Copyright (C) 2019 Consequential Robotics Ltd
+#	
+#	@section AUTHOR
+#	Consequential Robotics http://consequentialrobotics.com
+#	
+#	@section LICENSE
+#	For a full copy of the license agreement, and a complete
+#	definition of "The Software", see LICENSE in the MDK root
+#	directory.
+#	
+#	Subject to the terms of this Agreement, Consequential
+#	Robotics grants to you a limited, non-exclusive, non-
+#	transferable license, without right to sub-license, to use
+#	"The Software" in accordance with this Agreement and any
+#	other written agreement with Consequential Robotics.
+#	Consequential Robotics does not transfer the title of "The
+#	Software" to you; the license granted to you is not a sale.
+#	This agreement is a binding legal agreement between
+#	Consequential Robotics and the purchasers or users of "The
+#	Software".
+#	
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+#	KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+#	WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+#	PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+#	OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+#	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+#	OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+#	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	
 
 import time
 import gi
@@ -300,7 +332,7 @@ class miro_gui:
 		self.kin_joints.position = [0.0, math.radians(34.0), 0.0, 0.0]
 
 		self.cos_joints = Float32MultiArray()
-		self.cos_joints.data = [0.0, 0.5, 0.0, 0.0, 0.0, 0.0]
+		self.cos_joints.data = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 		self.tone = UInt16MultiArray()
 		self.tone.data = [0, 0, 0]
@@ -315,31 +347,32 @@ class miro_gui:
 
 		# set initial values
 		self.on_ResetCosButton_clicked()
+		self.adjustEyeInitialValues()
 		self.on_LEDReset_clicked()
 
 		# display GUI
 		self.MainWindow.show_all()
 
 		# robot name
-		topic_base = "/" + os.getenv("MIRO_ROBOT_NAME") + "/"
+		topic_base_name = "/" + os.getenv("MIRO_ROBOT_NAME")
 
 		# publishers
-		self.pub_cmd_vel = rospy.Publisher(topic_base + "control/cmd_vel", TwistStamped, queue_size=0)
-		self.pub_cos = rospy.Publisher(topic_base + "control/cosmetic_joints", Float32MultiArray, queue_size=0)
-		self.pub_illum = rospy.Publisher(topic_base + "control/illum", UInt32MultiArray, queue_size=0)
-		self.pub_kin = rospy.Publisher(topic_base + "control/kinematic_joints", JointState, queue_size=0)
-		self.pub_tone = rospy.Publisher(topic_base + "control/tone", UInt16MultiArray, queue_size=0)
-		self.pub_command = rospy.Publisher(topic_base + "control/command", String, queue_size=0)
+		self.pub_cmd_vel = rospy.Publisher(topic_base_name + "/control/cmd_vel", TwistStamped, queue_size=0)
+		self.pub_cos = rospy.Publisher(topic_base_name + "/control/cosmetic_joints", Float32MultiArray, queue_size=0)
+		self.pub_illum = rospy.Publisher(topic_base_name + "/control/illum", UInt32MultiArray, queue_size=0)
+		self.pub_kin = rospy.Publisher(topic_base_name + "/control/kinematic_joints", JointState, queue_size=0)
+		self.pub_tone = rospy.Publisher(topic_base_name + "/control/tone", UInt16MultiArray, queue_size=0)
+		self.pub_command = rospy.Publisher(topic_base_name + "/control/command", String, queue_size=0)
 
 		# subscribers
-		self.sub_package = rospy.Subscriber(topic_base + "sensors/package",
-					miro.msg.sensors_package, self.callback_package)
-		self.sub_mics = rospy.Subscriber(topic_base + "sensors/mics",
-					Int16MultiArray, self.callback_mics)
-		self.sub_caml = rospy.Subscriber(topic_base + "sensors/caml/compressed",
-					CompressedImage, self.callback_caml)
-		self.sub_camr = rospy.Subscriber(topic_base + "sensors/camr/compressed",
-					CompressedImage, self.callback_camr)
+		self.sub_package = rospy.Subscriber(topic_base_name + "/sensors/package",
+					miro.msg.sensors_package, self.callback_package, queue_size=1, tcp_nodelay=True)
+		self.sub_mics = rospy.Subscriber(topic_base_name + "/sensors/mics",
+					Int16MultiArray, self.callback_mics, queue_size=1, tcp_nodelay=True)
+		self.sub_caml = rospy.Subscriber(topic_base_name + "/sensors/caml/compressed",
+					CompressedImage, self.callback_caml, queue_size=1, tcp_nodelay=True)
+		self.sub_camr = rospy.Subscriber(topic_base_name + "/sensors/camr/compressed",
+					CompressedImage, self.callback_camr, queue_size=1, tcp_nodelay=True)
 
 	#Handle Closure of Main Window
 	def on_MainWindow_destroy(self, *args):
@@ -412,6 +445,15 @@ class miro_gui:
 		self.kin_joints.position[yaw] = math.radians(self.YawControl.get_value())
 
 ############################################### COSMETICS CONTROL ###########################################################
+
+	def adjustEyeInitialValues(self):
+
+		# the calibration values for the eyelids are half-closed
+		# but it's annoying to have the GUI default to this because
+		# then the cameras are half-obscured so for the eyes only
+		# we don't start at the calibration point
+		self.LeftEyeControl.set_value(0.0)
+		self.RightEyeControl.set_value(0.0)
 
 	def on_ResetCosButton_clicked(self, *args):
 		self.LeftEyeControl.set_value(miro.constants.EYE_CALIB)
@@ -798,6 +840,21 @@ def generate_argb(colour, bright):
 			else:
 				fps = "???"
 			self.meas_fps[i] = fps
+
+			# write in cross-hairs
+			h = image.shape[0]
+			w = image.shape[1]
+			cv2.line(image, (0, h/2), (w, h/2), (255, 0, 255), 1)
+			cv2.line(image, (0, h/2), (w, h/2), (255, 0, 255), 1)
+			cv2.line(image, (w/2, 0), (w/2, h), (255, 0, 255), 1)
+			cv2.line(image, (w/2-1, 0), (w/2-1, h), (255, 0, 255), 1)
+
+			# write in nominal "dead ahead" point (see dev/camera_model/190724/horiz_map)
+			x = w * 0.75
+			if i == 1:
+				x = w * 0.25
+			x = int(x)
+			cv2.line(image, (x, int(h*0.45)), (x, int(h*0.55)), (255, 0, 255), 1)
 
 			# update displayed image
 			pb = GdkPixbuf.Pixbuf.new_from_data(image.tostring(),

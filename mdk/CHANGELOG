@@ -6,26 +6,95 @@ ________________________________________________________________
 
 
 ################################################################
-create_release: R190211_RC1
-
-
-################################################################
 create_release: R190211_RC2
 
 
+
 User-facing changes since R190211:
-- Updated on-board web interface to support latest MIROcode implementation.
+
+- Updated on-board web interface to support latest MIROcode
+	implementation.
+	
 - Updated LICENSE information.
+
 - Fixed bug in example_kc.py.
+
 - Exposed some additional core states on ROS interface.
-- Various improvements to robustness of start-up procedure against network problems.
 
+- Various improvements to robustness of start-up procedure
+	against network problems.
 
-
-################################################################
-create_release: R190407_RC1
 
 
 ################################################################
 create_release: R190407_RC2
+
+
+
+User-facing changes since R190407:
+
+- MIROapp can now set wifi credentials including spaces and
+	UNICODE characters.
+	
+- Added "behavioural probability" adjustment to demo (see docs).
+
+- Increased parameter "valence_jerk_gain" to increase impact on
+	affect of shaking, hitting.
+	
+- Some improvements to MIROapp GUI, particularly controller page.
+
+- Added extra flags to demo (disable various expression routes).
+
+
+
+################################################################
+create_release: R190518_RC1
+
+
+
+User-facing changes since R190508:
+
+- Expanded/rationalised test/example client suite. Explore these
+	at ~/mdk/bin/shared (most provide brief help when called
+	with no arguments).
+
+- Added client templates for Python and C/C++ (see docs).
+	
+- Some improvements to simulator including much improved matching
+	of simulated cameras to physical cameras; significant enhancement
+	of physical camera model, also.
+
+- Some improvements to autonomous controller ("demo mode"),
+	including several sensing and motion control bug fixes. With
+	this release, we disable face processing on-board to reduce
+	load; users can re-enable it if they prefer but it may harm
+	overall demo performance.
+
+- Added web interface to demo flags etc.; find it at
+	<ip address>:8001/config.
+
+- Added substantial update_platform layer in support of future
+	software releases; several updates to platform are included
+	(disable swap, apache, unattended upgrades - note that
+	system upgrades are now performed explicitly during software
+	updates or on a periodic basis).
+
+- Many updates to web interface serving MIROcode.
+
+- Improvements to reporting, interfacing; more reporting options
+	in MIROapp to send information to support team in case of
+	problems.
+
+- Various bug fixes.
+
+
+
+
+
+################################################################
+create_release: R190828_RC1
+
+
+################################################################
+create_release: R190828_RC2
 

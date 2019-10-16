@@ -78,163 +78,163 @@
 		</include>
 		
 		<include>
-			<name>table-14</name>
+			<name>miro_table-14</name>
 			<uri>model://miro_table</uri>
 			<pose>0 -0.75 0 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>table-15</name>
+			<name>miro_table-15</name>
 			<uri>model://miro_table</uri>
 			<pose>1.45 -0.75 0 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>table-0</name>
+			<name>miro_table-0</name>
 			<uri>model://miro_table</uri>
 			<pose>0 0 0 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>table-1</name>
+			<name>miro_table-1</name>
 			<uri>model://miro_table</uri>
 			<pose>1.45 0 0 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>table-2</name>
+			<name>miro_table-2</name>
 			<uri>model://miro_table</uri>
 			<pose>0 0.75 0 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>table-3</name>
+			<name>miro_table-3</name>
 			<uri>model://miro_table</uri>
 			<pose>1.45 0.75 0 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>table-4</name>
+			<name>miro_table-4</name>
 			<uri>model://miro_table</uri>
 			<pose>0.725 1.5 0 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>table-5</name>
+			<name>miro_table-5</name>
 			<uri>model://miro_table</uri>
 			<pose>0.725 2.25 0 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>table-6</name>
+			<name>miro_table-6</name>
 			<uri>model://miro_table</uri>
 			<pose>0.725 3 0 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>table-7</name>
+			<name>miro_table-7</name>
 			<uri>model://miro_table</uri>
 			<pose>0.725 3.75 0 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>table-8</name>
+			<name>miro_table-8</name>
 			<uri>model://miro_table</uri>
 			<pose>2.175 3 0 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>table-9</name>
+			<name>miro_table-9</name>
 			<uri>model://miro_table</uri>
 			<pose>2.175 3.75 0 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>table-10</name>
+			<name>miro_table-10</name>
 			<uri>model://miro_table</uri>
 			<pose>3.23 3.35 0 0 0 1.57</pose>
 		</include>
 
 		<include>
-			<name>table-11</name>
+			<name>miro_table-11</name>
 			<uri>model://miro_table</uri>
 			<pose>3.23 4.75 0 0 0 1.57</pose>
 		</include>
 		
 		<include>
-			<name>table-12</name>
+			<name>miro_table-12</name>
 			<uri>model://miro_table</uri>
 			<pose>3.23 5.85 0 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>table-13</name>
+			<name>miro_table-13</name>
 			<uri>model://miro_table</uri>
 			<pose>3.23 6.6 0 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>can-pile-0-0</name>
+			<name>coke_can-0-0</name>
 			<uri>model://coke_can</uri>
 			<pose>0.129156 1.642 1.011 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>can-pile-0-1</name>
+			<name>coke_can-0-1</name>
 			<uri>model://coke_can</uri>
 			<pose>0.305947 1.642 1.011 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>can-pile-0-2</name>
+			<name>coke_can-0-2</name>
 			<uri>model://coke_can</uri>
 			<pose>0.482738 1.642 1.011 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>can-pile-0-3</name>
+			<name>coke_can-0-3</name>
 			<uri>model://coke_can</uri>
 			<pose>0.2175515 1.642 1.325 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>can-pile-0-4</name>
+			<name>coke_can-0-4</name>
 			<uri>model://coke_can</uri>
 			<pose>0.3943425 1.642 1.325 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>can-pile-0-5</name>
+			<name>coke_can-0-5</name>
 			<uri>model://coke_can</uri>
 			<pose>0.305947 1.642 1.639 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>can-pile-1-0</name>
+			<name>coke_can-1-0</name>
 			<uri>model://coke_can</uri>
 			<pose>3.6 2.75 1.01098 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>can-pile-1-1</name>
+			<name>coke_can-1-1</name>
 			<uri>model://coke_can</uri>
 			<pose>3.6 2.93144 1.01098 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>can-pile-1-2</name>
+			<name>coke_can-1-2</name>
 			<uri>model://coke_can</uri>
 			<pose>3.45033 2.84076 1.01098 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>can-pile-1-3</name>
+			<name>coke_can-1-3</name>
 			<uri>model://coke_can</uri>
 			<pose>3.54749 2.82966 1.32561 0 0 0</pose>
 		</include>
 		
 		<include>
-			<name>stop-sign</name>
+			<name>stop_sign</name>
 			<uri>model://stop_sign</uri>
 			<pose>3.3 7.05 0 0 0 0</pose>
 		</include>

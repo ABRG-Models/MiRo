@@ -75,17 +75,47 @@ def kc_miro():
 
 
 
-def kc_view_to_HEAD(azim, elev, r):
+def kc_miro_cams_horiz():
+
+	kc = kc_miro()
+
+	# adjust LIFT until cameras are horizontal
+	c = kc.getConfig()
+	c[1] = 51.0 / 180.0 * np.pi
+	kc.setConfig(c)
+
+	return kc
+
+
+
+def kc_viewline_to_position(azim, elev, r):
 
 	# compute target
 	target = np.array([r, 0.0, 0.0])
 
-	# rotate target by elevation then azimuth
-	target = kc.kc_rotate(target, 'y', -elev)
+	# rotate target by azimuth then elevation
 	target = kc.kc_rotate(target, 'z', azim)
+	target = kc.kc_rotate(target, 'y', -elev)
 
 	# ok
 	return target
+
+
+
+
+def kc_position_to_viewline(target):
+
+	# measure elevation
+	elev = np.arctan2(target[2], target[0])
+
+	# undo elevation
+	target = kc.kc_rotate(target, 'y', elev)
+
+	# measure azimuth
+	azim = np.arctan2(target[1], target[0])
+
+	# ok
+	return (azim, elev)
 
 
 

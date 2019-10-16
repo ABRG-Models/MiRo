@@ -162,6 +162,9 @@ class KinematicChain:
 				pars.ctypes.data_as(ctypes.POINTER(self.dll_ctype))
 				)
 
+		# store initial state in case caller wants it later
+		self.state_init = self.getState()
+
 	def zeroPose(self):
 
 		# zero pose
@@ -243,6 +246,21 @@ class KinematicChain:
 		# combine pose and config into one list
 		return [self.getPose(), self.getConfig()]
 
+	def getStateInit( self ):
+
+		# return state that was stored at init
+		return self.state_init
+
+	def getPoseInit( self ):
+
+		# return pose that was stored at init
+		return self.state_init[0]
+
+	def getConfigInit( self ):
+
+		# return config that was stored at init
+		return self.state_init[1]
+
 	def changeFrameAbs( self, inFrame, outFrame, pos ):
 
 		pos = pos.astype(self.dll_ntype)
@@ -291,7 +309,4 @@ class KinematicChain:
 			self.accumPoseChange(dpose)
 		else:
 			self.accumPoseChange(dpose[0:2])
-
-
-
 

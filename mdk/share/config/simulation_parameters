@@ -11,14 +11,24 @@
 # at load time and are used to configure the simulation.
 
 # camera configuration
+# set to <frame size>@<frame rate>
+# <frame_size> can be 180w, 360w, 720w
 #frame=360w@15
 
-# sensors
+# use wide-angle camera model
+# 0: use narrow-angle model
+# 1: use wide-angle model
+#use_wideanglecamera_eyes=0
+
+# enable/disable sensors
+# 0: disable this sensor
+# 1: enable this sensor
 enable_eyes=1
+enable_gaze=0
 enable_overhead=0
 enable_sonar=1
-enable_light_sensors=1
 enable_cliff_sensors=1
+enable_light_sensors=1
 
 # rendering
 # NB: enable_sun does not currently work (placeholder)

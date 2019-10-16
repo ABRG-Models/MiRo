@@ -54,10 +54,20 @@ catkin_python_setup()
 ## Generate messages in the 'msg' folder
 add_message_files(
 	FILES
+	adjust.msg
+	affect_adjust.msg
 	affect.msg
-	affect_state.msg
+	animal_adjust.msg
+	animal_state.msg
+	funnel_web.msg
+	object_ball.msg
+	object_face.msg
+	objects.msg
+	object_tag.msg
+	priority_peak.msg
 	push.msg
 	sensors_package.msg
+	sleep_adjust.msg
 	sleep.msg
 	voice_state.msg
  )

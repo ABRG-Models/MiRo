@@ -35,24 +35,34 @@
 
 import rospy
 import numpy as np
+import random
+
 import miro2 as miro
 
-# Set threshold required for a valid MULL selection
-# 0.1001 seems to be a good compromise that allows MULL to win in the sim a reasonable amount of the time
-MULL_VAL = 0.1001
 
+
+def fmt_prio(prio):
+
+	np.set_printoptions(precision=3, suppress=True)
+	s = prio.__str__()
+	np.set_printoptions(precision=8, suppress=False)
+	return s
 
 class BasalGanglia(object):
 
-	def __init__(self, pars):
+	def __init__(self, state, pars):
 
 		# store
-		self.pars = pars.selection
+		self.state = state
+		self.pars = pars
 
 		# start with "no action" selected
 		self.prio = []
 		self.inhib = []
 		self.selected = -1
+
+		# and not in sham mode
+		self.sham = False
 
 	def update(self, actions):
 
@@ -64,10 +74,8 @@ class BasalGanglia(object):
 			prio = action.interface.priority
 
 			# Hysteretical feedback term
-			# if i == self.selected:
-			# Exclude MULL from hysteresis
-			if (i == self.selected) and (i != 0):
-				prio += self.pars.selection_hysteresis
+			if	i == self.selected:
+				prio += self.pars.selection.selection_hysteresis
 
 			prio = np.clip(prio, 0.0, 1.0)
 			self.prio[i] = prio
@@ -79,25 +87,29 @@ class BasalGanglia(object):
 		#	self.prio /= np.sum(self.prio)
 
 		# Add a little noise
-		noise = np.random.normal(size=len(actions)) * self.pars.selection_noise_mag
-		self.prio += abs(noise)
+		noise = np.random.normal(size=len(actions)) * self.pars.selection.selection_noise_mag
+		self.prio += noise
 
-		# If MULL is the winning action at a threshold lower than MULL_VAL,
-		# add noise to non-MULL actions and subtract noise from MULL until some action is greater than 0.1
-		while (np.argmax(self.prio) == 0) and (self.prio[0] < MULL_VAL) and (all(i < 0.1 for i in self.prio[1:])):
-			noise = np.random.normal(size=len(actions) - 1) * self.pars.selection_noise_mag
-			self.prio[1:] += abs(noise)
-			self.prio[0] -= abs(np.random.normal() * self.pars.selection_noise_mag)
-
-		# Select action with maximum priority (winner take all)
+		# select action with maximum priority (winner take all)
 		selected = np.argmax(self.prio)
 
 		# update selection
 		if self.selected != selected:
-			print "\n[**** SELECT ACTION", actions[selected].name, "****]"
+
+			# report
+			print "[**** SELECT ACTION", actions[selected].name, "@", self.state.tick, fmt_prio(self.prio), "****]"
 			actions[self.selected].event_stop()
 			self.selected = selected
 			actions[self.selected].event_start()
+
+			# recompute sham state
+			if self.pars.action.action_prob == 1.0:
+				# do not roll dice or annoy dev with message
+				self.sham = False
+			else:
+				u = random.uniform(0.0, 1.0)
+				self.sham = u > self.pars.action.action_prob
+				print "\tsham state is now", self.sham
 
 		# feed back inhibition to each action sub-system
 		for i, action in enumerate(actions):

@@ -77,10 +77,6 @@ class ActionApproach(ActionTemplate):
 		priority *= self.input.conf_surf
 		priority *= self.input.conf_space
 
-		# modulate for dev
-		if self.pars.flags.DEV_ORIENT_ONLY:
-			priority = 0.0
-
 		# ok
 		return priority
 
@@ -98,7 +94,7 @@ class ActionApproach(ActionTemplate):
 		fovea_f_WORLD = self.kc.changeFrameAbs(
 				miro.constants.LINK_HEAD,
 				miro.constants.LINK_WORLD,
-				miro.utils.kc_interf.kc_view_to_HEAD(
+				miro.utils.kc_interf.kc_viewline_to_position(
 					self.input.priority_peak.azim,
 					self.input.priority_peak.elev,
 					self.input.priority_peak.range
@@ -150,6 +146,3 @@ class ActionApproach(ActionTemplate):
 		# debug fovea movement through WORLD
 		#fovea_WORLD = self.kc.changeFrameAbs(miro.constants.LINK_HEAD, miro.constants.LINK_WORLD, self.fovea_HEAD)
 		#print "fovea_WORLD", fovea_WORLD, self.clock.toString()
-
-
-

@@ -51,6 +51,10 @@ class ActionOrient(ActionTemplate):
 		# parameters
 		self.name = "orient"
 
+		if self.pars.flags.DEV_DEBUG_WRITE_TRACES:
+			with open('/tmp/orient', 'w') as file:
+				file.write("")
+
 	def compute_priority(self):
 
 		return self.input.priority_peak.height * self.pars.action.orient_base_prio
@@ -63,41 +67,104 @@ class ActionOrient(ActionTemplate):
 		if self.pars.flags.DEV_DEBUG_ORIENT_START:
 			self.system_output.tone = 240
 
+		if self.pars.flags.DEV_DEBUG_WRITE_TRACES:
+			with open('/tmp/orient', 'a') as file:
+				s_peak = str(self.input.priority_peak.azim) + " " + str(self.input.priority_peak.elev)
+				file.write(str(self.system_state.tick) + " " + s_peak + "\n")
+
 	def start(self):
 
-		# get current gaze target in HEAD
-		self.gaze_HEAD = miro.utils.kc_interf.kc_view_to_HEAD(
+		# first, we determine where is the object to which we intend
+		# to orient, in WORLD frame. this won't change for the duration
+		# of the action.
+
+		# determine desired final gaze target in SENSOR
+		self.gaze_target_f_SENSOR = miro.utils.kc_interf.kc_viewline_to_position(
+				self.input.priority_peak.azim,
+				self.input.priority_peak.elev,
+				self.input.priority_peak.range
+				)
+
+		# transform into HEAD
+		if self.input.priority_peak.stream_index == 0:
+			gaze_target_f_HEAD = self.gaze_target_f_SENSOR + self.pars.camera.location[0]
+		if self.input.priority_peak.stream_index == 1:
+			gaze_target_f_HEAD = self.gaze_target_f_SENSOR + self.pars.camera.location[1]
+		else:
+			gaze_target_f_HEAD = self.gaze_target_f_SENSOR
+
+		# transform into WORLD
+		self.gaze_target_f_WORLD = self.kc.changeFrameAbs(
+				miro.constants.LINK_HEAD,
+				miro.constants.LINK_WORLD,
+				gaze_target_f_HEAD
+				)
+
+		# we can do orienting of gaze either in the space of the stream
+		# sensor (caml, camr, mics) or in HEAD. there are pros and cons
+		# to each.
+		#
+		# if we do it in HEAD, there is no "sensor bias" - the whole head
+		# will be looking straight at you afterwards; if we do it in SENSOR
+		# then we'll end up with just one eye looking at us (usually).
+
+		# get current gaze target at the same range as that, in a form
+		# that is suitable for use in either HEAD or SENSOR
+		self.gaze_target_i_HEAD_OR_SENSOR = miro.utils.kc_interf.kc_viewline_to_position(
 				0.0,
 				self.input.gaze_elevation,
-				self.pars.action.orient_gaze_target_radius
+				self.input.priority_peak.range
 				)
+
+		# orient in HEAD
+		if self.pars.action.orient_in_HEAD:
+
+			# define gaze target in HEAD as canonical gaze target
+			self.gaze_target_i_HEAD = self.gaze_target_i_HEAD_OR_SENSOR
+
+		# orient in SENSOR
+		else:
+
+			# define gaze target in HEAD as canonical gaze target
+			# transformed from SENSOR into HEAD
+			if self.input.priority_peak.stream_index == 0:
+				self.gaze_target_i_HEAD = self.gaze_target_i_HEAD_OR_SENSOR + self.pars.camera.location[0]
+			if self.input.priority_peak.stream_index == 1:
+				self.gaze_target_i_HEAD = self.gaze_target_i_HEAD_OR_SENSOR + self.pars.camera.location[1]
+			if self.input.priority_peak.stream_index == 2:
+				self.gaze_target_i_HEAD = self.gaze_target_i_HEAD_OR_SENSOR
 
 		# get current gaze target in WORLD
-		self.gaze_i_WORLD = self.kc.changeFrameAbs(
+		self.gaze_target_i_WORLD = self.kc.changeFrameAbs(
 				miro.constants.LINK_HEAD,
 				miro.constants.LINK_WORLD,
-				miro.utils.kc_interf.kc_view_to_HEAD(
-					0.0,
-					self.input.gaze_elevation,
-					self.pars.action.orient_gaze_target_radius
-					)
+				self.gaze_target_i_HEAD
 				)
-		#print "self.gaze_i_WORLD", self.gaze_i_WORLD
 
-		# get desired gaze target in WORLD
-		self.gaze_f_WORLD = self.kc.changeFrameAbs(
-				miro.constants.LINK_HEAD,
-				miro.constants.LINK_WORLD,
-				miro.utils.kc_interf.kc_view_to_HEAD(
-					self.input.priority_peak.azim,
-					self.input.priority_peak.elev,
-					self.pars.action.orient_gaze_target_radius
+		# debug
+		if self.pars.flags.DEV_DEBUG_ORIENTS:
+
+			print "\n\nORIENT START!\n\n"
+
+			"""
+			# get desired gaze target in WORLD
+			self.gaze_target_f_WORLD = self.kc.changeFrameAbs(
+					miro.constants.LINK_HEAD,
+					miro.constants.LINK_WORLD,
+					miro.utils.kc_interf.kc_viewline_to_position(
+						0.4,
+						self.input.gaze_elevation + 0.2,
+						self.pars.action.orient_gaze_target_radius
+						)
 					)
-				)
-		#print "self.gaze_f_WORLD", self.gaze_f_WORLD
+
+			print "---- gazes ----"
+			print self.gaze_target_i_WORLD
+			print self.gaze_target_f_WORLD
+			"""
 
 		# get change in gaze target across movement
-		self.dgaze_WORLD = self.gaze_f_WORLD - self.gaze_i_WORLD
+		self.dgaze_target_WORLD = self.gaze_target_f_WORLD - self.gaze_target_i_WORLD
 
 		# decide pattern rate / time
 		elev = self.input.priority_peak.elev - self.input.gaze_elevation
@@ -109,37 +176,61 @@ class ActionOrient(ActionTemplate):
 		# start action clock
 		self.clock.start(steps)
 
+		# mark actioned
+		self.input.priority_peak.actioned = 1
+
 	def service(self):
 
 		# read clock
 		x = self.clock.cosine_profile()
 		self.clock.advance(True)
 
-		# compute interim gaze target along a straight line (not quite an arc, but no matter...)
-		gaze_x_WORLD = self.gaze_i_WORLD + x * self.dgaze_WORLD
-		#print "gaze_x_WORLD", gaze_x_WORLD
+		# compute desired gaze target along a straight line (not quite an arc, but no matter...)
+		gaze_target_WORLD_cmd = self.gaze_target_i_WORLD + x * self.dgaze_target_WORLD
+
+		# debug how WORLD gaze is intended to, and actually does, change
+		if self.pars.flags.DEV_DEBUG_ORIENTS:
+			gaze_target_WORLD = self.kc.changeFrameAbs(
+					miro.constants.LINK_HEAD,
+					miro.constants.LINK_WORLD,
+					self.gaze_target_i_HEAD
+					)
+			print gaze_target_WORLD_cmd, gaze_target_WORLD
 
 		# transform into HEAD for actioning as a push
 		gaze_x_HEAD = self.kc.changeFrameAbs(
 				miro.constants.LINK_WORLD,
 				miro.constants.LINK_HEAD,
-				gaze_x_WORLD
+				gaze_target_WORLD_cmd
 				)
-		#print "gaze_x_HEAD", gaze_x_HEAD
 
-		# correct range to gaze target range so we turn rather than shimmy
-		# (we won't shimmy anyway with NO_TRANSLATION, but still...)
-		gaze_x_HEAD *= self.pars.action.orient_gaze_target_radius / np.linalg.norm(gaze_x_HEAD)
+		# we compute a trajectory in WORLD that is a straight line, which
+		# in principle will cause us to shimmy backwards rather than simply
+		# turning our head. in practice, this is prevented by using the flag
+		# PUSH_FLAG_IMPULSE anyway, but for belt and braces we reconstruct
+		# the arc, here, approximately, unless flagged off.
+		if self.pars.action.orient_follow_arc:
+			gaze_x_HEAD *= np.linalg.norm(self.gaze_target_f_SENSOR) / np.linalg.norm(gaze_x_HEAD)
 
-		# apply push
+		# prepare push
 		push = miro.utils.kc.KinematicPush()
 		push.link = miro.constants.LINK_HEAD
 		push.flags = 0 \
 				| miro.constants.PUSH_FLAG_IMPULSE \
 				| miro.constants.PUSH_FLAG_NO_TRANSLATION
-		push.pos = self.gaze_HEAD
-		push.vec = gaze_x_HEAD - self.gaze_HEAD
+		push.pos = self.gaze_target_i_HEAD
+		push.vec = gaze_x_HEAD - self.gaze_target_i_HEAD
+
+		# debug
+		#print x, np.linalg.norm(push.vec)
+
+		# debug (do not apply push)
+		#if self.pars.flags.DEV_DEBUG_ORIENTS:
+		#	if self.count != 3:
+		#		return
+
+		# apply push
 		self.apply_push(push)
 
-		#print push.vec
+
 

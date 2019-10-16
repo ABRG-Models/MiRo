@@ -30,23 +30,8 @@
 	OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	
-*/
 
-/*
 	This header provides constants used in the software.
-
-	[0] by definition
-	[1] measured by eye 181004 (BM)
-	[2] was 5.0, but link was catching on servo horn securing screw, so
-		limited travel to avoid this 181219 (BM)
-	[3] was 1500, change necessitated by experiments 181219, not quite
-		enough travel available to rearward end of movement
-	[4] see dev/servo_lift_nonlinearity_map
-	[5] was 1500, change necessitated by reduced gearing to allow full
-		range of movement 181217
-	[6] measured by eye 181217 (BM)
-	[7] measured by eye 190201 (BM)
-	[8] safely inside limits of servo travel 190201 (BM)
 */
 
 #ifndef INC_MIRO_SOFTWARE_CONSTANTS_H
@@ -68,11 +53,7 @@
 #define MIRO_WHEEL_HALF_TRACK_M				(MIRO_WHEEL_TRACK_M * 0.5f)
 #define MIRO_WHEEL_MAX_ANG_SPEED_RAD_PER_S	(MIRO_WHEEL_MAX_SPEED_M_PER_S / MIRO_WHEEL_HALF_TRACK_M)
 
-//	these additional parameters are used to convert between P1
-//	signal space (normalised drive downstream and encoder counts
-//	upstream) and P2 signal space (m/s both ways). for
-//	applications working with the P2 signal space, these parameters
-//	are not required, since the conversion is performed in P2.
+//	main drive additional physical parameters
 #define MIRO_WHEEL_COUNTS_PER_MOTOR_ROT		4
 #define MIRO_WHEEL_GEARBOX_RATIO			39.822f
 #define MIRO_WHEEL_CMD_SPEED_PER_M_PER_S	210.0f
@@ -98,7 +79,7 @@
 //	TILT
 
 //	constants associated with TILT DOF (currently fixed).
-#define MIRO_TILT_RAD_MIN						__DEG2RAD(   -5.0f)
+#define MIRO_TILT_RAD_MIN						__DEG2RAD(   -6.0f)
 #define MIRO_TILT_RAD_MAX						MIRO_TILT_RAD_MIN
 #define MIRO_TILT_RAD_CALIB						MIRO_TILT_RAD_MIN
 
@@ -114,8 +95,7 @@
 
 #define MIRO_LIFT_COUNTS_CALIB					1600 // [3]
 
-//	we actually use a nonlinear mapping for this DOF, below,
-//	so the value here is not used.
+//	we actually use a nonlinear mapping for this DOF, below, so this value is not used
 #define MIRO_LIFT_COUNTS_PER_RAD				(660 / __DEG2RAD(30.0f))
 
 /*c2py-skip*/
@@ -260,12 +240,13 @@
 #define MIRO_CAM_DIVERGENCE __DEG2RAD( 27.0f)
 
 //	camera projection model (see dev/camera/projection)
-#define MIRO_CAM_HORI_HALF_FOV __DEG2RAD(60.0f)
+#define MIRO_CAM_HORI_HALF_FOV __DEG2RAD(60.6f)
+#define MIRO_CAM_VERT_HALF_FOV __DEG2RAD(31.8f)
 #define MIRO_CAM_PIXEL_ASPECT_RATIO 1.0f
-#define MIRO_CAM_DISTORTION_MODEL_K1 -1.5f
-#define MIRO_CAM_DISTORTION_MODEL_K2 1.0f
-#define MIRO_CAM_DISTORTION_MODEL_K3 -0.5f
-#define MIRO_CAM_DISTORTION_MODEL_K4 0.5f
+#define MIRO_CAM_DISTORTION_MODEL_H1 -0.295f
+#define MIRO_CAM_DISTORTION_MODEL_H2 13.0f
+#define MIRO_CAM_DISTORTION_MODEL_H3 23.0f
+#define MIRO_CAM_DISTORTION_MODEL_H4 1.17302f
 
 //	IMU scaling
 #define MIRO_ACCEL_1G (1024)
@@ -287,11 +268,16 @@
 #define MIRO_PUSH_FLAG_NO_NECK_MOVEMENT				__BIT(4)
 #define MIRO_PUSH_FLAG_WAIT							__BIT(5)
 
-//	DOCLINK AFFECT FLAGS
-//	affect expression flags
-#define MIRO_AFFECT_EXPRESS_THROUGH_VOICE			__BIT(0)
-#define MIRO_AFFECT_EXPRESS_THROUGH_NECK			__BIT(1)
-#define MIRO_AFFECT_EXPRESS_THROUGH_WHEELS			__BIT(2)
+//	DOCLINK ANIMAL STATE FLAGS
+//	animal state flags
+#define MIRO_ANIMAL_EXPRESS_THROUGH_VOICE			__BIT(0)
+#define MIRO_ANIMAL_EXPRESS_THROUGH_NECK			__BIT(1)
+#define MIRO_ANIMAL_EXPRESS_THROUGH_WHEELS			__BIT(2)
+#define MIRO_ANIMAL_DETECT_MOTION					__BIT(8)
+#define MIRO_ANIMAL_DETECT_FACE						__BIT(9)
+#define MIRO_ANIMAL_DETECT_BALL						__BIT(10)
+#define MIRO_ANIMAL_DETECT_SOUND					__BIT(11)
+#define MIRO_ANIMAL_DETECT_APRIL					__BIT(12)
 
 
 

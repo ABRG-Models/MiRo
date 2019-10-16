@@ -36,7 +36,6 @@ import time
 import node
 
 import cv2
-from cv_bridge import CvBridge
 
 
 
@@ -46,32 +45,36 @@ class NodeDetectMotion(node.Node):
 
 		node.Node.__init__(self, sys, "detect_motion")
 
-		# resources
-		self.bridge = CvBridge()
-
 		# state
 		self.frame0 = [None, None]
 		self.frame1 = [None, None]
 
-	def tick_camera(self, stream_index):
+	def tick_camera(self, stream_index, detect_motion):
 
-		self.frame1[stream_index] = self.frame0[stream_index]
-		self.frame0[stream_index] = self.state.frame_raw[stream_index]
+		if detect_motion:
 
-		if self.frame1[stream_index] is not None:
+			self.frame1[stream_index] = self.frame0[stream_index]
+			self.frame0[stream_index] = self.state.frame_bgr[stream_index]
 
-			# take difference in RGB space
-			dif = cv2.absdiff(self.frame0[stream_index], self.frame1[stream_index])
+			if self.frame1[stream_index] is not None:
 
-			# convert to grayscale
-			mov = cv2.cvtColor(dif, cv2.COLOR_BGR2GRAY)
+				# take difference in RGB space
+				dif = cv2.absdiff(self.frame0[stream_index], self.frame1[stream_index])
 
-			# filter
-			movf = cv2.GaussianBlur(mov, (9,9), 0)
+				# convert to grayscale
+				mov = cv2.cvtColor(dif, cv2.COLOR_BGR2GRAY)
 
-			# publish
-			self.state.frame_mov[stream_index] = movf
+				# filter
+				movf = cv2.GaussianBlur(mov, (9,9), 0)
 
+				# publish
+				self.state.frame_mov[stream_index] = movf
+
+
+		else:
+
+			# in this case, just provide a blank frame
+			self.state.frame_mov[stream_index] = 0 * cv2.cvtColor(self.state.frame_bgr[stream_index], cv2.COLOR_BGR2GRAY)
 
 
 

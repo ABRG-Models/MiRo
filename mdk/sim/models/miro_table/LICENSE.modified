@@ -1,0 +1,19 @@
+This is a slightly modified version of Nate Koenig's "table" model,
+downloaded from the Gazebo Models repository in April 2019:
+
+https://bitbucket.org/osrf/gazebo_models/src/default/table/
+
+That model is licensed as indicated in "LICENSE".
+
+The modification is to use a different texture:
+
+Agathis_lanceolata_MHNT.BOT.2010.6.70_modified.jpg
+
+Which is a modified (cropped only) version of:
+
+https://commons.wikimedia.org/wiki/File:Agathis_lanceolata_MHNT.BOT.2010.6.70.jpg
+
+The texture file is distributed under the:
+
+Creative Commons Attribution-Share Alike 3.0 Unported license.
+

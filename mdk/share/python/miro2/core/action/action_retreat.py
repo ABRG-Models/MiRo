@@ -30,8 +30,13 @@
 #	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #	
 #
-#	Action Retreat
-#	action where Miro will retreat a stimulus
+#	action "retreat"
+#
+#	this action is bid for whenever the action "halt" is underway
+#	(which itself is bid for during a wheel stall) /and/ the previous
+#	action was generating a "retreatable push". the action then retreats
+#	away from what the robot was doing when the wheel stall occurred,
+#	for a short time.
 
 import copy
 import numpy as np

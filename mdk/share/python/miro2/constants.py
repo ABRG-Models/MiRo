@@ -103,7 +103,6 @@ PLATFORM_U_FLAG_LOW_BATTERY = __BIT(21)
 
 
 
-
 # warning ignored line: #define INC_MIRO_SOFTWARE_CONSTANTS_H
 
 
@@ -122,11 +121,7 @@ WHEEL_RADIUS_M = (WHEEL_DIAMETER_M * 0.5)
 WHEEL_HALF_TRACK_M = (WHEEL_TRACK_M * 0.5)
 WHEEL_MAX_ANG_SPEED_RAD_PER_S = (WHEEL_MAX_SPEED_M_PER_S / WHEEL_HALF_TRACK_M)
 
-#	these additional parameters are used to convert between P1
-#	signal space (normalised drive downstream and encoder counts
-#	upstream) and P2 signal space (m/s both ways). for
-#	applications working with the P2 signal space, these parameters
-#	are not required, since the conversion is performed in P2.
+#	main drive additional physical parameters
 WHEEL_COUNTS_PER_MOTOR_ROT = 4
 WHEEL_GEARBOX_RATIO = 39.822
 WHEEL_CMD_SPEED_PER_M_PER_S = 210.0
@@ -152,7 +147,7 @@ COS_COUNTS_MAX = 2500
 #	TILT
 
 #	constants associated with TILT DOF (currently fixed).
-TILT_RAD_MIN = __DEG2RAD(   -5.0)
+TILT_RAD_MIN = __DEG2RAD(   -6.0)
 TILT_RAD_MAX = TILT_RAD_MIN
 TILT_RAD_CALIB = TILT_RAD_MIN
 
@@ -168,8 +163,7 @@ LIFT_RAD_CALIB = __DEG2RAD(   34.0)
 
 LIFT_COUNTS_CALIB = 1600
 
-#	we actually use a nonlinear mapping for this DOF, below,
-#	so the value here is not used.
+#	we actually use a nonlinear mapping for this DOF, below, so this value is not used
 LIFT_COUNTS_PER_RAD = (660 / __DEG2RAD(30.0))
 
 
@@ -310,12 +304,13 @@ CAM_ELEVATION = __DEG2RAD( 45.0)
 CAM_DIVERGENCE = __DEG2RAD( 27.0)
 
 #	camera projection model (see dev/camera/projection)
-CAM_HORI_HALF_FOV = __DEG2RAD(60.0)
+CAM_HORI_HALF_FOV = __DEG2RAD(60.6)
+CAM_VERT_HALF_FOV = __DEG2RAD(31.8)
 CAM_PIXEL_ASPECT_RATIO = 1.0
-CAM_DISTORTION_MODEL_K1 = -1.5
-CAM_DISTORTION_MODEL_K2 = 1.0
-CAM_DISTORTION_MODEL_K3 = -0.5
-CAM_DISTORTION_MODEL_K4 = 0.5
+CAM_DISTORTION_MODEL_H1 = -0.295
+CAM_DISTORTION_MODEL_H2 = 13.0
+CAM_DISTORTION_MODEL_H3 = 23.0
+CAM_DISTORTION_MODEL_H4 = 1.17302
 
 #	IMU scaling
 ACCEL_1G = (1024)
@@ -337,11 +332,16 @@ PUSH_FLAG_NO_ROTATION = __BIT(3)
 PUSH_FLAG_NO_NECK_MOVEMENT = __BIT(4)
 PUSH_FLAG_WAIT = __BIT(5)
 
-#	DOCLINK AFFECT FLAGS
-#	affect expression flags
-AFFECT_EXPRESS_THROUGH_VOICE = __BIT(0)
-AFFECT_EXPRESS_THROUGH_NECK = __BIT(1)
-AFFECT_EXPRESS_THROUGH_WHEELS = __BIT(2)
+#	DOCLINK ANIMAL STATE FLAGS
+#	animal state flags
+ANIMAL_EXPRESS_THROUGH_VOICE = __BIT(0)
+ANIMAL_EXPRESS_THROUGH_NECK = __BIT(1)
+ANIMAL_EXPRESS_THROUGH_WHEELS = __BIT(2)
+ANIMAL_DETECT_MOTION = __BIT(8)
+ANIMAL_DETECT_FACE = __BIT(9)
+ANIMAL_DETECT_BALL = __BIT(10)
+ANIMAL_DETECT_SOUND = __BIT(11)
+ANIMAL_DETECT_APRIL = __BIT(12)
 
 
 

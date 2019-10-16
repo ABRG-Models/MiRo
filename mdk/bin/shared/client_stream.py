@@ -1,4 +1,36 @@
 #!/usr/bin/python
+#
+#	@section COPYRIGHT
+#	Copyright (C) 2019 Consequential Robotics Ltd
+#	
+#	@section AUTHOR
+#	Consequential Robotics http://consequentialrobotics.com
+#	
+#	@section LICENSE
+#	For a full copy of the license agreement, and a complete
+#	definition of "The Software", see LICENSE in the MDK root
+#	directory.
+#	
+#	Subject to the terms of this Agreement, Consequential
+#	Robotics grants to you a limited, non-exclusive, non-
+#	transferable license, without right to sub-license, to use
+#	"The Software" in accordance with this Agreement and any
+#	other written agreement with Consequential Robotics.
+#	Consequential Robotics does not transfer the title of "The
+#	Software" to you; the license granted to you is not a sale.
+#	This agreement is a binding legal agreement between
+#	Consequential Robotics and the purchasers or users of "The
+#	Software".
+#	
+#	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+#	KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+#	WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+#	PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+#	OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+#	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+#	OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+#	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#	
 
 import rospy
 from std_msgs.msg import UInt8MultiArray, UInt16MultiArray, Int16MultiArray, String
@@ -16,8 +48,32 @@ MAX_STREAM_MSG_SIZE = (4096 - 48)
 # buffer for quarter of a second, for instance.
 BUFFER_STUFF_BYTES = 4000
 
-# media source directories
-DIR_SOURCE = ["../../share/media", os.getenv('HOME') + "/lib/miro2x/mdk/share/media"]
+# media source list
+DIR_SOURCE = [
+	"../../share/media"
+	]
+	
+# list directories belonging to other releases
+DIR_ROOT="../../../"
+DIR_MDK = []
+subdirs = os.listdir(DIR_ROOT)
+for d in subdirs:
+	if len(d) < 3:
+		continue
+	if d[0:3] != "mdk":
+		continue
+	DIR_MDK.append(d)
+	
+# rsort them so we prioritise more recent ones
+DIR_MDK.sort()
+DIR_MDK.reverse()
+
+# and append to media source list
+for d in DIR_MDK:
+	DIR_SOURCE.append(DIR_ROOT + d + "/share/media")
+
+# append dev directories
+DIR_SOURCE.append(os.getenv('HOME') + "/lib/miro2x/mdk/share/media")
 
 ################################################################
 
@@ -43,7 +99,7 @@ for dir in DIR_SOURCE:
 
 		# add to array
 		for file in files:
-	
+		
 			# special files prepended with underscore
 			if file[0] == '_':
 			
@@ -52,7 +108,17 @@ for dir in DIR_SOURCE:
 			
 			# normal files
 			else:
+			
+				# append to index
 				index.append([file, os.path.join(dir, file)])
+				
+		# if any were found, we stop there, because the source
+		# directories are intended not to union each other, but
+		# to override each other, in the order specified in
+		# DIR_SOURCE
+		if len(index) > 0:
+			print "reading from:", dir
+			break
 
 # sort array
 index.sort()
@@ -295,22 +361,22 @@ class streamer:
 		self.buffer_total = 0
 
 		# get robot name
-		topic_base = "/" + os.getenv("MIRO_ROBOT_NAME") + "/"
+		topic_base_name = "/" + os.getenv("MIRO_ROBOT_NAME")
 
 		# publish
-		topic = topic_base + "control/stream"
+		topic = topic_base_name + "/control/stream"
 		print ("publish", topic)
 		self.pub_stream = rospy.Publisher(topic, Int16MultiArray, queue_size=0)
 
 		# subscribe
-		topic = topic_base + "platform/log"
+		topic = topic_base_name + "/platform/log"
 		print ("subscribe", topic)
-		self.sub_log = rospy.Subscriber(topic, String, self.callback_log)
+		self.sub_log = rospy.Subscriber(topic, String, self.callback_log, queue_size=5, tcp_nodelay=True)
 
 		# subscribe
-		topic = topic_base + "sensors/stream"
+		topic = topic_base_name + "/sensors/stream"
 		print ("subscribe", topic)
-		self.sub_stream = rospy.Subscriber(topic, UInt16MultiArray, self.callback_stream)
+		self.sub_stream = rospy.Subscriber(topic, UInt16MultiArray, self.callback_stream, queue_size=1, tcp_nodelay=True)
 
 if __name__ == "__main__":
 

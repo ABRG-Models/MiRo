@@ -36,9 +36,9 @@ import os
 import copy
 
 import node
+import miro2 as miro
 
 import cv2
-from cv_bridge import CvBridge
 
 
 
@@ -47,9 +47,6 @@ class NodeDetectFace(node.Node):
 	def __init__(self, sys):
 
 		node.Node.__init__(self, sys, "detect_face")
-
-		# resources
-		self.bridge = CvBridge()
 
 		# classifiers
 		classifiers = [
@@ -68,7 +65,7 @@ class NodeDetectFace(node.Node):
 		# clock state
 		self.ticks = [0, 0]
 
-	def tick_camera(self, stream_index):
+	def tick_camera(self, stream_index, msg_obj):
 
 		# get image (grayscale)
 		img = self.state.frame_gry[stream_index]
@@ -92,16 +89,24 @@ class NodeDetectFace(node.Node):
 				rect = rects[i].astype('float')
 				conf = np.tanh(conf * 0.1)
 				if conf > 0.0:
-					#print "detected face", stream_index, conf, rect
 					face = np.concatenate((rect, conf))
+					print "detect face", stream_index, face
 					faces.append(face)
+
+					# convert to d
+					corn_d = self.state.camera_model_mini.p2d(rect[0:2].astype('float32'))
+					size_d = self.state.camera_model_mini.length_p2d(rect[2:4].astype('float32'))
+
+					# store
+					msg = miro.msg.object_face()
+					msg.conf = conf
+					msg.corner = corn_d
+					msg.size = size_d
+					msg_obj.faces.append(msg)
 
 		# merge duplicates
 		# let's not do this for now, I'm not sure why it's needed yet
 		#faces = self.merge_duplicates(faces)
-
-		# store
-		self.state.detect_face[stream_index] = faces
 
 		# tick
 		self.ticks[stream_index] += 1

@@ -39,6 +39,16 @@ import signals
 
 
 
+def fmt_float(x):
+
+	return "{0:.3f}".format(x)
+
+def fmt_rad_as_deg(x):
+
+	return "{0:.3f}".format(x*57.2958)
+
+
+
 class ActionTemplate(object):
 
 	def __init__(self, parent):
@@ -61,10 +71,12 @@ class ActionTemplate(object):
 		# initialise state and clock objects private to this action
 		self.interface = ActionInterface()
 		self.clock = ActionClock()
+		self.count = 0
 
 		# miscellaneous state
 		self.name = "unnamed"
 		self.fovea_HEAD = miro.utils.get("LOC_SONAR_FOVEA_HEAD")
+		self.fovea_BODY = np.array([0.1, 0.0, 0.0]) # arbitrary, just a location all components can agree on
 
 		# call finalize (derived class must implement this)
 		self.finalize()
@@ -88,8 +100,7 @@ class ActionTemplate(object):
 
 		# this is called when an appetitive response is started
 		# and responds by processing what was oriented into affect
-		conf = self.system_state.priority_peak.source_conf
-		value = np.sum(np.multiply(conf, self.pars.action.priority_peak_source_value))
+		value = self.system_state.priority_peak.value
 		self.system_state.action_target_value = value * gain
 
 	def get_inhibition(self):
@@ -119,6 +130,18 @@ class ActionTemplate(object):
 		# apply push
 		self.apply_push(push)
 
+	def apply_push_body(self, pushvec, flags=miro.constants.PUSH_FLAG_IMPULSE):
+
+		# create push
+		push = miro.utils.kc.KinematicPush()
+		push.link = miro.constants.LINK_BODY
+		push.flags = flags
+		push.pos = self.fovea_BODY
+		push.vec = pushvec
+
+		# apply push
+		self.apply_push(push)
+
 		"""
 	def get_push(self):
 
@@ -134,11 +157,17 @@ class ActionTemplate(object):
 
 		if self.pars.flags.DEV_DEBUG_ACTION_PARAMS:
 			print "(DEV_DEBUG_ACTION_PARAMS, at action start...)"
-			print "\tpriority_peak.location", self.input.priority_peak.azim, self.input.priority_peak.elev
-			print "\tpriority_peak.height", self.input.priority_peak.height
-			print "\tpriority_peak.size", self.input.priority_peak.size
-			print "\tpriority_peak.size_norm", self.input.priority_peak.size_norm
-			print "\tpriority_peak.range", self.input.priority_peak.range
+			print "\tpriority_peak.stream_index", self.input.priority_peak.stream_index
+			loc_d = self.input.priority_peak.loc_d
+			if not loc_d is None:
+				print "\tpriority_peak.x_d", fmt_float(loc_d[0])
+				print "\tpriority_peak.y_d", fmt_float(loc_d[1])
+			print "\tpriority_peak.azim", fmt_rad_as_deg(self.input.priority_peak.azim)
+			print "\tpriority_peak.elev", fmt_rad_as_deg(self.input.priority_peak.elev)
+			print "\tpriority_peak.height", fmt_float(self.input.priority_peak.height)
+			print "\tpriority_peak.size", fmt_float(self.input.priority_peak.size)
+			print "\tpriority_peak.size_norm", fmt_float(self.input.priority_peak.size_norm)
+			print "\tpriority_peak.range", fmt_float(self.input.priority_peak.range)
 
 	def event_start(self):
 
@@ -146,12 +175,24 @@ class ActionTemplate(object):
 
 	def event_stop(self):
 
-		pass
+		# count how many actions we've executed
+		self.count += 1
 
 	def stop(self):
 
 		# to stop action, stop motor plan clock (no effect if already stopped)
 		self.clock.stop()
+
+	def stop_client(self):
+
+		# handy shortcut used during debug which stops execution of
+		# the demo client to allow review of output
+		print "\n************************ stop_client() called by", self.name, "\n"
+		self.system_state.keep_running = False
+
+		# also set to MULL_ONLY for any remaining run time to avoid
+		# starting a new movement action
+		self.pars.flags.DEV_MULL_ONLY = True
 
 	def ascending(self):
 
@@ -317,7 +358,3 @@ class ActionClock(object):
 			return 1.0
 
 		return self.t_norm
-
-
-
-

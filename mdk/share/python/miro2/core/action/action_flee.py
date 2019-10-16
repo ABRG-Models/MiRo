@@ -75,15 +75,21 @@ class ActionFlee(ActionTemplate):
 				+ fixation_gain * (fixation - 0.5)
 				+ size_gain * size_norm)
 
+		#print height, valence, arousal, fixation, size_norm, priority
+
 		# modulate by cliff
+		"""
+		No, don't - if you do, then there will be a priority to flee when there
+		is nothing to flee from, when looking over a cliff. Let action avert
+		handle the cliff situation - we should flee only if it is a natural
+		thing to do, anyway. There is a down modulation of action approach,
+		which /does/ make sense.
+
 		priority = self.modulate_priority_to(priority,
 				self.pars.action.priority_medium,
 				1.0 - self.input.conf_surf,
 				+1)
-
-		# modulate for dev
-		if self.pars.flags.DEV_ORIENT_ONLY:
-			priority = 0.0
+				"""
 
 		# ok
 		return priority
@@ -100,7 +106,7 @@ class ActionFlee(ActionTemplate):
 		fovea_f_WORLD = self.kc.changeFrameAbs(
 				miro.constants.LINK_HEAD,
 				miro.constants.LINK_WORLD,
-				miro.utils.kc_interf.kc_view_to_HEAD(
+				miro.utils.kc_interf.kc_viewline_to_position(
 					self.input.priority_peak.azim + np.pi, # flee in opposite direction to priority peak
 					self.input.priority_peak.elev,
 					flee_dist
@@ -145,5 +151,3 @@ class ActionFlee(ActionTemplate):
 
 		# apply push
 		self.apply_push_fovea(fovea_x_HEAD - self.fovea_HEAD)
-
-

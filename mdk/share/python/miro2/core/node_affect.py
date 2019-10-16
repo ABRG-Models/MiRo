@@ -63,17 +63,12 @@ class RTC(object):
 		self.skew_secs = 0
 		"""
 
-	def get_time_based_arousal( self ):
+	def get_time_of_day( self ):
 
 		# get normalised time (0.0 to 1.0 during day)
 		now = datetime.datetime.now()
 		t = (now.hour * 60.0 + now.minute) / 1440.0
-		
-		# cosine map
-		arousal = -np.cos(t * 2.0 * np.pi)
-		
-		# ok
-		return (now.hour, arousal)
+		return t
 
 		"""
 	def get_time( self ):
@@ -530,14 +525,6 @@ class RTC(object):
 
 
 
-class AffectDrive(object):
-
-	def __init__(self, target, gamma):
-		self.gamma = gamma
-		self.target = target
-
-
-
 class NodeAffect(node.Node):
 
 	def __init__(self, sys):
@@ -554,31 +541,11 @@ class NodeAffect(node.Node):
 		self.d_valence = 0
 		self.d_arousal = 0
 
-		# extrinsic drives
-		self.emotion_drive = AffectDrive([0,0], 0)
-		self.mood_drive = AffectDrive([0,0], 0)
-		self.sleep_drive = AffectDrive([0,0], 0)
-
 		# state
 		self.audio_level = 0
 		self.audio_level_accum = 0
 		self.jerk_head_smooth = np.array([0.0, 0.0, 0.0])
 		self.jerk_head_smooth_i = 0
-
-		# input
-		self.affect_drive = None
-
-		"""
-
-		# subscribe
-		self.subscribe('core/affect_drive', miro2.msg.affect_drive, self.callback_affect_drive)
-
-	def callback_affect_drive(self, msg):
-
-		# store
-		self.affect_drive = msg
-
-		"""
 
 	def drive_arousal(self, d):
 
@@ -590,12 +557,17 @@ class NodeAffect(node.Node):
 		# accumulate drive
 		self.d_valence += d
 
-	def affect_from_explicit(self):
+	def affect_from_adjust(self):
 
-		# apply drives from external source
-		self.mood.drive(self.mood_drive)
-		self.sleep.drive(self.sleep_drive)
-		self.emotion.drive(self.emotion_drive)
+		# receive
+		adjust = self.input.animal_adjust
+		if not adjust is None:
+			self.input.animal_adjust = None
+
+			# handle adjust
+			self.mood.adjust(adjust.mood)
+			self.emotion.adjust(adjust.emotion)
+			self.sleep.adjust(adjust.sleep)
 
 	def affect_from_sleep_blocked(self):
 
@@ -753,16 +725,6 @@ class NodeAffect(node.Node):
 		self.emotion.arousal += x
 		self.d_arousal -= x
 
-		# apply external drive
-		if not self.affect_drive is None:
-			self.emotion.valence += (self.affect_drive.emotion.valence - self.emotion.valence) * self.affect_drive.emotion_gamma
-			self.emotion.arousal += (self.affect_drive.emotion.arousal - self.emotion.arousal) * self.affect_drive.emotion_gamma
-			self.mood.valence += (self.affect_drive.mood.valence - self.mood.valence) * self.affect_drive.mood_gamma
-			self.mood.arousal += (self.affect_drive.mood.arousal - self.mood.arousal) * self.affect_drive.mood_gamma
-			self.sleep.wakefulness += (self.affect_drive.sleep.wakefulness - self.sleep.wakefulness) * self.affect_drive.sleep_gamma
-			self.sleep.pressure += (self.affect_drive.sleep.pressure - self.sleep.pressure) * self.affect_drive.sleep_gamma
-			self.affect_drive = None
-
 	def state_valence_dynamics(self):
 
 		# valence is computed relatively independently from arousal/sleep
@@ -804,11 +766,10 @@ class NodeAffect(node.Node):
 
 			# adjustment from circadian rhythm
 			if self.pars.flags.AFFECT_FROM_CLOCK:
-				(t, x) = self.rtc.get_time_based_arousal()
-				arousal_target += x * self.pars.affect.arousal_gain_rtc
-				
-				# store hour for monitoring
-				self.output.affect_time.data = t
+
+				# cosine map
+				arousal_rtc = -np.cos(self.time_of_day * 2.0 * np.pi)
+				arousal_target += arousal_rtc * self.pars.affect.arousal_gain_rtc
 
 			# store target from circadian rhythm
 			self.pars.affect.arousal_target_circadian = arousal_target
@@ -886,12 +847,13 @@ class NodeAffect(node.Node):
 			self.sleep.pressure = 0.0
 			self.sleep.wakefulness = 1.0
 
-		#print self.sleep.pressure, self.sleep.wakefulness
-
 	def tick(self):
 
+		# tick clock
+		self.time_of_day = self.rtc.get_time_of_day()
+
 		# external influence on states
-		self.affect_from_explicit()
+		self.affect_from_adjust()
 
 		# enable
 		if self.pars.flags.AFFECT_ENABLE:
@@ -905,14 +867,14 @@ class NodeAffect(node.Node):
 		self.state.wakefulness = self.sleep.wakefulness
 
 		# load affect output message
-		msg = self.output.affect_state
+		msg = self.output.animal_state
 		msg.sleep.pressure = self.sleep.pressure
 		msg.sleep.wakefulness = self.sleep.wakefulness
 		msg.mood.valence = self.mood.valence
 		msg.mood.arousal = self.mood.arousal
 		msg.emotion.valence = self.emotion.valence
 		msg.emotion.arousal = self.emotion.arousal
-
+		msg.time_of_day = self.time_of_day
 
 
 

@@ -69,6 +69,8 @@ miro_info()
 	env | grep ROS | grep -v UNKNOWN | sed s!$HOME!~!g
 	env | grep GAZEBO | grep -v UNKNOWN | sed s!$HOME!~!g
 	env | grep PYTHON | grep -v UNKNOWN | sed s!$HOME!~!g
+	echo -e "\n[ ROBOT ]"
+	mm -info 2> /dev/null
 	echo
 }
 
@@ -76,25 +78,28 @@ miro_info()
 miro_get_dynamic_address()
 {
 	# recover address (this works on the system as configured at the factory)
-	MIRO_DYNAMIC_IP=`/sbin/ifconfig | grep inet | grep -v inet6 | grep -v 127.0.0.1 | head -n 1 | sed s/addr:// | sed s/.*inet\ // | sed s/\ .*//`
+	MIRO_DYNAMIC_IP=`/sbin/ifconfig | grep inet | grep -v inet6 | grep -v 127.0.0.1 | head -n 1 | sed 's/[^0-9]*//' | sed 's/\ .*//'`
 }
 
 # network address resolution function
 miro_resolve_network_address()
 {
+	# explicit
+	[[ "$MIRO_LOCAL_IP" != "" ]] && { MIRO_LOCAL_IP_SRC="set from MIRO_LOCAL_IP"; return; }
+
 	# static
-	[[ "$MIRO_NETWORK_MODE" == "static" ]] && { MIRO_LOCAL_IP=$MIRO_STATIC_IP; }
+	[[ "$MIRO_NETWORK_MODE" == "static" ]] && { MIRO_LOCAL_IP_SRC="set from MIRO_STATIC_IP"; MIRO_LOCAL_IP=$MIRO_STATIC_IP; }
 
 	# dynamic
-	[[ "$MIRO_NETWORK_MODE" == "dynamic" ]] && { miro_get_dynamic_address; MIRO_LOCAL_IP=$MIRO_DYNAMIC_IP; }
+	[[ "$MIRO_NETWORK_MODE" == "dynamic" ]] && { miro_get_dynamic_address; MIRO_LOCAL_IP_SRC="set from miro_get_dynamic_address()"; MIRO_LOCAL_IP=$MIRO_DYNAMIC_IP; }
 
 	# loopback
-	[[ "$MIRO_NETWORK_MODE" == "loopback" ]] && { MIRO_LOCAL_IP=127.0.0.1; }
-	
+	[[ "$MIRO_NETWORK_MODE" == "loopback" ]] && { MIRO_LOCAL_IP_SRC="set to loopback"; MIRO_LOCAL_IP=127.0.0.1; }
+
 	# resolve to something in case no network was available
 	if [[ "$1" == "resolve" ]];
 	then
-		[[ "$MIRO_LOCAL_IP" == "" ]] && { MIRO_LOCAL_IP=127.0.0.1; miro_warn "network address not available, using loopback"; }
+		[[ "$MIRO_LOCAL_IP" == "" ]] && { MIRO_LOCAL_IP_SRC="network address not available, using loopback"; MIRO_LOCAL_IP=127.0.0.1; miro_warn "$MIRO_LOCAL_IP_SRC"; }
 	fi
 }
 
@@ -130,6 +135,7 @@ export MIRO_DIR_TRASH=$MIRO_DIR_USER/trash
 # get tmp dirs
 export MIRO_DIR_TMP=/tmp/$MIRO_TOKEN
 export MIRO_DIR_LOG=$MIRO_DIR_TMP/log
+export MIRO_DIR_PID=$MIRO_DIR_TMP/pid
 export MIRO_DIR_DUMP=$MIRO_DIR_TMP/dump
 
 # get mdk dirs
@@ -145,7 +151,10 @@ export MIRO_MULTITOOL=$MIRO_DIR_ONBOARD/multitool.sh
 [ -d "$MIRO_DIR_BIN" ] || { miro_config_error "failed to find MDK bin directory for this system"; return; }
 
 # ensure dirs exist
-mkdir -p "$MIRO_DIR_CONFIG" "$MIRO_DIR_TRASH" "$MIRO_DIR_LOG" "$MIRO_DIR_DUMP" "$MIRO_DIR_STATE"
+mkdir -p "$MIRO_DIR_CONFIG" "$MIRO_DIR_TRASH" "$MIRO_DIR_LOG" "$MIRO_DIR_PID" "$MIRO_DIR_DUMP" "$MIRO_DIR_STATE"
+
+# configure node to use .local
+export NODE_PATH=$NODE_PATH:~/.local/npm/lib/node_modules
 
 # caller can skip slow parts if desired
 if [[ "$MIRO_SETUP_QUICK" == "" ]];
@@ -165,17 +174,37 @@ then
 	# load that file
 	source $MIRO_USER_SETUP || { miro_config_error "failed to source user_setup.bash"; }
 
-	# resolve network address
-	miro_resolve_network_address resolve
+	# determine robot address
+	if [[ "$MIRO_ROBOT_IP" == "" ]];
+	then
+		MIRO_ROBOT_IP_SRC="not set"
+	else
+		MIRO_ROBOT_IP_SRC="set explicitly"
+	fi
 
-	# set ROS network variables
-	[[ "$ROS_MASTER_IP" == "" ]] && ROS_MASTER_IP=localhost
+	# determine local address
+	miro_resolve_network_address resolve
 	export ROS_IP=$MIRO_LOCAL_IP
+
+	# determine master address
+	if [[ "$ROS_MASTER_IP" == "" ]];
+	then
+		if [[ "$MIRO_ROBOT_IP" != "" ]];
+		then
+			export ROS_MASTER_IP=$MIRO_ROBOT_IP
+			ROS_MASTER_IP_SRC="set from MIRO_ROBOT_IP"
+		else
+			export ROS_MASTER_IP=localhost
+			ROS_MASTER_IP_SRC="not set, assumed running locally"
+		fi
+	else
+		ROS_MASTER_IP_SRC="set explicitly"
+	fi
 	export ROS_MASTER_URI=http://$ROS_MASTER_IP:11311
 
 	# source ROS setup
 	source /opt/ros/$MIRO_ROS_RELEASE/setup.bash || { miro_config_error "failed to source ROS setup.bash"; }
-	
+
 	# source Gazebo setup, if installed
 	if [[ -f "/usr/share/gazebo/setup.sh" ]];
 	then
@@ -191,9 +220,9 @@ then
 	else
 		miro_config_error "catkin_ws has not yet been built on this machine - did you install_mdk.sh?"
 	fi
-	
+
 	# add path to python share
-	TMP=$MIRO_DIR_MDK/share/python
+	TMP=$MIRO_DIR_SHARE/python
 	[[ ":$PYTHONPATH:" != *":$TMP:"* ]] && PYTHONPATH=$TMP:$PYTHONPATH
 
 	# make packages available to third-party software
@@ -215,7 +244,10 @@ then
 		echo MDK path: $MIRO_DIR_MDK
 		echo MDK release: $MIRO_MDK_RELEASE
 		echo User setup: $MIRO_USER_SETUP
-		echo Network address: $MIRO_LOCAL_IP
+		echo
+		echo -e "Local network address: $MIRO_LOCAL_IP ($MIRO_LOCAL_IP_SRC)"
+		echo -e "Robot network address: $MIRO_ROBOT_IP ($MIRO_ROBOT_IP_SRC)"
+		echo -e "ROS master address: $ROS_MASTER_URI ($ROS_MASTER_IP_SRC)"
 		echo
 		echo -e "Type \"miro_info\" to see your environment"
 		echo -e "________________________________________________________________\n"

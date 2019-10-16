@@ -58,7 +58,7 @@ class NodeAction(node.Node):
 		node.Node.__init__(self, sys, "action")
 
 		# action selection (basal ganglia model)
-		self.selector = BasalGanglia(self.pars)
+		self.selector = BasalGanglia(self.state, self.pars)
 
 		# input/output objects
 		self.action_input = ActionInput()
@@ -69,14 +69,14 @@ class NodeAction(node.Node):
 				ActionHalt(self),
 				ActionOrient(self),
 				ActionApproach(self),
-				ActionAvert(self),
 				ActionFlee(self),
+				ActionAvert(self),
 				ActionRetreat(self)
 				]
 
 		# state
 		self.count = 0
-		self.push = None
+		self.push = []
 		self.retreatable_push = None
 		self.debug_tick = 0
 
@@ -94,7 +94,7 @@ class NodeAction(node.Node):
 	def apply_push(self, push, retreatable):
 
 		# store
-		self.push = push
+		self.push.append(push)
 		if retreatable:
 			self.retreatable_push = push
 
@@ -124,7 +124,7 @@ class NodeAction(node.Node):
 		self.action_input.conf_space += range
 
 		# debug
-		if self.pars.flags.DEV_DEBUG_SONAR:
+		if self.pars.flags.DEBUG_SONAR:
 			# play tone to indicate range to target
 			if self.action_input.conf_space < 0.95:
 				ping_period = int(5.0 + self.action_input.conf_space * 20.0)
@@ -135,13 +135,23 @@ class NodeAction(node.Node):
 
 	def modulate_by_cliff(self):
 
+		# get current
+		cliff_reading = self.action_input.cliff
+
 		# get min/max
 		cliff_min = np.clip(self.pars.action.cliff_thresh - self.pars.action.cliff_margin, 0, 15)
 		cliff_max = np.clip(self.pars.action.cliff_thresh + self.pars.action.cliff_margin, 0, 15)
 		cliff_range = cliff_max - cliff_min
 
+		# dev
+		if self.pars.flags.DEV_SIMULATE_CLIFF:
+			cliff_reading[0] = 0.0
+			cliff_reading[1] = 0.0
+			if (self.state.tick % 50) == 0:
+				print "DEV_SIMULATE_CLIFF"
+
 		# aka "shun cliffs"
-		cliff = np.min(np.array(self.input.sensors_package.cliff.data))
+		cliff = np.min(cliff_reading)
 		cliff = (cliff * 15.0).astype(np.uint16)
 		cliff -= cliff_min
 		cliff = np.float(np.clip(cliff, 0, cliff_range))
@@ -198,10 +208,10 @@ class NodeAction(node.Node):
 			# store
 			self.action_input.user_touch = self.state.user_touch
 			self.action_input.sonar_range = msg.sonar.range
-			self.action_input.cliff = msg.cliff.data
+			self.action_input.cliff = np.array(msg.cliff.data)
 			self.action_input.priority_peak = self.state.priority_peak
-			self.action_input.emotion = copy.copy(self.output.affect_state.emotion)
-			self.action_input.sleep = copy.copy(self.output.affect_state.sleep)
+			self.action_input.emotion = copy.copy(self.output.animal_state.emotion)
+			self.action_input.sleep = copy.copy(self.output.animal_state.sleep)
 			self.action_input.wheel_speed_opto = self.input.sensors_package.wheel_speed_opto.data
 			self.action_input.wheel_speed_back_emf = self.input.sensors_package.wheel_speed_back_emf.data
 			self.action_input.wheel_effort_pwm = self.input.sensors_package.wheel_effort_pwm.data
@@ -216,7 +226,8 @@ class NodeAction(node.Node):
 			self.modulate_by_sonar()
 
 		if self.pars.flags.ACTION_MODULATE_BY_CLIFF:
-			self.modulate_by_cliff()
+			if not self.pars.flags.DEV_IGNORE_CLIFF_SENSORS:
+				self.modulate_by_cliff()
 
 	def limit_accel(self, action):
 
@@ -307,6 +318,15 @@ class NodeAction(node.Node):
 		# fill in action input
 		self.process_input()
 
+		# debug
+		if self.pars.flags.DEV_DEBUG_ORIENTS:
+			if self.state.tick >= 100 and self.state.tick <= 120:
+				pass
+			elif self.state.tick >= 240 and self.state.tick <= 260:
+				pass
+			else:
+				self.action_input.priority_peak.height = 0.0
+
 		# for each action
 		for action in self.actions:
 
@@ -322,12 +342,27 @@ class NodeAction(node.Node):
 				if action.move_away:
 					action.interface.priority = 0.0
 
+			# handle ORIENT_ONLY
+			if self.pars.flags.DEV_ORIENT_ONLY and action.name != "orient":
+				action.interface.priority = 0.0
+
+			# handle MULL_ONLY
+			if self.pars.flags.DEV_MULL_ONLY and action.name != "mull":
+				action.interface.priority = 0.0
+
+			# handle NO_FLEE
+			if self.pars.flags.DEV_NO_FLEE and action.name == "flee":
+				action.interface.priority = 0.0
+
 		# start test action?
 		if self.pars.flags.DEV_RUN_TEST_ACTION:
 			self.start_test_action()
 
 		# update selection mechanism
 		self.selector.update(self.actions)
+
+		# get sham state
+		sham = self.selector.sham
 
 		# and store its state for monitoring
 		self.output.sel_prio.data = self.selector.prio
@@ -340,11 +375,7 @@ class NodeAction(node.Node):
 			action.descending()
 
 		# action push
-		if not self.push is None:
-
-			# recover
-			push = self.push
-			self.push = None
+		for push in self.push:
 
 			# add flags
 			if self.pars.flags.BODY_ENABLE_TRANSLATION == 0:
@@ -363,22 +394,24 @@ class NodeAction(node.Node):
 						push.vec[0] *= space
 						x = x - push.vec[0]
 
-						if self.pars.flags.DEV_DEBUG_SONAR and x > 0.0:
+						if self.pars.flags.DEBUG_SONAR and x > 0.0:
 							# play tone to indicate we're restricted
 							if self.state.tick & 1:
 								self.output.tone = int(x * 50000.0)
 							else:
 								self.output.tone = 0
 
-			# apply push to local kc
-			self.kc_m.push(push)
+			# if not in sham state
+			if not sham:
 
-			# publish push to external kc
-			self.output.pushes.append(push)
+				# apply push to local kc
+				self.kc_m.push(push)
+
+				# publish push to external kc
+				self.output.pushes.append(push)
+
+		# clear actioned pushes
+		self.push = []
 
 		# debug
 		self.count += 1
-
-
-
-
