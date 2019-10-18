@@ -46,6 +46,7 @@ from action.action_orient import ActionOrient
 from action.action_flee import ActionFlee
 from action.action_avert import ActionAvert
 from action.action_retreat import ActionRetreat
+from action.action_special import ActionSpecial
 
 from std_msgs.msg import MultiArrayDimension
 
@@ -66,12 +67,13 @@ class NodeAction(node.Node):
 		# create actions
 		self.actions = [
 				ActionMull(self),
-				ActionHalt(self),
 				ActionOrient(self),
 				ActionApproach(self),
 				ActionFlee(self),
 				ActionAvert(self),
-				ActionRetreat(self)
+				ActionHalt(self),
+				ActionRetreat(self),
+				ActionSpecial(self)
 				]
 
 		# state
@@ -79,6 +81,8 @@ class NodeAction(node.Node):
 		self.push = []
 		self.retreatable_push = None
 		self.debug_tick = 0
+		self.avert_count = 0
+		self.cliff_sensor_fail_detect_count = 0
 
 		# output
 		nchan = len(self.actions)
@@ -100,72 +104,86 @@ class NodeAction(node.Node):
 
 	def modulate_by_sonar(self):
 
-		# get sonar reading
-		range = self.input.sensors_package.sonar.range
+		# default
+		self.action_input.conf_space = 1.0
 
-		# get sonar range
-		range_min = self.pars.body.sonar_min_range
-		range_max = self.pars.body.sonar_max_range
+		# if not flagged off
+		if self.pars.flags.ACTION_MODULATE_BY_SONAR:
 
-		# get normalised range
-		range -= range_min
-		range_max -= range_min
-		range = range / range_max
+			# get sonar reading
+			range = self.input.sensors_package.sonar.range
 
-		# constrain
-		if range < 0.0:
-			range = 0.0
-		if range > 1.0:
-			range = 1.0
+			# get sonar range
+			range_min = self.pars.body.sonar_min_range
+			range_max = self.pars.body.sonar_max_range
 
-		# readings come and go, so preserve them using a filter
-		self.action_input.conf_space *= 0.95
-		range *= 0.05
-		self.action_input.conf_space += range
+			# get normalised range
+			range -= range_min
+			range_max -= range_min
+			range = range / range_max
 
-		# debug
-		if self.pars.flags.DEBUG_SONAR:
-			# play tone to indicate range to target
-			if self.action_input.conf_space < 0.95:
-				ping_period = int(5.0 + self.action_input.conf_space * 20.0)
-				if self.state.tick >= (self.debug_tick + ping_period):
-					self.debug_tick = self.state.tick
-					self.output.tone = int((1.0 - self.action_input.conf_space) * 250.0)
+			# constrain
+			if range < 0.0:
+				range = 0.0
+			if range > 1.0:
+				range = 1.0
 
+			# readings come and go, so preserve them using a filter
+			self.action_input.conf_space *= 0.95
+			range *= 0.05
+			self.action_input.conf_space += range
+
+			# debug
+			if self.pars.flags.DEBUG_SONAR:
+				# play tone to indicate range to target
+				if self.action_input.conf_space < 0.95:
+					ping_period = int(5.0 + self.action_input.conf_space * 20.0)
+					if self.state.tick >= (self.debug_tick + ping_period):
+						self.debug_tick = self.state.tick
+						self.output.tone = int((1.0 - self.action_input.conf_space) * 250.0)
 
 	def modulate_by_cliff(self):
 
-		# get current
-		cliff_reading = self.action_input.cliff
+		# default
+		self.action_input.conf_surf = 1.0
 
-		# get min/max
-		cliff_min = np.clip(self.pars.action.cliff_thresh - self.pars.action.cliff_margin, 0, 15)
-		cliff_max = np.clip(self.pars.action.cliff_thresh + self.pars.action.cliff_margin, 0, 15)
-		cliff_range = cliff_max - cliff_min
+		# if not flagged off
+		if self.pars.flags.ACTION_MODULATE_BY_CLIFF:
 
-		# dev
-		if self.pars.flags.DEV_SIMULATE_CLIFF:
-			cliff_reading[0] = 0.0
-			cliff_reading[1] = 0.0
-			if (self.state.tick % 50) == 0:
-				print "DEV_SIMULATE_CLIFF"
+			# if cliff sensors are valid
+			if not self.pars.dev.IGNORE_CLIFF_SENSORS:
 
-		# aka "shun cliffs"
-		cliff = np.min(cliff_reading)
-		cliff = (cliff * 15.0).astype(np.uint16)
-		cliff -= cliff_min
-		cliff = np.float(np.clip(cliff, 0, cliff_range))
+				# get current
+				cliff_reading = self.action_input.cliff
 
-		# confidence in a surface ahead of us
-		conf = 0.0
-		if cliff_range > 0:
-			conf = cliff / cliff_range
-		else:
-			if cliff >= 0.0:
-				conf = 1.0
+				# get min/max
+				cliff_min = np.clip(self.pars.action.cliff_thresh - self.pars.action.cliff_margin, 0, 15)
+				cliff_max = np.clip(self.pars.action.cliff_thresh + self.pars.action.cliff_margin, 0, 15)
+				cliff_range = cliff_max - cliff_min
 
-		# store
-		self.action_input.conf_surf = conf
+				# dev
+				if self.pars.dev.SIMULATE_CLIFF:
+					cliff_reading[0] = 0.0
+					cliff_reading[1] = 0.0
+					if (self.state.tick % 50) == 0:
+						print "DEV_SIMULATE_CLIFF"
+
+				# aka "shun cliffs"
+				cliff = np.min(cliff_reading)
+				cliff = (cliff * 15.0).astype(np.uint16)
+				cliff -= cliff_min
+				cliff = np.float(np.clip(cliff, 0, cliff_range))
+
+				# confidence in a surface ahead of us
+				conf = 0.0
+				if cliff_range > 0:
+					conf = cliff / cliff_range
+				else:
+					if cliff >= 0.0:
+						conf = 1.0
+
+				# store
+				self.action_input.conf_surf = conf
 
 	def compute_gaze_elevation(self):
 		'''
@@ -216,18 +234,16 @@ class NodeAction(node.Node):
 			self.action_input.wheel_speed_back_emf = self.input.sensors_package.wheel_speed_back_emf.data
 			self.action_input.wheel_effort_pwm = self.input.sensors_package.wheel_effort_pwm.data
 			self.action_input.wheel_speed_cmd = self.input.sensors_package.wheel_speed_cmd.data
+			self.action_input.stream = self.input.stream
 
 		# compute transformed input data
 		self.compute_gaze_elevation()
 		self.compute_dgaze()
 		self.compute_gaze_fixation()
 
-		if self.pars.flags.ACTION_MODULATE_BY_SONAR:
-			self.modulate_by_sonar()
-
-		if self.pars.flags.ACTION_MODULATE_BY_CLIFF:
-			if not self.pars.flags.DEV_IGNORE_CLIFF_SENSORS:
-				self.modulate_by_cliff()
+		# do modulations
+		self.modulate_by_sonar()
+		self.modulate_by_cliff()
 
 	def limit_accel(self, action):
 
@@ -309,17 +325,41 @@ class NodeAction(node.Node):
 			if self.count > start_at and self.selector.selected == 0:
 				self.state.keep_running = False
 
+	def cliff_sensor_fail_detect(self, action_starting):
+
+		if action_starting.name == "avert":
+			# count one
+			self.avert_count += 1
+		elif action_starting.name == "mull":
+			# ignore interposed mulls
+			pass
+		else:
+			# count reset
+			self.avert_count = 0
+
+		# if avert is selected multiple times in a row without anything
+		# interposed other than mull, it's almost guaranteed that the
+		# cliff sensors are playing up. play a sound to indicate this.
+		if self.avert_count >= 3:
+			self.cliff_sensor_fail_detect_count = 15
+
 	def tick(self):
 
 		# cannot usefully proceed without this
 		if self.state.priority_peak is None:
 			return
 
+		# do cliff sensor fail warning sound
+		if self.cliff_sensor_fail_detect_count > 0:
+			self.cliff_sensor_fail_detect_count -= 1
+			if (self.cliff_sensor_fail_detect_count % 5) < 2:
+				self.output.tone = 120
+
 		# fill in action input
 		self.process_input()
 
 		# debug
-		if self.pars.flags.DEV_DEBUG_ORIENTS:
+		if self.pars.dev.DEBUG_ORIENTS:
 			if self.state.tick >= 100 and self.state.tick <= 120:
 				pass
 			elif self.state.tick >= 240 and self.state.tick <= 260:
@@ -343,23 +383,28 @@ class NodeAction(node.Node):
 					action.interface.priority = 0.0
 
 			# handle ORIENT_ONLY
-			if self.pars.flags.DEV_ORIENT_ONLY and action.name != "orient":
+			if self.pars.dev.ORIENT_ONLY and action.name != "orient":
 				action.interface.priority = 0.0
 
 			# handle MULL_ONLY
-			if self.pars.flags.DEV_MULL_ONLY and action.name != "mull":
+			if self.pars.dev.MULL_ONLY and action.name != "mull":
 				action.interface.priority = 0.0
 
 			# handle NO_FLEE
-			if self.pars.flags.DEV_NO_FLEE and action.name == "flee":
+			if self.pars.dev.NO_FLEE and action.name == "flee":
 				action.interface.priority = 0.0
 
+			# handle dev focus action
+			if self.pars.dev.focus_action:
+				if action.name != "mull" and action.name != self.pars.dev.focus_action:
+					action.interface.priority = 0.0
+
 		# start test action?
-		if self.pars.flags.DEV_RUN_TEST_ACTION:
+		if self.pars.dev.RUN_TEST_ACTION:
 			self.start_test_action()
 
 		# update selection mechanism
-		self.selector.update(self.actions)
+		self.selector.update(self)
 
 		# get sham state
 		sham = self.selector.sham

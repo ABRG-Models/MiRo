@@ -55,23 +55,26 @@ class ActionApproach(ActionTemplate):
 	def compute_priority(self):
 
 		# extract variables
-		valence = self.input.emotion.valence
-		arousal = self.input.emotion.arousal
-		height = self.input.priority_peak.height
+		peak_height = self.input.priority_peak.height
 		size_norm = self.input.priority_peak.size_norm
 		fixation = self.input.fixation
+		valence = self.input.emotion.valence
+		arousal = self.input.emotion.arousal
 
 		# extract pars
-		base_priority = self.pars.action.approach_base_prio
-		size_gain = self.pars.action.approach_size_gain
-		arousal_gain = self.pars.action.approach_arousal_gain
-		valence_gain = self.pars.action.approach_valence_gain
-		fixation_gain = self.pars.action.approach_fixation_gain
+		move_fixation_thresh = self.pars.action.move_fixation_thresh
+		move_size_gain = self.pars.action.move_size_gain
+		move_fixation_gain = self.pars.action.move_fixation_gain
+		move_valence_gain = self.pars.action.move_valence_gain
+		move_arousal_gain = self.pars.action.move_arousal_gain
 
 		# compute priority
-		tend_some = np.tanh(arousal_gain * (arousal - 0.5) + fixation_gain * (fixation - 0.5))
-		tend_appe = np.tanh(valence_gain * (valence - 0.5) - size_gain * (size_norm - 0.5))
-		priority = height * (base_priority + tend_some + tend_appe)
+		modulation = 1.0 \
+		 	- move_size_gain * (size_norm - 0.5) \
+			+ move_fixation_gain * (fixation - move_fixation_thresh) \
+			+ move_valence_gain * (valence - 0.5) \
+			+ move_arousal_gain * (arousal - 0.5)
+		priority = self.move_softsat(peak_height * modulation);
 
 		# modulate by cliff and sonar
 		priority *= self.input.conf_surf

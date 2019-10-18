@@ -89,12 +89,27 @@ User-facing changes since R190508:
 
 
 
-
-
-################################################################
-create_release: R190828_RC1
-
-
 ################################################################
 create_release: R190828_RC2
+
+
+
+User-facing changes since R190828:
+
+- Reworked demo action priorities for more active behaviour.
+
+- Added cliff sensor fail warning sound.
+
+- Scale vocalisation volume with ambient sound level.
+
+- Introduce "MIROcube" and demo responses to it.
+
+- Some improvements to network security.
+
+
+
+
+
+################################################################
+create_release: R191016_RC1
 

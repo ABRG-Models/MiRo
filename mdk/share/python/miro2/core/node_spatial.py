@@ -71,7 +71,7 @@ class NodeSpatial(node.Node):
 		self.mov_gain = self.pars.spatial.mov_gain
 
 		# debug
-		if self.pars.flags.DEV_DEBUG_WRITE_TRACES:
+		if self.pars.dev.DEBUG_WRITE_TRACES:
 			with open("/tmp/spatial", "w") as file:
 				file.write("")
 
@@ -166,7 +166,7 @@ class NodeSpatial(node.Node):
 				return dome[1]
 
 		# create
-		if not self.pars.flags.DEV_DEBUG_HALT: # do not pollute info
+		if not self.pars.dev.DEBUG_HALT: # do not pollute info
 			print "create dome at radius", radius
 		s = radius * 8 + 1
 		dome = np.zeros((s, s), np.float32)
@@ -265,11 +265,11 @@ class NodeSpatial(node.Node):
 	def inject_face(self, stream_index):
 
 		# extract signal
-		if self.state.detect_objects[stream_index] is None:
+		if self.state.detect_objects_for_spatial[stream_index] is None:
 			return
 
 		# for each face
-		for face in self.state.detect_objects[stream_index].faces:
+		for face in self.state.detect_objects_for_spatial[stream_index].faces:
 
 			# move coordinates into frame pixels
 			conf = face.conf
@@ -280,7 +280,7 @@ class NodeSpatial(node.Node):
 			range = self.estimate_range(size[0], self.pars.action.face_size_m)
 
 			# debug
-			if not self.pars.flags.DEV_DEBUG_HALT: # do not pollute info
+			if not self.pars.dev.DEBUG_HALT: # do not pollute info
 				print "face at range", range, "with conf", conf
 			if self.pars.flags.DEBUG_DETECTION:
 				self.output.tone = 255
@@ -306,11 +306,11 @@ class NodeSpatial(node.Node):
 	def inject_ball(self, stream_index):
 
 		# extract signal
-		if self.state.detect_objects[stream_index] is None:
+		if self.state.detect_objects_for_spatial[stream_index] is None:
 			return
 
 		# for each ball
-		for ball in self.state.detect_objects[stream_index].balls:
+		for ball in self.state.detect_objects_for_spatial[stream_index].balls:
 
 			# move coordinates into frame pixels
 			cen_p = self.state.camera_model_mini.d2p(np.array(ball.centre))
@@ -327,7 +327,7 @@ class NodeSpatial(node.Node):
 			range = self.estimate_range(r * 2, self.pars.action.ball_size_m)
 
 			# debug
-			if not self.pars.flags.DEV_DEBUG_HALT: # do not pollute info
+			if not self.pars.dev.DEBUG_HALT: # do not pollute info
 				print "ball at range", range
 			if self.pars.flags.DEBUG_DETECTION:
 				self.output.tone = 253
@@ -347,11 +347,11 @@ class NodeSpatial(node.Node):
 	def inject_april(self, stream_index):
 
 		# extract signal
-		if self.state.detect_objects[stream_index] is None:
+		if self.state.detect_objects_for_spatial[stream_index] is None:
 			return
 
 		# for each tag
-		for tag in self.state.detect_objects[stream_index].tags:
+		for tag in self.state.detect_objects_for_spatial[stream_index].tags:
 
 			# extract tag
 			id = tag.id
@@ -359,12 +359,17 @@ class NodeSpatial(node.Node):
 			corn = [tag.corners[0:2], tag.corners[2:4], tag.corners[4:6], tag.corners[6:8]]
 
 			# move coordinates into frame pixels
-			cen = self.state.camera_model_mini.d2p(cen)
-			c0 = self.state.camera_model_mini.d2p(np.array(corn[0]))
-			c2 = self.state.camera_model_mini.d2p(np.array(corn[2]))
+			cam = self.state.camera_model_mini
+			cen = cam.d2p(cen)
+			c0 = cam.d2p(np.array(corn[0]))
+			c1 = cam.d2p(np.array(corn[1]))
+			c2 = cam.d2p(np.array(corn[2]))
+			c3 = cam.d2p(np.array(corn[3]))
 
 			# get size
-			d = np.linalg.norm(c2 - c0)
+			d1 = np.linalg.norm(c2 - c0)
+			d2 = np.linalg.norm(c3 - c1)
+			d = np.max([d1, d2])
 
 			# get parameters
 			x = int(cen[0])
@@ -381,7 +386,6 @@ class NodeSpatial(node.Node):
 			gain *= 1.0 / np.sqrt(range)
 			gain = np.clip(gain, 0.0, 1.0)
 			m = gain
-			#print gain, range, m
 
 			# inject stimulus
 			self.inject_dome(self.pri[stream_index], (x, y), r, m)
@@ -703,12 +707,12 @@ class NodeSpatial(node.Node):
 		if stream_index < 2:
 
 			# debug
-			if self.pars.flags.DEV_DEBUG_WRITE_TRACES and stream_index == 0:
+			if self.pars.dev.DEBUG_WRITE_TRACES and stream_index == 0:
 
-				if not self.state.detect_objects[stream_index] is None:
+				if not self.state.detect_objects_for_spatial[stream_index] is None:
 
 					# prepare string representing single tag and best_peak
-					tags = self.state.detect_objects[stream_index].tags
+					tags = self.state.detect_objects_for_spatial[stream_index].tags
 					if len(tags) > 0:
 						tag = tags[0]
 						cen = tag.centre
@@ -733,7 +737,7 @@ class NodeSpatial(node.Node):
 						file.write(s + "\n")
 
 			# clear detected objects
-			self.state.detect_objects[stream_index] = None
+			self.state.detect_objects_for_spatial[stream_index] = None
 
 	def tick_camera(self, stream_index):
 
@@ -760,6 +764,3 @@ class NodeSpatial(node.Node):
 
 		# ok
 		return updated
-
-
-

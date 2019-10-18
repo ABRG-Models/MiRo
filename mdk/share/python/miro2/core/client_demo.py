@@ -92,6 +92,7 @@ class DemoInput:
 
 		# instantiate
 		self.sensors_package = None
+		self.stream = None
 		self.voice_state = None
 		self.mics = None
 		self.animal_adjust = None
@@ -122,7 +123,8 @@ class DemoState:
 		self.wakefulness = 0.0
 		self.fovea_speed = 0.0
 		self.halting = False
-		self.action_target_value = None
+		self.action_target_valence = None
+		self.action_target_arousal = None
 		self.interact_enable = True
 
 		# loop feedback
@@ -151,7 +153,8 @@ class DemoState:
 		self.audio_level = None
 
 		# detected objects
-		self.detect_objects = [None, None]
+		self.detect_objects_for_spatial = [None, None]
+		self.detect_objects_for_50Hz = [None, None]
 
 		# internal
 		self.reconfigure_cameras = False
@@ -169,6 +172,7 @@ class DemoOutput:
 		self.affect = None
 		self.pushes = []
 		self.tone = 0
+		self.stream = None
 
 
 
@@ -248,7 +252,7 @@ class DemoSystem(object):
 		self.nodes = DemoNodes(self.client_type)
 
 		# debug
-		if self.pars.flags.DEV_START_CAMS_HORIZ:
+		if self.pars.dev.START_CAMS_HORIZ:
 			print "adjusting camera start position to horizontal"
 			self.kc_m = miro.utils.kc_interf.kc_miro_cams_horiz()
 			self.kc_s = miro.utils.kc_interf.kc_miro_cams_horiz()
@@ -264,7 +268,7 @@ class DemoSystem(object):
 		self.timing0 = None # time.time()
 
 		# traces
-		if self.pars.flags.DEV_DEBUG_WRITE_TRACES:
+		if self.pars.dev.DEBUG_WRITE_TRACES:
 			with open('/tmp/kin', 'w') as file:
 				file.write("")
 
@@ -311,6 +315,9 @@ class DemoSystem(object):
 			# publish config
 			self.pub_config = self.publish('core/config/state', std_msgs.msg.String)
 
+			# publish audio
+			self.pub_stream = self.publish('control/stream', std_msgs.msg.Int16MultiArray)
+
 			# publish debug states JIT
 			self.pub_pri_peak = None
 
@@ -343,7 +350,7 @@ class DemoSystem(object):
 		self.pars.finalize()
 
 		# action final parameters
-		if not self.pars.flags.DEV_RECONFIG_CAMERA_QUICK:
+		if not self.pars.dev.RECONFIG_CAMERA_QUICK:
 			self.state.reconfigure_cameras = True
 
 		# and set up to reconfigure them on the fly
@@ -367,6 +374,7 @@ class DemoSystem(object):
 			self.subscribe('core/config/command', std_msgs.msg.String, self.callback_config_command)
 			self.subscribe('core/animal/adjust', miro.msg.animal_adjust, self.callback_animal_adjust)
 			self.subscribe('core/audio_level', std_msgs.msg.Float32MultiArray, self.callback_audio_level)
+			self.subscribe('sensors/stream', std_msgs.msg.UInt16MultiArray, self.callback_stream)
 
 		# select client type
 		if self.client_type == "camera":
@@ -447,6 +455,10 @@ class DemoSystem(object):
 	def callback_audio_level(self, msg):
 
 		self.state.audio_level = np.array(msg.data)
+
+	def callback_stream(self, msg):
+
+		self.input.stream = msg.data
 
 	def callback_sensors_package(self, msg):
 
@@ -568,8 +580,14 @@ class DemoSystem(object):
 		# clear pushes for external kc
 		self.output.pushes = []
 
+		# publish stream
+		if self.output.stream:
+			self.pub_stream.msg.data = self.output.stream
+			self.output.stream = None
+			self.pub_stream.publish()
+
 		# debug
-		if self.pars.flags.DEV_SEND_DEBUG_TOPICS:
+		if self.pars.dev.SEND_DEBUG_TOPICS:
 
 			# publish
 			if self.pub_pri_peak is None:
@@ -625,7 +643,7 @@ class DemoSystem(object):
 			os.remove(self.trigger_filename)
 
 		# write traces
-		if self.pars.flags.DEV_DEBUG_WRITE_TRACES:
+		if self.pars.dev.DEBUG_WRITE_TRACES:
 			with open('/tmp/kin', 'a') as file:
 				sen = np.array(self.input.sensors_package.kinematic_joints.position)
 				cmd = np.array(config)
@@ -648,7 +666,8 @@ class DemoSystem(object):
 
 	def callback_detect_objects(self, msg):
 
-		self.state.detect_objects[msg.stream_index] = msg
+		self.state.detect_objects_for_spatial[msg.stream_index] = msg
+		self.state.detect_objects_for_50Hz[msg.stream_index] = msg
 
 	def callback_mov(self, stream_index, msg):
 
@@ -750,7 +769,7 @@ class DemoSystem(object):
 			self.pub_mov.pub.publish(msg)
 
 		# dev
-		if self.pars.flags.DEV_SEND_DEBUG_TOPICS:
+		if self.pars.dev.SEND_DEBUG_TOPICS:
 
 			# publish ball detector state (debug)
 			if self.pub_bal is None:
@@ -848,7 +867,7 @@ class DemoSystem(object):
 					break
 
 			# check dev stop
-			if self.pars.flags.DEV_DEBUG_AUTO_STOP:
+			if self.pars.dev.DEBUG_AUTO_STOP:
 				if self.state.tick >= 400: # set this value manually
 					print "DEV_DEBUG_AUTO_STOP"
 					with open("/tmp/DEV_DEBUG_AUTO_STOP", "w") as file:
@@ -856,7 +875,7 @@ class DemoSystem(object):
 					break
 
 			# debug
-			if self.pars.flags.DEV_SHOW_LOC_EYE:
+			if self.pars.dev.SHOW_LOC_EYE:
 				x = miro.utils.get("LOC_EYE_L_HEAD")
 				y = self.kc_m.changeFrameAbs(miro.constants.LINK_HEAD, miro.constants.LINK_WORLD, x)
 				print "LOC_EYE_L_HEAD_WORLD", y

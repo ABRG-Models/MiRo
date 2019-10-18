@@ -81,6 +81,12 @@ class ActionTemplate(object):
 		# call finalize (derived class must implement this)
 		self.finalize()
 
+	def move_softsat(self, prio):
+
+		# dev/action_priority
+		priority_attend = self.pars.action.priority_attend
+		return np.tanh(prio / priority_attend) * priority_attend
+
 	def modulate_priority_to(self, priority, target, weight, mode):
 
 		delta = target - priority
@@ -101,7 +107,14 @@ class ActionTemplate(object):
 		# this is called when an appetitive response is started
 		# and responds by processing what was oriented into affect
 		value = self.system_state.priority_peak.value
-		self.system_state.action_target_value = value * gain
+		self.system_state.action_target_valence = value * gain
+
+		# note that if the gain is negative, but the value of the
+		# target is positive, there will be a negative affect on
+		# the target value. this could be interpreted as the agent
+		# having perceived the target to be negative (hence their
+		# behaviour). it's actually the perceived value that affects
+		# their mood.
 
 	def get_inhibition(self):
 
@@ -155,7 +168,7 @@ class ActionTemplate(object):
 
 	def debug_event_start(self):
 
-		if self.pars.flags.DEV_DEBUG_ACTION_PARAMS:
+		if self.pars.dev.DEBUG_ACTION_PARAMS:
 			print "(DEV_DEBUG_ACTION_PARAMS, at action start...)"
 			print "\tpriority_peak.stream_index", self.input.priority_peak.stream_index
 			loc_d = self.input.priority_peak.loc_d
@@ -168,6 +181,9 @@ class ActionTemplate(object):
 			print "\tpriority_peak.size", fmt_float(self.input.priority_peak.size)
 			print "\tpriority_peak.size_norm", fmt_float(self.input.priority_peak.size_norm)
 			print "\tpriority_peak.range", fmt_float(self.input.priority_peak.range)
+			print "\tfixation", fmt_float(self.input.fixation)
+			print "\tvalence", fmt_float(self.input.emotion.valence)
+			print "\tarousal", fmt_float(self.input.emotion.arousal)
 
 	def event_start(self):
 
@@ -192,7 +208,7 @@ class ActionTemplate(object):
 
 		# also set to MULL_ONLY for any remaining run time to avoid
 		# starting a new movement action
-		self.pars.flags.DEV_MULL_ONLY = True
+		self.pars.dev.MULL_ONLY = True
 
 	def ascending(self):
 
@@ -283,6 +299,9 @@ class ActionInput(object):
 		self.dgaze = 0.0
 		self.gaze_elevation = 0.0
 
+		# stream
+		self.stream = None
+
 
 
 class ActionInterface(object):
@@ -331,6 +350,12 @@ class ActionClock(object):
 			if self.steps_so_far >= self.steps_total:
 				self.stop()
 
+	def reset(self):
+
+		# just reset to start, to allow an action to use it as a
+		# hold-open button rather than a clock, per se
+		self.start(self.steps_total)
+
 	def stop(self):
 
 		# reset clock
@@ -343,18 +368,38 @@ class ActionClock(object):
 
 		return self.steps_total > 0
 
-	def cosine_profile(self):
-
-		# return a profile from 0 to 1 (for t > steps_total, return 1)
-		if self.t_norm >= 1.0:
-			return 1.0
-
-		return 0.5 - 0.5 * np.cos(self.t_norm * np.pi)
-
 	def linear_profile(self):
 
-		# Returns a profile from 0 to 1, for t > steps_total, return 1
-		if self.t_norm >= 1.0:
-			return 1.0
+		# Returns a profile moving linearly from 0 to 1 (i.e. just normalised time)
+		t_norm = self.t_norm
+		if t_norm >= 1.0:
+			t_norm = 1.0
 
-		return self.t_norm
+		return t_norm
+
+	def cosine_profile(self):
+
+		# return a profile moving from 0 to 1 with acceleration
+		t_norm = self.t_norm
+		if t_norm >= 1.0:
+			t_norm = 1.0
+
+		return 0.5 - 0.5 * np.cos(t_norm * np.pi)
+
+	def sine_profile(self):
+
+		# return a profile from -1 to 1, excursing +ve then -ve within cycle (a single period of a sine wave)
+		t_norm = self.t_norm
+		if t_norm >= 1.0:
+			t_norm = 1.0
+
+		return np.sin(t_norm * np.pi * 2.0)
+
+	def cosine_circle_profile(self, phase=0.0):
+
+		# return a profile from 0 to 0 peaking at 1 at mid-point (a single period of a cosine squared)
+		t_norm = self.t_norm
+		if t_norm >= 1.0:
+			t_norm = 1.0
+
+		return 0.5 - 0.5 * np.cos((t_norm * 2.0 + phase) * np.pi)

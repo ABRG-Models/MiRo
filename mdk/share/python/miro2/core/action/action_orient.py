@@ -51,23 +51,23 @@ class ActionOrient(ActionTemplate):
 		# parameters
 		self.name = "orient"
 
-		if self.pars.flags.DEV_DEBUG_WRITE_TRACES:
+		if self.pars.dev.DEBUG_WRITE_TRACES:
 			with open('/tmp/orient', 'w') as file:
 				file.write("")
 
 	def compute_priority(self):
 
-		return self.input.priority_peak.height * self.pars.action.orient_base_prio
+		return self.move_softsat(self.input.priority_peak.height)
 
 	def event_start(self):
 
 		self.appetitive_response(self.pars.action.orient_appetitive_commitment)
 		self.debug_event_start()
 
-		if self.pars.flags.DEV_DEBUG_ORIENT_START:
+		if self.pars.dev.DEBUG_ORIENT_START:
 			self.system_output.tone = 240
 
-		if self.pars.flags.DEV_DEBUG_WRITE_TRACES:
+		if self.pars.dev.DEBUG_WRITE_TRACES:
 			with open('/tmp/orient', 'a') as file:
 				s_peak = str(self.input.priority_peak.azim) + " " + str(self.input.priority_peak.elev)
 				file.write(str(self.system_state.tick) + " " + s_peak + "\n")
@@ -142,7 +142,7 @@ class ActionOrient(ActionTemplate):
 				)
 
 		# debug
-		if self.pars.flags.DEV_DEBUG_ORIENTS:
+		if self.pars.dev.DEBUG_ORIENTS:
 
 			print "\n\nORIENT START!\n\n"
 
@@ -189,7 +189,7 @@ class ActionOrient(ActionTemplate):
 		gaze_target_WORLD_cmd = self.gaze_target_i_WORLD + x * self.dgaze_target_WORLD
 
 		# debug how WORLD gaze is intended to, and actually does, change
-		if self.pars.flags.DEV_DEBUG_ORIENTS:
+		if self.pars.dev.DEBUG_ORIENTS:
 			gaze_target_WORLD = self.kc.changeFrameAbs(
 					miro.constants.LINK_HEAD,
 					miro.constants.LINK_WORLD,
@@ -225,12 +225,9 @@ class ActionOrient(ActionTemplate):
 		#print x, np.linalg.norm(push.vec)
 
 		# debug (do not apply push)
-		#if self.pars.flags.DEV_DEBUG_ORIENTS:
+		#if self.pars.dev.DEBUG_ORIENTS:
 		#	if self.count != 3:
 		#		return
 
 		# apply push
 		self.apply_push(push)
-
-
-

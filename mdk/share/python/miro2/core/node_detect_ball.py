@@ -57,7 +57,7 @@ class NodeDetectBall(node.Node):
 		img = self.state.frame_bgr[stream_index]
 
 		# load test image
-		if self.pars.flags.DEV_DETECT_BALL and stream_index == 0 and (self.ticks[stream_index] & 30) < 1:
+		if self.pars.dev.DETECT_BALL and stream_index == 0 and (self.ticks[stream_index] & 30) < 1:
 			home = os.getenv("HOME")
 			img = cv2.imread(home + "/lib/miro2x/resource/detect_ball_test.jpg")
 
@@ -145,6 +145,3 @@ class NodeDetectBall(node.Node):
 
 		# tick
 		self.ticks[stream_index] += 1
-
-
-

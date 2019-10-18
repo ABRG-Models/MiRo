@@ -679,14 +679,24 @@ class NodeAffect(node.Node):
 	def affect_from_action_target(self):
 
 		# positive action target values raise valence
-		d_valence = self.state.action_target_value
+		d_valence = self.state.action_target_valence
 		if not d_valence is None:
-			self.state.action_target_value = None
+			self.state.action_target_valence = None
 			d_valence *= self.pars.affect.valence_action_target_gain
-			if not self.pars.flags.DEV_DEBUG_HALT: # do not pollute info
-				if d_valence > 0.001:
-					print "affect boost", d_valence
+			if not self.pars.dev.DEBUG_HALT: # do not pollute info
+				if np.abs(d_valence) > 0.001:
+					print "valence boost from action target", d_valence
 			self.drive_valence(d_valence)
+
+		# handle also effects on arousal
+		d_arousal = self.state.action_target_arousal
+		if not d_arousal is None:
+			self.state.action_target_arousal = None
+			d_arousal *= self.pars.affect.arousal_action_target_gain
+			if not self.pars.dev.DEBUG_HALT: # do not pollute info
+				if np.abs(d_arousal) > 0.001:
+					print "arousal boost from action target", d_arousal
+			self.drive_arousal(d_arousal)
 
 	def affect_from_random(self):
 
@@ -711,7 +721,7 @@ class NodeAffect(node.Node):
 		if self.pars.flags.AFFECT_FROM_ACTION_TARGET:
 			self.affect_from_action_target()
 
-		if self.pars.flags.DEV_RANDOMIZE_VALENCE:
+		if self.pars.dev.RANDOMIZE_VALENCE:
 			self.affect_from_random()
 
 		# apply drives over a period of time so that emotional
@@ -740,7 +750,7 @@ class NodeAffect(node.Node):
 
 			# mood valence tends to return to neutral
 			gamma = self.pars.affect.gamma_neutral_valence_asleep
-			if self.pars.flags.DEV_FAST_SLEEP_DYNAMICS:
+			if self.pars.dev.FAST_SLEEP_DYNAMICS:
 				gamma *= self.pars.affect.fast_sleep_dyn_gain
 			gamma_awake = self.pars.affect.gamma_neutral_valence_awake
 			gamma += self.sleep.wakefulness * (gamma_awake - gamma)
@@ -828,7 +838,7 @@ class NodeAffect(node.Node):
 				+ self.pars.affect.sleep_dyn_c * w3
 
 		# accelerate
-		if self.pars.flags.DEV_FAST_SLEEP_DYNAMICS:
+		if self.pars.dev.FAST_SLEEP_DYNAMICS:
 			dp *= self.pars.affect.fast_sleep_dyn_gain
 			dw *= self.pars.affect.fast_sleep_dyn_gain
 
@@ -875,6 +885,3 @@ class NodeAffect(node.Node):
 		msg.emotion.valence = self.emotion.valence
 		msg.emotion.arousal = self.emotion.arousal
 		msg.time_of_day = self.time_of_day
-
-
-

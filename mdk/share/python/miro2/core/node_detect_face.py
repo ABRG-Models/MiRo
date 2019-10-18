@@ -71,7 +71,7 @@ class NodeDetectFace(node.Node):
 		img = self.state.frame_gry[stream_index]
 
 		# load test image
-		if self.pars.flags.DEV_DETECT_FACE and stream_index == 0 and (self.ticks[stream_index] & 30) < 1:
+		if self.pars.dev.DETECT_FACE and stream_index == 0 and (self.ticks[stream_index] & 30) < 1:
 			home = os.getenv("HOME")
 			img_color = cv2.imread(home + "/lib/miro2x/resource/detect_face_test.jpg")
 			img = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
@@ -212,4 +212,3 @@ class NodeDetectFace(node.Node):
 		if len(largest) == 0:
 			return
 		"""
-

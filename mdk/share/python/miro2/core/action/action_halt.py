@@ -96,7 +96,7 @@ class ActionHalt(ActionTemplate):
 		eff = np.array(self.input.wheel_effort_pwm)
 
 		# report and exit, used for dev/wheel_stall
-		if self.pars.flags.DEV_DEBUG_HALT:
+		if self.pars.dev.DEBUG_HALT:
 			print \
 				fmt_wheels(cmd), \
 				fmt_wheels(opt), \
@@ -172,6 +172,3 @@ class ActionHalt(ActionTemplate):
 		# read clock
 		x = self.clock.cosine_profile()
 		self.clock.advance(True)
-
-
-

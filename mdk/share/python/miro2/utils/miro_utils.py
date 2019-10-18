@@ -33,6 +33,7 @@
 
 
 import numpy as np
+import os
 import sys
 import signal
 import rospy
@@ -89,5 +90,50 @@ def get(key):
 
 	miro.utils.error("unknown key")
 
+def get_media_file(filename):
 
+	# since R190828, we keep multiple MDKs alongside; to avoid repeating some
+	# large files, we do not keep them in all MDKs - rather, we just update
+	# them if they change, or if we add any. here, we find the most recent
+	# version of a given file for the caller.
 
+	# media source list
+	DIR_SOURCE = []
+
+	# root of MDKs on-board
+	DIR_CHANNEL = os.getenv("HOME") + "/channel"
+
+	# if present (i.e. if running on-board)
+	if os.path.isdir(DIR_CHANNEL):
+
+		# list directories belonging to other releases
+		DIR_MDK = []
+		subdirs = os.listdir(DIR_CHANNEL)
+		for d in subdirs:
+			if len(d) < 3:
+				continue
+			if d[0:3] != "mdk":
+				continue
+			DIR_MDK.append(d)
+
+		# rsort them so we prioritise more recent ones
+		DIR_MDK.sort()
+		DIR_MDK.reverse()
+
+		# and append to media source list
+		for d in DIR_MDK:
+			DIR_SOURCE.append(DIR_CHANNEL + "/" + d + "/share/media")
+
+	# append dev directories
+	DIR_SOURCE.append(os.getenv('HOME') + "/mdk/share/media")
+	DIR_SOURCE.append(os.getenv('HOME') + "/lib/miro2/mdk/share/media")
+	DIR_SOURCE.append(os.getenv('HOME') + "/lib/miro2x/mdk/share/media")
+
+	# now search them in order for the required file
+	for dir in DIR_SOURCE:
+		path = dir + "/" + filename
+		if os.path.isfile(path):
+			return path
+
+	# not found
+	return None

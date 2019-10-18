@@ -64,7 +64,9 @@ class BasalGanglia(object):
 		# and not in sham mode
 		self.sham = False
 
-	def update(self, actions):
+	def update(self, node):
+
+		actions = node.actions
 
 		self.prio = np.zeros(len(actions))
 		self.inhib = np.ones(len(actions))
@@ -102,6 +104,9 @@ class BasalGanglia(object):
 			self.selected = selected
 			actions[self.selected].event_start()
 
+			# do cliff sensor fail detect
+			node.cliff_sensor_fail_detect(actions[self.selected])
+
 			# recompute sham state
 			if self.pars.action.action_prob == 1.0:
 				# do not roll dice or annoy dev with message
@@ -119,7 +124,3 @@ class BasalGanglia(object):
 				self.inhib[i] = 0.0
 			else:
 				action.interface.inhibition = 1.0
-
-
-
-

@@ -233,6 +233,12 @@ class Action(object):
 
 	def __init__(self):
 
+		self.priority_idle = 0.1
+		self.priority_uninterruptable = 1.0
+		self.priority_high = 0.9
+		self.priority_attend = 0.8
+		self.priority_medium = 0.5
+
 		# probability that an action is executed (rather than shammed)
 		self.action_prob = 1.0
 
@@ -249,33 +255,29 @@ class Action(object):
 		self.halt_stall_acc_gain = 15.0
 		self.halt_num_steps = 20
 
-		self.orient_base_prio = 0.5
 		self.orient_speed_sec_per_rad = 2.0
 		self.orient_gaze_target_radius = 1.0
 		self.orient_min_steps = 25
 		self.orient_max_steps = 100
-		self.orient_appetitive_commitment = 0.5
+		self.orient_appetitive_commitment = 0.2
 		self.orient_in_HEAD = False
 		self.orient_follow_arc = True
 
-		self.approach_base_prio = 0.2
-		self.approach_size_gain = 0.5
-		self.approach_arousal_gain = 1.0
-		self.approach_valence_gain = 0.2
-		self.approach_fixation_gain = 1.5
+		self.move_fixation_thresh = 0.8
+		self.move_size_gain = 0.2
+		self.move_fixation_gain = 0.6
+		self.move_valence_gain = 0.5
+		self.move_arousal_gain = 0.5
+
 		self.approach_speed_mps = 0.2
 		self.approach_min_steps = 50
 		self.approach_max_steps = 300
 		self.approach_appetitive_commitment = 0.5
 
-		self.flee_base_prio = 0.0
-		self.flee_fixation_gain = 0.0
-		self.flee_arousal_gain = 0.25
-		self.flee_valence_gain = 0.5
-		self.flee_size_gain = 0.75
 		self.flee_speed_mps = 0.3
 		self.flee_min_steps = 50
 		self.flee_max_steps = 300
+		self.flee_appetitive_commitment = -0.2
 
 		self.avert_base_prio = 0.0
 		self.avert_algorithm = 'body'
@@ -295,12 +297,6 @@ class Action(object):
 
 		self.cliff_thresh = 6
 		self.cliff_margin = 1
-
-		self.priority_idle = 0.1
-		self.priority_uninterruptable = 1.0
-		self.priority_high = 0.75
-		self.priority_medium = 0.5
-		self.priority_low = 0.25
 
 		# known sizes of particular objects are used to estimate range
 		self.face_size_m = 0.25
@@ -375,6 +371,7 @@ class Affect(object):
 		self.valence_sleep_blocked_thresh = 0.75
 		self.valence_sleep_blocked_gain = -0.001
 		self.valence_action_target_gain = 0.5
+		self.arousal_action_target_gain = 1.0
 		self.arousal_stroke_thresh = 0.75
 		self.arousal_stroke_gain = 0.05
 		self.arousal_pet_gain = 0.025
@@ -455,6 +452,7 @@ class Flags( object ):
 		self.ACTION_ENABLE_SONAR_STOP	= 1
 		self.ACTION_ENABLE_MOVE_AWAY	= 1
 		self.ACTION_HALT_ON_STALL		= 1
+		self.ACTION_ENABLE_SPECIAL		= 1
 
 		self.SALIENCE_FROM_MOTION		= 1
 		self.SALIENCE_FROM_SOUND		= 1
@@ -467,33 +465,49 @@ class Flags( object ):
 		self.BODY_ENABLE_ROTATION		= 1
 		self.BODY_ENABLE_NECK_MOVEMENT	= 1
 
-		# developer flags default to 0 (disabled)
-		self.DEV_RANDOMIZE_VALENCE		= 0
-		self.DEV_FAST_SLEEP_DYNAMICS	= 0
-		self.DEV_DEBUG_HALT				= 0
-		self.DEV_DETECT_FACE			= 0
-		self.DEV_DETECT_BALL			= 0
-		self.DEV_MULL_ONLY				= 0
-		self.DEV_ORIENT_ONLY			= 0
-		self.DEV_NO_FLEE				= 0
-		self.DEV_RUN_TEST_ACTION		= 0
-		self.DEV_RECONFIG_CAMERA_QUICK	= 0
-		self.DEV_DEBUG_ACTION_PARAMS	= 1
-		self.DEV_DEBUG_ORIENT_START		= 0
-		self.DEV_DEBUG_ORIENTS			= 0
-		self.DEV_SEND_DEBUG_TOPICS		= 1
-		self.DEV_DEBUG_WRITE_TRACES		= 0
-		self.DEV_IGNORE_CLIFF_SENSORS	= 0
-		self.DEV_START_CAMS_HORIZ		= 0
-		self.DEV_SHOW_LOC_EYE			= 0
-		self.DEV_DEBUG_AUTO_STOP		= 0
-		self.DEV_SIMULATE_CLIFF			= 0
-
 		# developer flags accessible from MIROapp (for now)
 		self.DEBUG_SONAR				= 0
 		self.DEBUG_DETECTION			= 0
 
+class Dev( object ):
 
+	def __init__( self ):
+
+		# default is all disabled for production systems
+		self.focus_action			= None
+		self.RANDOMIZE_VALENCE		= 0
+		self.FAST_SLEEP_DYNAMICS	= 0
+		self.DEBUG_HALT				= 0
+		self.DETECT_FACE			= 0
+		self.DETECT_BALL			= 0
+		self.MULL_ONLY				= 0
+		self.ORIENT_ONLY			= 0
+		self.NO_FLEE				= 0
+		self.RUN_TEST_ACTION		= 0
+		self.RECONFIG_CAMERA_QUICK	= 0
+		self.DEBUG_ACTION_PARAMS	= 0
+		self.DEBUG_ORIENT_START		= 0
+		self.DEBUG_ORIENTS			= 0
+		self.SEND_DEBUG_TOPICS		= 0
+		self.DEBUG_WRITE_TRACES		= 0
+		self.IGNORE_CLIFF_SENSORS	= 0
+		self.START_CAMS_HORIZ		= 0
+		self.SHOW_LOC_EYE			= 0
+		self.DEBUG_AUTO_STOP		= 0
+		self.SIMULATE_CLIFF			= 0
+
+	def allow(self):
+
+		# print
+		print "allowing developer options..."
+
+		# select one action (as well as mull) to allow
+		# use None to disable
+		self.focus_action = "special"
+
+		# dev flags
+		self.DEBUG_ACTION_PARAMS	= 1
+		self.SEND_DEBUG_TOPICS		= 1
 
 class CorePars (object):
 
@@ -519,10 +533,11 @@ class CorePars (object):
 		self.detect_audio = DetectAudio()
 		self.detect_face = DetectFace()
 		self.flags = Flags()
+		self.dev = Dev()
 
 		# set default demo_flags
 		self.demo_flags = ""
-		self.allow_dev_flags = False
+		self.allow_dev = False
 
 		# finalize components
 		self.finalize_components()
@@ -583,6 +598,7 @@ class CorePars (object):
 		self.flags.ACTION_HALT_ON_STALL = self.demo_flag_norm_on("H", "disable halt on stall")
 		self.flags.ACTION_MODULATE_BY_SONAR = self.demo_flag_norm_on("m", "disable sonar modulation")
 		self.flags.ACTION_ENABLE_SONAR_STOP = self.flags.ACTION_MODULATE_BY_SONAR
+		self.flags.ACTION_ENABLE_SPECIAL = self.demo_flag_norm_on("x", "disable special responses")
 		#
 		self.flags.DEBUG_SONAR = self.demo_flag_norm_off("P", "[debug] debug sonar modulation")
 		self.flags.DEBUG_DETECTION = self.demo_flag_norm_off("Q", "[debug] debug detection")
@@ -590,7 +606,7 @@ class CorePars (object):
 		# dev flags are not accessible from MIROapp, but must be "allowed" by locally setting "D";
 		# this ensures that if we accidentally leave any DEV flags on in a release, they are muted
 		# on production systems
-		self.allow_dev_flags = self.demo_flag_norm_off("D", "[dev] allow developer flags")
+		self.allow_dev = self.demo_flag_norm_off("D", "[dev] allow developer options")
 
 		# report
 		print "----------------------------------------------------------------"
@@ -681,18 +697,9 @@ class CorePars (object):
 		# action demo_flags
 		self.action_demo_flags()
 
-		# if not ALLOW_DEV_FLAGS (all production units) disable all DEV flags
-		if not self.allow_dev_flags:
-			print "disabling developer flags..."
-			flags = dir(self.flags)
-			for flag in flags:
-				if flag[0:4] == "DEV_":
-					value = getattr(self.flags, flag)
-					if value:
-						setattr(self.flags, flag, 0)
-						print "\t" + flag
-		else:
-			print "allowing developer flags..."
+		# if allow_dev
+		if self.allow_dev:
+			self.dev.allow()
 
 		# finalize components (again, in case any changes happened above)
 		self.finalize_components()

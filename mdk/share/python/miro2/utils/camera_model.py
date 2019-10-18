@@ -309,6 +309,13 @@ class CameraModel:
 		vh = self.v2vh(stream_index, v)
 		return vh
 
+	def p2oh(self, p, stream_index, r):
+
+		v = self.p2v(p)
+		vh = self.v2vh(stream_index, v)
+		oh = self.vh2oh(stream_index, vh, r)
+		return vh
+
 	def vh2oh(self, stream_index, vh, r):
 
 		o = [r, 0.0, 0.0]
@@ -322,7 +329,3 @@ class CameraModel:
 		vh = self.v2vh(stream_index, v)
 		oh = self.vh2oh(stream_index, vh, r)
 		return oh
-
-
-
-

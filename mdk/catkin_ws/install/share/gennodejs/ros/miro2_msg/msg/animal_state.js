@@ -178,7 +178,13 @@ class animal_state {
     float32 time_of_day
     
     # normalised ambient sound level (0.0 -> 1.0)
+    # < 0.01 : pretty quiet
+    # 0.01 : normal ambient music
+    # 0.02-0.03 : loud music
+    # 0.05 : very loud music
+    # > 0.1 : System of a Down
     float32 sound_level
+    
     
     ================================================================================
     MSG: miro2_msg/affect

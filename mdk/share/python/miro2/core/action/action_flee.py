@@ -55,41 +55,26 @@ class ActionFlee(ActionTemplate):
 	def compute_priority(self):
 
 		# extract variables
-		valence = self.input.emotion.valence
-		arousal = self.input.emotion.arousal
-		height = self.input.priority_peak.height
+		peak_height = self.input.priority_peak.height
 		size_norm = self.input.priority_peak.size_norm
 		fixation = self.input.fixation
+		valence = self.input.emotion.valence
+		arousal = self.input.emotion.arousal
 
 		# extract pars
-		base_prio = self.pars.action.flee_base_prio
-		arousal_gain = self.pars.action.flee_arousal_gain
-		valence_gain = self.pars.action.flee_valence_gain
-		size_gain = self.pars.action.flee_size_gain
-		fixation_gain = self.pars.action.flee_fixation_gain
+		move_fixation_thresh = self.pars.action.move_fixation_thresh
+		move_size_gain = self.pars.action.move_size_gain
+		move_fixation_gain = self.pars.action.move_fixation_gain
+		move_valence_gain = self.pars.action.move_valence_gain
+		move_arousal_gain = self.pars.action.move_arousal_gain
 
 		# compute priority
-		priority = height * (base_prio
-				- valence_gain * (valence - 0.5)
-				+ arousal_gain * (arousal - 0.5)
-				+ fixation_gain * (fixation - 0.5)
-				+ size_gain * size_norm)
-
-		#print height, valence, arousal, fixation, size_norm, priority
-
-		# modulate by cliff
-		"""
-		No, don't - if you do, then there will be a priority to flee when there
-		is nothing to flee from, when looking over a cliff. Let action avert
-		handle the cliff situation - we should flee only if it is a natural
-		thing to do, anyway. There is a down modulation of action approach,
-		which /does/ make sense.
-
-		priority = self.modulate_priority_to(priority,
-				self.pars.action.priority_medium,
-				1.0 - self.input.conf_surf,
-				+1)
-				"""
+		modulation = 1.0 \
+		 	+ move_size_gain * (size_norm - 0.5) \
+			+ move_fixation_gain * (fixation - move_fixation_thresh) \
+			- move_valence_gain * (valence - 0.5) \
+			+ move_arousal_gain * (arousal - 0.5)
+		priority = self.move_softsat(peak_height * modulation);
 
 		# ok
 		return priority
@@ -136,6 +121,11 @@ class ActionFlee(ActionTemplate):
 			print "fovea_i_WORLD", self.fovea_i_WORLD
 			print "fovea_f_WORLD", fovea_f_WORLD
 			print "pattern time", total_dist, secs_ideal, steps_ideal, steps_constrained
+
+	def event_start(self):
+
+		self.appetitive_response(self.pars.action.flee_appetitive_commitment)
+		self.debug_event_start()
 
 	def service(self):
 
