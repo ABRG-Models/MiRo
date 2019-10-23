@@ -12,8 +12,10 @@ There's just a few things you'll need to do before using this repo for MiRo deve
 * [Guides to various Git concepts](https://guides.github.com)
 * [Git commands cheatsheet](https://github.github.com/training-kit/downloads/github-git-cheat-sheet/)
 
-### MSc students
+### Students
 The desktop computers in B.09 have a copy of this repo at `~/Documents/MiRo`; the first thing you should do is create and checkout a new branch for your project by changing to the repo directory and running `git checkout -b <your_project_name>`. We're going to store project work in a single cloned repo location on the disk (as this makes running the MDK a lot easier) but in separate branches, so it's probably worth familiarising yourself with [how branching works in Git](https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell) if you've not used Git before. In particular, it's important that you remember to *checkout* your branch each time you want to do some work, and then *commit* and *push* your changes once you're finished.
+
+Please don't push changes to the `master` branch or make changes to the code on the physical robots; these should be left in a known-good state.
 
 ## Interacting with MiRo
 We use [ROS](https://www.ros.org) to interface with both physical and virtual MiRos and [Gazebo](http://gazebosim.org) as a simulation environment, so these are the two additional software packages you'll need to test your code on your personal machine. There are two ways to get going:
@@ -35,4 +37,21 @@ To connect to the ROS core on your MiRo robot you will need to ensure three envi
 * `ROS_IP` must be set to your machine's IP address (of the interface used to communicate with MiRo)
 * `ROS_MASTER_URI` must be set to `http://<MiRo's IP>:11311`
 * `MIRO_ROBOT_NAME` must be set to your MiRo's ROS name - this can easily be viewed in the MiRo app
-You can test these are set correctly by running `mdk/bin/shared/client_gui.py`; you should be able to view sensor data from MiRo (cameras, touch sensors etc) and also send movement commands. If you can view data but not send commands, this usually indicates that `ROS_IP` is not set correctly.
+
+### Useful commands
+The following commands all require a running `roscore` instance for use with a virtual MiRo
+
+**Launch the MiRo simulator:**
+`~/mdk/sim/launch_sim.sh`
+
+**Run the client GUI:**
+`~/mdk/bin/shared/client_gui.py`
+
+**Run the MiRo demo code:**
+Run the following commands in separate terminal windows:
+* `~/mdk/share/python/miro2/core/client_demo.py - caml` (Note the space before and after the dash)
+* `~/mdk/share/python/miro2/core/client_demo.py - camr`
+* `~/mdk/share/python/miro2/core/client_demo.py`
+
+### Troubleshooting
+If you can view ROS data but not send commands, this usually indicates that `ROS_IP` is not set correctly.
